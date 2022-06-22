@@ -1,3 +1,5 @@
+SET foreign_key_checks = 0;
+
 DROP TABLE IF EXISTS user_status;
 
 DROP TABLE IF EXISTS publications;
@@ -18,13 +20,17 @@ DROP TABLE IF EXISTS requests_friendship;
 
 CREATE TABLE genders (
     id INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    gender_name CHAR(5)
+    gender_name VARCHAR(50)
 );
+
+INSERT INTO genders (gender_name) VALUES ('Homme'), ('Femme');
 
 CREATE TABLE roles (
     id INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    role_name CHAR(10)
+    role_name VARCHAR(50)
 );
+
+INSERT INTO roles (role_name) VALUES ('User'), ('Admin');
 
 CREATE TABLE users (
     id INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -33,20 +39,17 @@ CREATE TABLE users (
     gender_id INTEGER,
     FOREIGN KEY (gender_id) REFERENCES genders(id) ON DELETE RESTRICT ON UPDATE CASCADE,
     birthday DATE,
-    email VARCHAR(40),
-    password CHAR(12),
-    role_id INTEGER,
+    email VARCHAR(60) NOT NULL,
+    password VARCHAR(60) NOT NULL,
+    role_id INTEGER DEFAULT 1,
     FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE RESTRICT ON UPDATE CASCADE,
     created_at DATE,
-    account_disabled BOOLEAN,
-    is_connected BOOLEAN
+    account_disabled BOOLEAN
 );
 
 CREATE TABLE user_status (
-    user_id INTEGER,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE,
-    status_description TEXT(128),
-    update_at DATETIME
+    id INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    status_description TEXT(128)
 );
 
 CREATE TABLE publications (
@@ -88,8 +91,4 @@ CREATE TABLE requests_friendship (
     denied_date DATETIME
 );
 
-CREATE TABLE friends (
-    request_friendship_id INTEGER,
-    FOREIGN KEY (request_friendship_id) REFERENCES requests_friendship(id) ON DELETE RESTRICT ON UPDATE CASCADE,
-    are_friends BOOLEAN
-);
+SET foreign_key_checks = 1;
