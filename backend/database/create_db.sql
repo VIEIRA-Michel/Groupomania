@@ -8,8 +8,6 @@ DROP TABLE IF EXISTS publication_user_liked;
 
 DROP TABLE IF EXISTS comments;
 
-DROP TABLE IF EXISTS friends;
-
 DROP TABLE IF EXISTS users;
 
 DROP TABLE IF EXISTS genders;
@@ -39,7 +37,7 @@ CREATE TABLE users (
     gender_id INTEGER,
     FOREIGN KEY (gender_id) REFERENCES genders(id) ON DELETE RESTRICT ON UPDATE CASCADE,
     birthday DATE,
-    email VARCHAR(60) NOT NULL,
+    email VARCHAR(60) NOT NULL UNIQUE,
     password VARCHAR(60) NOT NULL,
     role_id INTEGER DEFAULT 1,
     FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE RESTRICT ON UPDATE CASCADE,
