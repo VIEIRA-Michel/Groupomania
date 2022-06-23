@@ -54,3 +54,42 @@ exports.createPublication = (req, res, next) => {
 
         })
 }
+
+exports.updatePublication = (req, res, next) => {
+    const publicationObject = {...req.body}
+    console.log('publicationObject', publicationObject);
+    let now = new Date();
+    let today = date.format(now, 'YYYY-MM-DD HH:mm:ss');
+    let publication = {
+        content: req.body.content,
+        picture: req.body.picture,
+        updated_at: today
+    };
+    let sql = `UPDATE publications SET content = ?, picture = ?, updated_at = ? WHERE id = ?;`;
+    connection.query(
+        sql, [publication.content, publication.picture, publication.updated_at, req.params.id], function (err, results) {
+            if (err) {
+                console.log(err)
+                res.status(500).json({ message: 'Erreur lors de la modification de la publication' });
+            } else {
+                console.log(results);
+                res.status(200).json({ message: 'Publication modifiée ! ' })
+            }
+        }
+    )
+}
+
+exports.deletePublication = (req, res, next) => {
+    let sql = `DELETE FROM publications WHERE id = ?;`;
+    connection.query(
+        sql, [req.params.id], function (err, results) {
+            if (err) {
+                console.log(err)
+                res.status(500).json({ message: 'Erreur lors de la suppression de la publication' });
+            } else {
+                console.log(results);
+                res.status(200).json({ message: 'Publication supprimée ! ' })
+            }
+        }
+    )
+}
