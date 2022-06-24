@@ -1,6 +1,7 @@
 const express = require('express');
 const usersRoutes = require('./routes/users.routes');
 const publicationsRoutes = require('./routes/publications.routes');
+const profilRoutes = require('./routes/profil.routes');
 const app = express();
 const auth = require('./middlewares/auth');
 
@@ -22,5 +23,6 @@ app.post('/api/refresh', auth.refreshToken, (req, res) => {
     res.send(req.user);
 });
 app.use('/api/home', auth.accesToken, publicationsRoutes);
+app.use('/api/profil', auth.accesToken, profilRoutes);
 
 module.exports = app;
