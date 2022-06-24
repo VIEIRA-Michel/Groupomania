@@ -133,3 +133,50 @@ exports.deleteComment = (req, res, next) => {
         }
     )
 }
+
+exports.likePublication = (req, res, next) => {
+    let like = {
+        user_id: req.user.userId,
+        publication_id: req.params.id
+    };
+    let sqlSearch = `SELECT * FROM publication_user_liked WHERE user_id = ? AND publication_id = ?;`;
+    connection.query(
+        sqlSearch, [like.user_id, like.publication_id], function (err, results) {
+            console.log('faut check ca', results);
+            if (err) {
+                console.log(err)
+                res.status(500).json({ message: 'Erreur lors de la recherche du like' });
+            } else {
+                if (results.length === 0) {
+                    let sql = `INSERT INTO publication_user_liked (user_id, publication_id) VALUES (?, ?);`;
+                    connection.query(
+                        sql, [like.user_id, like.publication_id], function (err, results) {
+                            if (err) {
+                                console.log(err)
+                                res.status(500).json({ message: 'Erreur lors de la création du like' });
+                            }
+                            if (!err) {
+                                res.status(200).json({ message: 'Like ajouté ! ' })
+                            }
+
+                        }
+                    )
+                } else {
+                    let sqlDeleteLike = `DELETE FROM publication_user_liked WHERE user_id = ? AND publication_id = ?;`;
+                    connection.query(
+                        sqlDeleteLike, [like.user_id, like.publication_id], function (err, results) {
+                            if (err) {
+                                console.log(err)
+                                res.status(500).json({ message: 'Erreur lors de la suppression du like' });
+                            }
+                            if (!err) {
+                                res.status(200).json({ message: 'Like supprimé ! ' })
+                            }
+                        }
+                    )
+                }
+            }
+        }
+    )
+}
+
