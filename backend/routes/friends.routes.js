@@ -8,5 +8,4 @@ router.get('/search', friendsController.search);
 router.post('/search/:id', friendsController.sendRequest);
 router.delete('/:id', friendsController.deleteFriend);
 
-
 module.exports = router;
