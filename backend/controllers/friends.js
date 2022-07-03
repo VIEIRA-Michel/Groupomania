@@ -42,25 +42,40 @@ exports.sendRequest = (req, res, next) => {
 }
 
 exports.approveRequest = (req, res, next) => {
-    if (req.body.response === 'accepted') {
-        let now = new Date();
-        let today = date.format(now, 'YYYY-MM-DD HH:mm:ss');
-        let sql = `UPDATE requests_friendship SET approve_date = ? WHERE id = ?;`;
+        let sqlCheck = `SELECT * FROM requests_friendship WHERE user_id_recipient = ? AND approve_date IS NULL;`;
         connection.query(
-            sql, [today, req.params.id], function (err, results) {
+            sqlCheck, [req.user.userId], function (err, results) {
                 if (err) throw err;
-                res.status(200).json({ message: 'Demande d\'amitié approuvée !' });
+                if (results === undefined || results.length === 0) {
+                    res.status(400).json({ message: 'Vous n\'avez aucune demande d\'amitié !' });
+                }
+                else {
+                    console.log(results);
+                    if (req.body.response === 'accepted') {
+                        let now = new Date();
+                        let today = date.format(now, 'YYYY-MM-DD HH:mm:ss');
+                        // results[i].id
+                        let sql = `UPDATE requests_friendship SET approve_date = ? WHERE id = ?;`;
+                        connection.query(
+                            sql, [today, req.params.id], function (err, results) {
+                                if (err) throw err;
+                                res.status(200).json({ message: 'Demande d\'amitié approuvée !' });
+                            }
+                        )
+                    } else if (req.body.response === 'refused') {
+                        let sql = `DELETE FROM requests_friendship WHERE id = ?;`;
+                        connection.query(
+                            sql, [req.params.id], function (err, results) {
+                                if (err) throw err;
+                                res.status(200).json({ message: 'Demande d\'amitié refusée !' });
+                            }
+                        )
+                    }
+                }
             }
+
         )
-    } else if (req.body.response === 'refused') {
-        let sql = `DELETE FROM requests_friendship WHERE id = ?;`;
-        connection.query(
-            sql, [req.params.id], function (err, results) {
-                if (err) throw err;
-                res.status(200).json({ message: 'Demande d\'amitié refusée !' });
-            }
-        )
-    }
+
 }
 
 exports.search = (req, res, next) => {

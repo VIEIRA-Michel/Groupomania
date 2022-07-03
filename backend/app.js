@@ -6,6 +6,7 @@ const commentsRoute = require('./routes/comments.routes');
 const friendsRoutes = require('./routes/friends.routes');
 const app = express();
 const auth = require('./middlewares/auth');
+const helmet = require('helmet');
 
 app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -16,6 +17,7 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(helmet({ crossOriginResourcePolicy: { policy: "same-site" } }));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/publications', auth.accesToken, publicationsRoutes);

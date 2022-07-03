@@ -2,15 +2,44 @@ const connection = require('../database/mysql_connexion');
 const date = require('date-and-time');
 
 exports.getAllPublications = (req, res, next) => {
-    let sql = `SELECT * FROM publications;`;
+    let sqlVerification = `SELECT * FROM requests_friendship WHERE user_id_sender = ? OR user_id_recipient = ? AND approve_date IS NOT NULL;`;
+    let arrayId = [];
+    let arrayId2 = [];
     connection.query(
-        sql, function (err, results) {
+        sqlVerification, [req.user.userId, req.user.userId], function (err, results) {
             if (err) {
-                console.log(err);
-                res.status(500).json({ message: 'Erreur lors de la récupération des publications' });
-            } else {
-                res.status(200).json({ Publications: results });
+                return next(err);
             }
+            for (let i = 0; i < results.length; i++) {
+                if (results[i].user_id_sender === req.user.userId) {
+                    arrayId.push(results[i].user_id_recipient);
+                } else if (results[i].user_id_recipient === req.user.userId) {
+                    arrayId.push(results[i].user_id_sender);
+                }
+            }
+            let sqlVerificationTwo = `SELECT * FROM users WHERE id IN(?) AND account_disabled IS NULL;`;
+            connection.query(
+                sqlVerificationTwo, [arrayId], function (err, results) {
+                    if (err) {
+                        return next(err);
+                    }
+                    for (let i = 0; i < results.length; i++) {
+                        arrayId2.push(results[i].id);
+                    }
+                    // console.log(arrayId2, 'les comptes qui sont pas desactiver');
+                    let sql = `SELECT * FROM publications WHERE user_id IN(?);`;
+                    connection.query(
+                        sql, [arrayId2], function (err, results) {
+                            if (err) {
+                                console.log(err);
+                                res.status(500).json({ message: 'Erreur lors de la récupération des publications' });
+                            } else {
+                                res.status(200).json({ Publications: results });
+                            }
+                        }
+                    )
+                }
+            )
         }
     )
 }
