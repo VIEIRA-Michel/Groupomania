@@ -3,6 +3,7 @@ const date = require('date-and-time');
 
 exports.getAllPublications = (req, res, next) => {
     let sqlVerification = `SELECT * FROM requests_friendship WHERE user_id_sender = ? OR user_id_recipient = ? AND approve_date IS NOT NULL;`;
+    // let sqlTest = `SELECT * FROM users INNER JOIN publications ON users.id = publications.user_id AND users.account_disabled IS NULL INNER JOIN requests_friendship senders ON users.id = senders.user_id_sender INNER JOIN requests_friendship recipients ON users.id = recipients.user_id_recipient`;
     let arrayId = [];
     let arrayId2 = [];
     connection.query(
@@ -26,7 +27,6 @@ exports.getAllPublications = (req, res, next) => {
                     for (let i = 0; i < results.length; i++) {
                         arrayId2.push(results[i].id);
                     }
-                    // console.log(arrayId2, 'les comptes qui sont pas desactiver');
                     let sql = `SELECT * FROM publications WHERE user_id IN(?);`;
                     connection.query(
                         sql, [arrayId2], function (err, results) {
