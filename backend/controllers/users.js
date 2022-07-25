@@ -42,6 +42,7 @@ exports.login = (req, res, next) => {
     connection.query(
         sql, [user.email], function (err, results) {
             if (err) throw err;
+            console.log(results[0]);
             bcrypt.compare(req.body.password, results[0].password)
                 .then(valid => {
                     if (!valid) {
@@ -57,7 +58,7 @@ exports.login = (req, res, next) => {
                                 email: results[0].email
                             },
                             process.env.ACCESS_TOKEN_SECRET,
-                            { expiresIn: '1800s' }
+                            { expiresIn: '120s' }
                         ),
                         refreshToken: jwt.sign(
                             {
@@ -68,7 +69,7 @@ exports.login = (req, res, next) => {
                                 email: results[0].email
                             },
                             process.env.REFRESH_TOKEN_SECRET,
-                            { expiresIn: '7d' })
+                            { expiresIn: '120s' })
                     })
                 })
                 .catch(error => res.status(500).json({ message: error }))
@@ -148,4 +149,18 @@ exports.changePassword = (req, res, next) => {
                 .catch(error => res.status(500).json({ message: error }))
         }
     )
+}
+
+exports.me = (req, res, next) => {
+    let sql = `SELECT lastname, firstname, email, birthday FROM users WHERE id = ?;`;
+    connection.query(
+        sql, [req.user.userId], function (err, results) {
+            if (err) throw err;
+            res.status(200).json({
+                lastname: results[0].lastname,
+                firstname: results[0].firstname,
+                email: results[0].email,
+                birthday: results[0].birthday
+            })
+        }   )
 }

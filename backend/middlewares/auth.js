@@ -22,7 +22,7 @@ exports.refreshToken = (req, res) => {
         if (err) return res.sendStatus(403);
         delete user.iat;
         delete user.exp;
-        const refreshToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '7d' });
+        const refreshToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '120s' });
         res.send({ accessToken: refreshToken });
     });
 }

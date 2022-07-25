@@ -2,44 +2,19 @@ const connection = require('../database/mysql_connexion');
 const date = require('date-and-time');
 
 exports.getAllPublications = (req, res, next) => {
-    let sqlVerification = `SELECT * FROM requests_friendship WHERE user_id_sender = ? OR user_id_recipient = ? AND approve_date IS NOT NULL;`;
-    // let sqlTest = `SELECT * FROM users INNER JOIN publications ON users.id = publications.user_id AND users.account_disabled IS NULL INNER JOIN requests_friendship senders ON users.id = senders.user_id_sender INNER JOIN requests_friendship recipients ON users.id = recipients.user_id_recipient`;
-    let arrayId = [];
-    let arrayId2 = [];
+    let sql = `SELECT * FROM users 
+                   LEFT JOIN publications ON users.id = publications.user_id AND users.account_disabled IS NULL 
+                   LEFT JOIN requests_friendship senders ON users.id = senders.user_id_sender 
+                   LEFT JOIN requests_friendship recipients ON users.id = recipients.user_id_recipient 
+                   WHERE users.id = ? OR (senders.user_id_recipient = ? AND senders.approve_date IS NOT NULL) OR (recipients.user_id_sender = ? AND recipients.approve_date IS NOT NULL);`;
     connection.query(
-        sqlVerification, [req.user.userId, req.user.userId], function (err, results) {
+        sql, [req.user.userId, req.user.userId, req.user.userId], function (err, results) {
             if (err) {
-                return next(err);
+                console.log(err);
+                res.status(500).json({ message: 'Erreur lors de la récupération des publications' });
+            } else {
+                res.status(200).json({ Publications: results });
             }
-            for (let i = 0; i < results.length; i++) {
-                if (results[i].user_id_sender === req.user.userId) {
-                    arrayId.push(results[i].user_id_recipient);
-                } else if (results[i].user_id_recipient === req.user.userId) {
-                    arrayId.push(results[i].user_id_sender);
-                }
-            }
-            let sqlVerificationTwo = `SELECT * FROM users WHERE id IN(?) AND account_disabled IS NULL;`;
-            connection.query(
-                sqlVerificationTwo, [arrayId], function (err, results) {
-                    if (err) {
-                        return next(err);
-                    }
-                    for (let i = 0; i < results.length; i++) {
-                        arrayId2.push(results[i].id);
-                    }
-                    let sql = `SELECT * FROM publications WHERE user_id IN(?);`;
-                    connection.query(
-                        sql, [arrayId2], function (err, results) {
-                            if (err) {
-                                console.log(err);
-                                res.status(500).json({ message: 'Erreur lors de la récupération des publications' });
-                            } else {
-                                res.status(200).json({ Publications: results });
-                            }
-                        }
-                    )
-                }
-            )
         }
     )
 }

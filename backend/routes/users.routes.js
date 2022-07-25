@@ -7,5 +7,6 @@ router.put('/profil', userController.updateProfil);
 router.put('/password', userController.changePassword);
 router.put('/disabled', userController.disabledProfil);
 router.get('/:id/publications', publicationsController.getPublicationsOfOnePerson);
+router.get('/me', userController.me);
 
 module.exports = router;

@@ -7,7 +7,17 @@ const friendsRoutes = require('./routes/friends.routes');
 const app = express();
 const auth = require('./middlewares/auth');
 const helmet = require('helmet');
+const cors = require('cors');
 
+
+app.use(cors());
+
+const corsOptions ={
+    origin:'http://localhost:8080', 
+    credentials:true,            //access-control-allow-credentials:true
+    optionSuccessStatus:200
+}
+app.use(cors(corsOptions));
 app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content, Accept, Content-Type, Authorization');
@@ -20,9 +30,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use(helmet({ crossOriginResourcePolicy: { policy: "same-site" } }));
 
 app.use('/api/auth', authRoutes);
-app.use('/api/publications', auth.accesToken, publicationsRoutes);
-app.use('/api/publications/:id', auth.accesToken, commentsRoute);
-app.use('/api/user', auth.accesToken, usersRoutes);
-app.use('/api/friends', auth.accesToken, friendsRoutes);
+app.use('/api/publications', auth.refreshToken, publicationsRoutes);
+app.use('/api/publications/:id', auth.refreshToken, commentsRoute);
+app.use('/api/user', auth.refreshToken, usersRoutes);
+app.use('/api/friends', auth.refreshToken, friendsRoutes);
 
 module.exports = app;
