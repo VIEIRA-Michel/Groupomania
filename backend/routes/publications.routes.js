@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const publicationsController = require('../controllers/publications');
 // const checkInput = require('../middlewares/checkInput');
+const multer = require('../middlewares/multer-config');
 const sanitize = require('../middlewares/sanitizer');
 
 

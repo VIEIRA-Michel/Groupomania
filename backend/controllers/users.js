@@ -57,7 +57,7 @@ exports.login = (req, res, next) => {
                                 email: results[0].email
                             },
                             process.env.ACCESS_TOKEN_SECRET,
-                            { expiresIn: '120s' }
+                            { expiresIn: '120m' }
                         ),
                         refreshToken: jwt.sign(
                             {
@@ -68,7 +68,7 @@ exports.login = (req, res, next) => {
                                 email: results[0].email
                             },
                             process.env.REFRESH_TOKEN_SECRET,
-                            { expiresIn: '120s' })
+                            { expiresIn: '120m' })
                     })
                 })
                 .catch(error => res.status(500).json({ message: error }))

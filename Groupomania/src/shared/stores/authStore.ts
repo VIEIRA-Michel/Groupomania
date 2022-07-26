@@ -63,6 +63,7 @@ export const useAuthStore = defineStore({
         },
         logout: () => {
             localStorage.removeItem('token');
+            localStorage.removeItem('user');
             // state.isConnected = false;
             // console.log(state);
         },
@@ -80,7 +81,7 @@ export const useAuthStore = defineStore({
                     authorization: `Bearer ${localStorage.getItem('token')}`
                 }
             }).then(response => {
-                console.log(response.data);
+                // console.log(response.data);
                 const store = useAuthStore();
                 // store.$patch({
                 //     user: response.data,

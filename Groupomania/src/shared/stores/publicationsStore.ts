@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import axios from 'axios';
 
+
 export interface Publication {
     id?: string;
     content: string;
@@ -12,6 +13,7 @@ export interface Publication {
     // done: boolean;
     publications : Array<Publication>;
     isLoading: boolean;
+    numberOfPages: number;
 }
 
 export const usePublicationsStore = defineStore({
@@ -19,6 +21,7 @@ export const usePublicationsStore = defineStore({
     state: () => ({
         publications: [],
         isLoading: true,
+        numberOfPages: 1,
     }),
     getters: {
         publication: (state) => state.publications,
@@ -36,7 +39,7 @@ export const usePublicationsStore = defineStore({
                     picture: picture,
                 }
             }).then(response => {
-                console.log(response.data);
+                // console.log(response.data);
                 const store = usePublicationsStore();
                 let updatePublications = [...store.$state.publications, response.data]
                 store.$patch({
@@ -46,20 +49,21 @@ export const usePublicationsStore = defineStore({
                 console.log(error);
             });
         },
-        getAllPublications: () => {
+        getAllPublications: (page: number) => {
+            const store = usePublicationsStore();
             axios({
                 method: 'get',
-                url: 'http://localhost:3000/api/publications/',
+                url: `http://localhost:3000/api/publications/?page=${page}`,
                 headers: {
                     'Content-Type': 'application/json',   
                     authorization: `Bearer ${localStorage.getItem('token')}`
                 }
             }).then(response => {
+                console.log('publication:', response.data);
                 const store = usePublicationsStore();
                 store.$patch({
                     publications: response.data.Publications,
-                });
-                store.$patch({
+                    numberOfPages: response.data.numOfPages,
                     isLoading: false,
                 });
                 return response.data.Publications;
@@ -67,14 +71,5 @@ export const usePublicationsStore = defineStore({
                 console.log(error);
             });
         },
-        getPublicationsOfUser: (state:any, id: number) => {
-            return state.getPublicationsOfUser(id);
-        },
-        deletePublication: (state:any, id: string) => {
-            return state.deletePublication(id);
-        },
-        updatePublication: (state:any, id: string, publication: any) => {
-            return state.updatePublication(id, publication);
-        }
     }
 });
