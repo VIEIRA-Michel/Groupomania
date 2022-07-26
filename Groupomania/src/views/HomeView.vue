@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router';
 import Publication from '../components/Publication.vue';
-
 import { reactive, ref } from 'vue';
 import { useAuthStore } from '../shared/stores/authStore';
+
 const authStore = useAuthStore();
 const token = localStorage.getItem('token');
 const connected = ref(!!token)
-console.log(connected.value);
 const open = ref(false);
 
 

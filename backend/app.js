@@ -30,9 +30,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use(helmet({ crossOriginResourcePolicy: { policy: "same-site" } }));
 
 app.use('/api/auth', authRoutes);
-app.use('/api/publications', auth.refreshToken, publicationsRoutes);
-app.use('/api/publications/:id', auth.refreshToken, commentsRoute);
-app.use('/api/user', auth.refreshToken, usersRoutes);
-app.use('/api/friends', auth.refreshToken, friendsRoutes);
+app.use('/api/publications', auth.accesToken, publicationsRoutes);
+app.use('/api/publications/:id', auth.accesToken, commentsRoute);
+app.use('/api/user', auth.accesToken, usersRoutes);
+app.use('/api/friends', auth.accesToken, friendsRoutes);
 
 module.exports = app;

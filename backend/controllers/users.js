@@ -42,7 +42,6 @@ exports.login = (req, res, next) => {
     connection.query(
         sql, [user.email], function (err, results) {
             if (err) throw err;
-            console.log(results[0]);
             bcrypt.compare(req.body.password, results[0].password)
                 .then(valid => {
                     if (!valid) {

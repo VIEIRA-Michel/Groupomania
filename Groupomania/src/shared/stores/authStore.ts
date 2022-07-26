@@ -71,7 +71,26 @@ export const useAuthStore = defineStore({
             if (token) {
                 state.isConnected = true;
             }
+        },
+        getMyInformations: () => {
+            axios({
+                method: 'get',
+                url: 'http://localhost:3000/api/user/me',
+                headers: {
+                    authorization: `Bearer ${localStorage.getItem('token')}`
+                }
+            }).then(response => {
+                console.log(response.data);
+                const store = useAuthStore();
+                // store.$patch({
+                //     user: response.data,
+                // });
+                localStorage.setItem('user', JSON.stringify(response.data));
+                return response.data;
+            }).catch(error => {
+                console.log(error);
+            });
         }
 
-    },
+    }
 });

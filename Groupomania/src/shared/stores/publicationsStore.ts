@@ -11,12 +11,14 @@ export interface Publication {
     // editMode: boolean;
     // done: boolean;
     publications : Array<Publication>;
+    isLoading: boolean;
 }
 
 export const usePublicationsStore = defineStore({
     id: "publication",
     state: () => ({
         publications: [],
+        isLoading: true,
     }),
     getters: {
         publication: (state) => state.publications,
@@ -26,12 +28,20 @@ export const usePublicationsStore = defineStore({
             axios({
                 method: 'post',
                 url: 'http://localhost:3000/api/publications',
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('token')}`
+                },
                 data: {
                     content: content,
                     picture: picture,
                 }
             }).then(response => {
-                console.log(response.data)
+                console.log(response.data);
+                const store = usePublicationsStore();
+                let updatePublications = [...store.$state.publications, response.data]
+                store.$patch({
+                    publications: updatePublications
+                })
             }).catch(error => {
                 console.log(error);
             });
@@ -39,9 +49,20 @@ export const usePublicationsStore = defineStore({
         getAllPublications: () => {
             axios({
                 method: 'get',
-                url: 'http://localhost:3000/api/publications/'
+                url: 'http://localhost:3000/api/publications/',
+                headers: {
+                    'Content-Type': 'application/json',   
+                    authorization: `Bearer ${localStorage.getItem('token')}`
+                }
             }).then(response => {
-                console.log(response.data)
+                const store = usePublicationsStore();
+                store.$patch({
+                    publications: response.data.Publications,
+                });
+                store.$patch({
+                    isLoading: false,
+                });
+                return response.data.Publications;
             }).catch(error => {
                 console.log(error);
             });

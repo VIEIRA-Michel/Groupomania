@@ -25,5 +25,5 @@ module.exports = (req, next) => {
     }
 
     // On continue d'envoyer notre requête avec les données sécurisées
-    next();
+    next;
 }
