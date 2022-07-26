@@ -1,6 +1,6 @@
 const sanitizer = require('sanitizer');
 
-module.exports = (req, next) => {
+module.exports = (req, res, next) => {
 
     // Pour chaque champ de notre body (qui contient les données à sauvegarder), on va sanitizer chacun des champs
     for (const key in req.body) {
@@ -25,5 +25,5 @@ module.exports = (req, next) => {
     }
 
     // On continue d'envoyer notre requête avec les données sécurisées
-    next;
+    next();
 }
