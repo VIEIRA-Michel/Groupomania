@@ -26,7 +26,7 @@ let loginInput = reactive({
 async function register(userInput: any) {
     let result = await authStore.register(userInput.lastname, userInput.firstname, userInput.email, userInput.password, userInput.confirmPassword);
     setTimeout(() => {
-        location.reload();
+        // location.reload();
     }, 500);
     return result;
 };
@@ -34,14 +34,14 @@ async function register(userInput: any) {
 async function login(loginInput: any) {
     let result = await authStore.login(loginInput.email, loginInput.password);
         setTimeout(() => {
-        location.reload();
+        // location.reload();
     }, 500);
     return result;
 }
 
 function logout() {
     authStore.logout();
-    location.reload();
+    // location.reload();
 }
 
 </script>

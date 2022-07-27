@@ -3,83 +3,55 @@ const date = require('date-and-time');
 const fs = require('fs');
 
 exports.getAllPublications = (req, res, next) => {
-    let sqlVerification = `SELECT * FROM requests_friendship WHERE user_id_sender = ? OR user_id_recipient = ? AND approve_date IS NOT NULL;`;
-    let arrayId = [];
-    let arrayId2 = [];
+    const resultsPerPage = 5;
+    let sql = `SELECT publications.id as publication_id, content, picture, user_id, publications.created_at as publication_created, updated_at, 
+    users.id, users.lastname, users.firstname, users.gender_id, users.birthday, users.email, users.role_id, users.created_at, users.account_disabled, 
+    senders.id as sender_requestId, senders.user_id_sender as sender_userId, senders.user_id_recipient as sender_recipientId, senders.request_date as sender_requestDate, senders.approve_date as sender_approveDate, senders.denied_date as sender_deniedDate, 
+    recipients.id as recipient_requestId, recipients.user_id_sender as recipient_senderId , recipients.user_id_recipient as recipient_userId, recipients.request_date as recipient_requestDate, recipients.approve_date as recipient_approveDate, recipients.denied_date as recipient_deniedDate FROM publications 
+    LEFT JOIN users ON users.id = publications.user_id AND users.account_disabled IS NULL LEFT JOIN requests_friendship senders ON users.id = senders.user_id_sender LEFT JOIN requests_friendship recipients ON users.id = recipients.user_id_recipient WHERE users.id = ? OR (senders.user_id_recipient = ? AND senders.approve_date IS NOT NULL) OR (recipients.user_id_sender = ? AND recipients.approve_date IS NOT NULL) GROUP BY publication_id;`;
     connection.query(
-        sqlVerification, [req.user.userId, req.user.userId], function (err, results) {
+        sql, [req.user.userId, req.user.userId, req.user.userId], function (err, results) {
             if (err) {
-                return next(err);
-            }
-            for (let i = 0; i < results.length; i++) {
-                if (results[i].user_id_sender === req.user.userId) {
-                    arrayId.push(results[i].user_id_recipient);
-                } else if (results[i].user_id_recipient === req.user.userId) {
-                    arrayId.push(results[i].user_id_sender);
-                }
-            }
-            let sqlVerificationTwo = `SELECT * FROM users WHERE id IN(?) AND account_disabled IS NULL;`;
-            connection.query(
-                sqlVerificationTwo, [arrayId], function (err, results) {
-                    if (err) {
-                        return next(err);
+                console.log(err);
+                res.status(500).json({ message: 'Erreur lors de la récupération des publications' });
+            } else {
+                if (results.length <= 0) {
+                    res.status(200).json({ message: 'Aucune publication' });
+                } else {
+                    const numOfResults = results.length;
+                    const numOfPages = Math.ceil(numOfResults / resultsPerPage);
+                    let page = req.query.page ? Number(req.query.page) : 1;
+                    if (page > numOfPages) {
+                        res.send('/?page=' + encodeURIComponent(numOfPages));
+                    } else if (page < 1) {
+                        res.send('/?page=' + encodeURIComponent('1'));
                     }
-                    for (let i = 0; i < results.length; i++) {
-                        arrayId2.push(results[i].id);
-                    }
-                    // console.log(arrayId2, 'les comptes qui sont pas desactiver');
-                    // let sql = `SELECT * FROM publications WHERE user_id IN(?);`;
-                    arrayId2.push(req.user.userId);
-                    console.log(arrayId2, 'les comptes pour les publications');
-                    const resultsPerPage = 5;
-                    let sql = `SELECT * FROM publications INNER JOIN users ON publications.user_id = users.id WHERE users.id IN(?) AND users.account_disabled IS NULL;`;
+                    const startingLimit = (page - 1) * resultsPerPage;
+                    sql = `SELECT publications.id as publication_id, content, picture, user_id, publications.created_at as publication_created, updated_at, 
+                           users.id, users.lastname, users.firstname, users.gender_id, users.birthday, users.email, users.role_id, users.created_at, users.account_disabled, 
+                           senders.id as sender_requestId, senders.user_id_sender as sender_userId, senders.user_id_recipient as sender_recipientId, senders.request_date as sender_requestDate, senders.approve_date as sender_approveDate, senders.denied_date as sender_deniedDate, 
+                           recipients.id as recipient_requestId, recipients.user_id_sender as recipient_senderId , recipients.user_id_recipient as recipient_userId, recipients.request_date as recipient_requestDate, recipients.approve_date as recipient_approveDate, recipients.denied_date as recipient_deniedDate FROM publications 
+                           LEFT JOIN users ON users.id = publications.user_id AND users.account_disabled IS NULL LEFT JOIN requests_friendship senders ON users.id = senders.user_id_sender LEFT JOIN requests_friendship recipients ON users.id = recipients.user_id_recipient WHERE users.id = ? OR (senders.user_id_recipient = ? AND senders.approve_date IS NOT NULL) OR (recipients.user_id_sender = ? AND recipients.approve_date IS NOT NULL) GROUP BY publication_id LIMIT ${startingLimit}, ${resultsPerPage};`
                     connection.query(
-                        sql, [arrayId2], function (err, results) {
+                        sql, [req.user.userId, req.user.userId, req.user.userId], function (err, results) {
                             if (err) {
                                 console.log(err);
                                 res.status(500).json({ message: 'Erreur lors de la récupération des publications' });
-                            } else {
-                                const numOfResults = results.length;
-                                const numOfPages = Math.ceil(numOfResults / resultsPerPage);
-                                let page = req.query.page ? Number(req.query.page) : 1;
-                                console.log(page, 'page');
-                                console.log(req.query, 'req.query');
-                                if (page > numOfPages) {
-                                    console.log('sa a marcher');
-                                    res.send('/?page=' + encodeURIComponent(numOfPages));
-                                } else if (page < 1) {
-                                    console.log(' sa a pas marcher');
-                                    res.send('/?page=' + encodeURIComponent('1'));
-                                }
-                                const startingLimit = (page - 1) * resultsPerPage;
-                                sql = `SELECT * FROM publications INNER JOIN users ON publications.user_id = users.id WHERE users.id IN(?) AND users.account_disabled IS NULL LIMIT ${startingLimit}, ${resultsPerPage};`
-                                connection.query(
-                                    sql, [arrayId2], function (err, results) {
-                                        if (err) {
-                                            console.log(err);
-                                            res.status(500).json({ message: 'Erreur lors de la récupération des publications' });
-                                        } 
-                                        let iterator = (page - 5) < 1 ? 1 : page - 5;
-                                        let endingLink = (iterator + 9) <= numOfPages ? (iterator + 9) : page + (numOfPages);
-                                        if (endingLink < (page + 4)) {
-                                            iterator -= (page + 4) - numOfPages;
-                                        }
-                                        res.status(200).json({ Publications: results, page: page, iterator: iterator, endingLink: endingLink, numOfPages: numOfPages, numOfResults: numOfResults});
-                                        // else {
-                                        //     res.status(200).json({ publications: results, numOfPages: numOfPages });
-                                        // }
-                                    }
-                                )
-                                // res.status(200).json({ Publications: results });
                             }
+                            let iterator = (page - 5) < 1 ? 1 : page - 5;
+                            let endingLink = (iterator + 9) <= numOfPages ? (iterator + 9) : page + (numOfPages);
+                            if (endingLink < (page + 4)) {
+                                iterator -= (page + 4) - numOfPages;
+                            }
+                            res.status(200).json({ Publications: results, page: page, numOfPages: numOfPages, numOfResults: numOfResults });
+
                         }
                     )
                 }
-            )
+            }
         }
     )
-}
-
+};
 exports.getPublicationsOfOnePerson = (req, res, next) => {
     let sql = `SELECT * FROM publications WHERE user_id = ?;`;
     connection.query(
@@ -98,15 +70,15 @@ exports.getPublicationsOfOnePerson = (req, res, next) => {
 exports.createPublication = (req, res, next) => {
     let now = new Date();
     let today = date.format(now, 'YYYY-MM-DD HH:mm:ss');
-    // let publicationObject = JSON.parse(req.body)
-    console.log(req.body);
     let publication = {
         content: req.body.content,
-        picture: req.body.picture,
         user_id: req.user.userId,
         created_at: today
-
     };
+    if (req.file) {
+        publication.picture = `${req.protocol}://${req.get('host')}/images/${req.file.filename}`;
+    };
+    
     let sql = `INSERT INTO publications (content, picture, user_id, created_at) VALUES (?, ?, ?, ?);`;
     connection.query(
         sql, [publication.content, publication.picture, publication.user_id, publication.created_at], function (err, results) {

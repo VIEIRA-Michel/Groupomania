@@ -11,7 +11,7 @@ export interface Publication {
     updated_at?: string;
     // editMode: boolean;
     // done: boolean;
-    publications : Array<Publication>;
+    publications: Array<Publication>;
     isLoading: boolean;
     numberOfPages: number;
 }
@@ -27,24 +27,29 @@ export const usePublicationsStore = defineStore({
         publication: (state) => state.publications,
     },
     actions: {
-        createPublication: (content:string, picture? : string) => {
+        createPublication: (inputValue: any) => {
+            let formData = new FormData();
+            formData.append('content', inputValue.content);
+            formData.append('picture', inputValue.picture);
             axios({
                 method: 'post',
                 url: 'http://localhost:3000/api/publications',
                 headers: {
                     Authorization: `Bearer ${localStorage.getItem('token')}`
                 },
-                data: {
-                    content: content,
-                    picture: picture,
-                }
+                data: formData,
             }).then(response => {
-                // console.log(response.data);
                 const store = usePublicationsStore();
-                let updatePublications = [...store.$state.publications, response.data]
-                store.$patch({
-                    publications: updatePublications
-                })
+                if (!store.$state.publications) {
+                    store.$patch({
+                        publications: [response.data]
+                    })
+                } else {
+                    let updatePublications = [...store.$state.publications, response.data]
+                    store.$patch({
+                        publications: updatePublications
+                    })
+                }
             }).catch(error => {
                 console.log(error);
             });
@@ -55,7 +60,7 @@ export const usePublicationsStore = defineStore({
                 method: 'get',
                 url: `http://localhost:3000/api/publications/?page=${page}`,
                 headers: {
-                    'Content-Type': 'application/json',   
+                    'Content-Type': 'application/json',
                     authorization: `Bearer ${localStorage.getItem('token')}`
                 }
             }).then(response => {

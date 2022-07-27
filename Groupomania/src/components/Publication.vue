@@ -18,12 +18,11 @@
                 </div>
                 <div class="post__content">
                     <div class="post__content__details">
-                        <form action="">
+                        <form @submit.prevent="createPublication($event, inputValue)">
                             <input type="text" v-model="inputValue.content" class="post__content__details__input">
                             <input type="file" ref="fileInput" accept="image/*" @change="onPickFile"
                                 class="post__content__details__file">
-                            <button class="post__content__details__button"
-                                @click="createPublication(inputValue)">Publier</button>
+                            <button class="post__content__details__button">Publier</button>
                         </form>
                     </div>
                 </div>
@@ -88,36 +87,26 @@ let inputValue = reactive({
     content: '',
     picture: ''
 });
-// function onPickFile(event: any) {
-//     console.log(event.target.value);
-//     //   this.$refs.fileInput.click()
-// };
 
-// function onFilePicked (event: any) {
-//   const files = event.target.files
-//   let filename = files[0].name
-//   const fileReader = new FileReader()
-//   fileReader.addEventListener('load', () => {
-//     this.imageUrl = fileReader.result
-//   })
-//   fileReader.readAsDataURL(files[0])
-//   this.image = files[0]
-// }
-// function onFilePicked(event: any) {
-//     let file = event.target.files[0];
-//     let reader = new FileReader();
-//     reader.onload = (e: any) => {
-//         inputValue.picture = e.target.result;
-//     };
-//     reader.readAsDataURL(file);
-// }
+function onPickFile(event: any) {
+    // let file = this.$refs.fileInput.files[0];
+    // let reader = new FileReader();
+    // reader.readAsDataURL(file);
+    // reader.onload = (e) => {
+    console.log(event.target.files[0]);
+    inputValue.picture = event.target.files[0];
+    //     inputValue.picture = e.target.result;
+    // };
+}
+
 const publicationsStore = usePublicationsStore();
 const authStore = useAuthStore();
 let loading = ref(publicationsStore.$state.isLoading);
-// console.log(loading);
 
-function createPublication(inputValue: any) {
-    let result = publicationsStore.createPublication(inputValue.content, inputValue.picture);
+
+function createPublication(event: any, inputValue: any) {
+    event.preventDefault();
+    let result = publicationsStore.createPublication(inputValue);
     return result;
 }
 
