@@ -64,7 +64,7 @@ export const usePublicationsStore = defineStore({
                     authorization: `Bearer ${localStorage.getItem('token')}`
                 }
             }).then(response => {
-                console.log('publication:', response.data);
+                // console.log('publication:', response.data);
                 const store = usePublicationsStore();
                 store.$patch({
                     publications: response.data.Publications,
@@ -76,5 +76,50 @@ export const usePublicationsStore = defineStore({
                 console.log(error);
             });
         },
+        // editPublication: (publication: Publication) => {
+        //     axios({
+        //         method: 'put',
+        //         url: `http://localhost:3000/api/publications/${publication.publication_id}`,
+        //         headers: {
+        //             'Content-Type': 'application/json',
+        //             authorization: `Bearer ${localStorage.getItem('token')}`
+        //         }
+        //     }).then(response => {
+        //         console.log('publication:', response.data);
+        //         const store = usePublicationsStore();
+        //         let updatePublications = store.$state.publications.map(item => {
+        //             console.log('voici item', item);
+        //             // if (item.publication_id === publication.publication_id) {
+        //             //     return response.data;
+        //             // }
+        //             return item;
+        //         }
+        //         );
+        //         store.$patch({
+        //             publications: updatePublications
+        //         });
+        //     }).catch(error => {
+        //         console.log(error);
+        //     });
+        // },
+        deletePublication: (publication: Publication) => {
+            axios({
+                method: 'delete',
+                url: `http://localhost:3000/api/publications/${publication.publication_id}`,
+                headers: {
+                    'Content-Type': 'application/json',
+                    authorization: `Bearer ${localStorage.getItem('token')}`
+                }
+            }).then(response => {
+                const store = usePublicationsStore();
+                let updatePublications = store.$state.publications.filter(item=> {
+                    return item.publication_id !== publication.id;
+                }
+                );
+                store.$patch({
+                    publications: updatePublications
+                });
+            })
+        }
     }
 });

@@ -78,7 +78,7 @@ exports.createPublication = (req, res, next) => {
     if (req.file) {
         publication.picture = `${req.protocol}://${req.get('host')}/images/${req.file.filename}`;
     };
-    
+
     let sql = `INSERT INTO publications (content, picture, user_id, created_at) VALUES (?, ?, ?, ?);`;
     connection.query(
         sql, [publication.content, publication.picture, publication.user_id, publication.created_at], function (err, results) {
@@ -119,15 +119,31 @@ exports.updatePublication = (req, res, next) => {
 }
 
 exports.deletePublication = (req, res, next) => {
-    let sql = `DELETE FROM publications WHERE id = ?;`;
+    let sql = `SELECT * FROM publications WHERE id = ?;`;
     connection.query(
         sql, [req.params.id], function (err, results) {
             if (err) {
-                console.log(err)
-                res.status(500).json({ message: 'Erreur lors de la suppression de la publication' });
+                console.log(err);
+                res.status(500).json({ message: 'Erreur lors de la récupération de la publication' });
             } else {
-                console.log(results);
-                res.status(200).json({ message: 'Publication supprimée ! ' })
+                if (results.length === 0) {
+                    res.status(404).json({ message: 'Publication non trouvée' });
+                } else {
+                    const filename = results[0].picture.split('/images/')[1];
+                    fs.unlink(`images/${filename}`, () => {
+                        sql = `DELETE FROM publications WHERE id = ?;`;
+                        connection.query(
+                            sql, [req.params.id], function (err, results) {
+                                if (err) {
+                                    console.log(err);
+                                    res.status(500).json({ message: 'Erreur lors de la suppression de la publication' });
+                                } else {
+                                    res.status(200).json({ message: 'Publication supprimée ! ' })
+                                }
+                            }
+                        )
+                    })
+                }
             }
         }
     )

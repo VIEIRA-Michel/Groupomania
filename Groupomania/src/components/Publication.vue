@@ -6,14 +6,17 @@
         <div v-else-if="!loading">
             <div v-if="user" class="post">
                 <div class="post__top">
-                    <div class="post__top__avatar">
-                        <img src="https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50?s=200"
-                            alt="avatar" />
-                    </div>
-                    <div class="post__top__info">
-                        <div class="post__top__info__name">
-                            <span>{{ user.firstname + ' ' + user.lastname }}</span>
+                    <div class="post__top__details">
+                        <div class="post__top__details__avatar">
+                            <img src="https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50?s=200"
+                                alt="avatar" />
                         </div>
+                        <div class="post__top__details__info">
+                            <div class="post__top__details__info__name">
+                                <span>{{ user.firstname + ' ' + user.lastname }}</span>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
                 <div class="post__content">
@@ -31,17 +34,28 @@
                 <div v-for="publication in arrayPublications">
                     <div class="post">
                         <div class="post__top">
-                            <div class="post__top__avatar">
-                                <img src="https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50?s=200"
-                                    alt="avatar" />
+                            <div class="post__top__details">
+                                <div class="post__top__details__avatar">
+                                    <img src="https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50?s=200"
+                                        alt="avatar" />
+                                </div>
+                                <div class="post__top__details__info">
+                                    <div class="post__top__details__info__name">
+                                        <span>{{ publication.firstname + ' ' + publication.lastname }}</span>
+                                    </div>
+                                    <div class="post__top__details__info__date">
+                                        <span>{{ 'Publiée le ' + publication.created_at }}</span>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="post__top__info">
-                                <div class="post__top__info__name">
-                                    <span>{{ publication.firstname + ' ' + publication.lastname }}</span>
-                                </div>
-                                <div class="post__top__info__date">
-                                    <span>{{ 'Publiée le ' + publication.created_at }}</span>
-                                </div>
+                            <div class="post__top__button">
+                                <!-- <button @click="deletePublication(publication.id)" class="post__top__button__button"> -->
+                                <button @click="editPublication(publication)">
+                                    Modifier
+                                </button>
+                                <button @click="deletePublication(publication)">
+                                    Supprimer
+                                </button>
                             </div>
                         </div>
                         <div class="post__content">
@@ -89,14 +103,7 @@ let inputValue = reactive({
 });
 
 function onPickFile(event: any) {
-    // let file = this.$refs.fileInput.files[0];
-    // let reader = new FileReader();
-    // reader.readAsDataURL(file);
-    // reader.onload = (e) => {
-    console.log(event.target.files[0]);
     inputValue.picture = event.target.files[0];
-    //     inputValue.picture = e.target.result;
-    // };
 }
 
 const publicationsStore = usePublicationsStore();
@@ -123,6 +130,15 @@ async function getAllPublications(page: number) {
     }, 3000);
 }
 
+function editPublication(publication: any) {
+    // publicationsStore.editPublication(publication);
+    console.log('edit');
+}
+
+function deletePublication(publication: any) {
+    publicationsStore.deletePublication(publication);
+}
+
 async function getMyInformation() {
     let result = await authStore.getMyInformations();
     return result;
@@ -139,6 +155,8 @@ watchEffect(() => {
 </script>
 
 <style scoped lang="scss">
+@import '../styles/Components/buttons';
+
 .post {
     width: 50rem;
     padding: 20px;
@@ -150,14 +168,33 @@ watchEffect(() => {
 
     &__top {
         display: flex;
+        width: 100%;
 
-        &__avatar {
-            border-radius: 50%;
-            margin-right: 0.5rem;
+        &__details {
+            display: flex;
+            flex-direction: row;
+            width: 50%;
 
-            img {
-                width: 4rem;
-                border-radius: 32px;
+            &__avatar {
+                border-radius: 50%;
+                margin-right: 0.5rem;
+
+                img {
+                    width: 4rem;
+                    border-radius: 32px;
+                }
+            }
+
+
+        }
+
+        &__button {
+            display: flex;
+            justify-content: end;
+            width: 50%;
+
+            button {
+                @include button-primary;
             }
         }
     }
@@ -184,17 +221,7 @@ watchEffect(() => {
             }
 
             &__button {
-                background-color: #FD2D01;
-                border-color: #FD2D01;
-                color: #fff;
-                font-size: 1rem;
-                padding: 5px 10px;
-                border-radius: 5px;
-                border-width: 1px;
-                border-style: solid;
-                cursor: pointer;
-                transition: all 0.3s ease-in-out;
-                margin: 0 10px;
+                @include button-primary;
             }
         }
     }
@@ -211,17 +238,7 @@ watchEffect(() => {
         }
 
         button {
-            background-color: #FD2D01;
-            border-color: #FD2D01;
-            color: #fff;
-            font-size: 1rem;
-            padding: 5px 10px;
-            border-radius: 5px;
-            border-width: 1px;
-            border-style: solid;
-            cursor: pointer;
-            transition: all 0.3s ease-in-out;
-            margin: 0 10px;
+            @include button-primary;
         }
     }
 }
