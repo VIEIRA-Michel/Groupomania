@@ -33,7 +33,7 @@ app.use(helmet({ crossOriginResourcePolicy: { policy: "same-site" } }));
 app.use('/images', express.static(path.join(__dirname, 'images')));
 app.use('/api/auth', authRoutes);
 app.use('/api/publications', auth.accesToken, publicationsRoutes);
-app.use('/api/publications/:id', auth.accesToken, commentsRoute);
+app.use('/api/publications', auth.accesToken, commentsRoute);
 app.use('/api/user', auth.accesToken, usersRoutes);
 app.use('/api/friends', auth.accesToken, friendsRoutes);
 

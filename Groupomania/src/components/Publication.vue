@@ -1,3 +1,113 @@
+<script setup lang="ts">
+import Loading from './Loading.vue';
+import PublicationForm from './PublicationForm.vue';
+import Comment from './Comment.vue';
+import { reactive, ref, watchEffect, computed } from 'vue';
+import { useAuthStore } from '../shared/stores/authStore';
+import type { Publication } from '../shared/interfaces/publication.interface';
+import { usePublicationsStore } from '../shared/stores/publicationsStore';
+import { useCommentsStore } from '../shared/stores/commentsStore';
+const publicationsStore = usePublicationsStore();
+const commentsStore = useCommentsStore();
+let arrayPublications = ref();
+
+const publications = computed(() => {
+    // console.log('computed', publicationsStore.$state.publications);
+    return publicationsStore.$state.publications;
+});
+
+let displayComments = ref(false);
+let comment = ref();
+let page = ref(1);
+let count = ref(1);
+let numberOfPages = ref();
+let inputValue = reactive({
+    content: '',
+    picture: ''
+});
+
+function onPickFile(event: any) {
+    inputValue.picture = event.target.files[0];
+}
+
+const authStore = useAuthStore();
+let loading = ref(publicationsStore.$state.isLoading);
+
+
+function createPublication(event: any, inputValue: any) {
+    event.preventDefault();
+    // console.log(inputValue);
+    let result = publicationsStore.createPublication(inputValue);
+    return result;
+}
+
+let getUser: any = localStorage.getItem('user');
+let user: any = JSON.parse(getUser);
+
+
+
+// async function getAllPublications(page: number) {
+//     let result = await publicationsStore.getAllPublications(page);
+//     setTimeout(() => {
+//         console.log('le result : ', result);
+//         arrayPublications.value = publicationsStore.$state.publications;
+//         numberOfPages.value = publicationsStore.$state.numberOfPages;
+//         loading.value = false;
+//     }, 3000);
+// }
+
+function getAllPublications(page: number) {
+    let result = publicationsStore.getAllPublications(page);
+    setTimeout(() => {
+        arrayPublications.value = publicationsStore.$state.publications;
+        numberOfPages.value = publicationsStore.$state.numberOfPages;
+        loading.value = false;
+    }, 3000);
+}
+function editPublication(id: number, update: any) {
+    // console.log('publication component voici lupdate', update.post);
+    publicationsStore.updatePublication(id, update.post);
+}
+
+function deletePublication(id: number) {
+    publicationsStore.deletePublication(id);
+}
+
+async function getMyInformation() {
+    let result = await authStore.getMyInformations();
+    return result;
+}
+getAllPublications(page.value);
+getMyInformation();
+
+// watchEffect(() => {
+//     loading.value = true;
+//     page.value = count.value;
+//     getAllPublications(page.value);
+// })
+// publicationsStore.$subscribe((params) => {
+//     console.log('params, publication-component', params);
+// })
+
+function getComments(id: number) {
+    let limitValue = ref(5);
+    let from = ref(0);
+    console.log('id', id);
+    commentsStore.getAllComments(id, limitValue.value, from.value);
+    setTimeout(() => {
+        if (comment.value === undefined) {
+            comment.value = commentsStore.$state.comments;
+        } else {
+            // comment.value = commentsStore.$state.comments;
+            comment.value = [...comment.value, commentsStore.$state.comments];
+        }
+        displayComments.value = true;
+    }, 3000);
+
+}
+console.log(commentsStore.$state.comments);
+</script>
+
 <template>
     <div>
         <div v-if="loading">
@@ -31,51 +141,67 @@
                 </div>
             </div>
             <div v-if="arrayPublications">
-                <div v-for="publication in arrayPublications">
-                    <div class="post">
-                        <div class="post__top">
-                            <div class="post__top__details">
-                                <div class="post__top__details__avatar">
-                                    <img src="https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50?s=200"
-                                        alt="avatar" />
-                                </div>
-                                <div class="post__top__details__info">
-                                    <div class="post__top__details__info__name">
-                                        <span>{{ publication.firstname + ' ' + publication.lastname }}</span>
+                <div v-for="publication in publications">
+                    <div v-if="!publication.editMode">
+                        <div class="post">
+                            <div class="post__top">
+                                <div class="post__top__details">
+                                    <div class="post__top__details__avatar">
+                                        <img src="https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50?s=200"
+                                            alt="avatar" />
                                     </div>
-                                    <div class="post__top__details__info__date">
-                                        <span>{{ 'Publiée le ' + publication.created_at }}</span>
+                                    <div class="post__top__details__info">
+                                        <div class="post__top__details__info__name">
+                                            <span>{{ publication.firstname + ' ' + publication.lastname }}</span>
+                                        </div>
+                                        <div class="post__top__details__info__date">
+                                            <span>{{ 'Publiée le ' + publication.created_at }}</span>
+                                        </div>
                                     </div>
                                 </div>
+                                <div class="post__top__button">
+                                    <button @click.stop="publication.editMode = true">
+                                        Modifier
+                                    </button>
+                                    <button @click="deletePublication(publication.publication_id)">
+                                        Supprimer
+                                    </button>
+                                </div>
                             </div>
-                            <div class="post__top__button">
-                                <!-- <button @click="deletePublication(publication.id)" class="post__top__button__button"> -->
-                                <button @click="editPublication(publication)">
-                                    Modifier
-                                </button>
-                                <button @click="deletePublication(publication)">
-                                    Supprimer
-                                </button>
+                            <div class="post__content">
+                                <p>{{ publication.content }}</p>
+                                <img :src="publication.picture" alt="">
+                            </div>
+                            <div class="post__interaction">
+                                <div class="post__interaction__like">
+                                    <!-- <span>{{ publication.likes }}</span> -->
+                                    <button type="button"><span>15</span> J'aime</button>
+                                    <!-- <button @click="like" type="button">J'aime</button> -->
+                                </div>
+                                <div class="post__interaction__comment">
+                                    <!-- <span>{{ publication.comments.length }}</span> -->
+                                    <button @click.stop="getComments(publication.publication_id)"
+                                        type="button">Commentaires</button>
+                                    <!-- <button @click="comment" type="button">Commenter</button> -->
+                                </div>
+                            </div>
+                            <div class="post__interaction__comment__list">
+                                <!-- <button><u>Afficher les
+                                        commentaires</u></button> -->
+                                <div v-if="displayComments">
+                                    <Comment :comments="comment" />
+                                </div>
                             </div>
                         </div>
-                        <div class="post__content">
-                            <p>{{ publication.content }}</p>
-                            <img :src="publication.picture" alt="">
-                        </div>
-                        <div class="post__interaction">
-                            <div class="post__interaction__like">
-                                <span>{{ publication.likes }}</span>
-                                <!-- <button @click="like" type="button">J'aime</button> -->
-                            </div>
-                            <!-- <div class="post__interaction__comment">
-                            <span>{{ publication.comments.length }}</span> -->
-                            <!-- <button @click="comment" type="button">Commenter</button> -->
-                            <!-- </div> -->
-                        </div>
+                    </div>
+                    <div v-else>
+                        <PublicationForm :content="publication.content" :picture="publication.picture"
+                            :id="publication.publication_id" :user="user" @cancel="publication.editMode = false"
+                            @update="editPublication(publication.publication_id, { editMode: false, post: $event })" />
                     </div>
                 </div>
                 <div class="post__page">
-                    <div v-if="page >= 1" class="post__page__previous">
+                    <div v-if="page > 1" class="post__page__previous">
                         <button @click="count--" type="button">Page Précédente</button>
                     </div>
                     <div v-if="page < numberOfPages" class="post__page__next">
@@ -86,73 +212,6 @@
         </div>
     </div>
 </template>
-
-<script setup lang="ts">
-
-import Loading from './Loading.vue';
-import { reactive, ref, watchEffect } from 'vue';
-import { useAuthStore } from '../shared/stores/authStore';
-import { usePublicationsStore } from '../shared/stores/publicationsStore';
-let arrayPublications = ref();
-let page = ref(1);
-let count = ref(1);
-let numberOfPages = ref();
-let inputValue = reactive({
-    content: '',
-    picture: ''
-});
-
-function onPickFile(event: any) {
-    inputValue.picture = event.target.files[0];
-}
-
-const publicationsStore = usePublicationsStore();
-const authStore = useAuthStore();
-let loading = ref(publicationsStore.$state.isLoading);
-
-
-function createPublication(event: any, inputValue: any) {
-    event.preventDefault();
-    let result = publicationsStore.createPublication(inputValue);
-    return result;
-}
-
-let getUser: any = localStorage.getItem('user');
-let user: any = JSON.parse(getUser);
-
-
-async function getAllPublications(page: number) {
-    let result = await publicationsStore.getAllPublications(page);
-    setTimeout(() => {
-        arrayPublications.value = publicationsStore.$state.publications;
-        numberOfPages.value = publicationsStore.$state.numberOfPages;
-        loading.value = false;
-    }, 3000);
-}
-
-function editPublication(publication: any) {
-    // publicationsStore.editPublication(publication);
-    console.log('edit');
-}
-
-function deletePublication(publication: any) {
-    publicationsStore.deletePublication(publication);
-}
-
-async function getMyInformation() {
-    let result = await authStore.getMyInformations();
-    return result;
-}
-getAllPublications(page.value);
-getMyInformation();
-
-watchEffect(() => {
-    loading.value = true;
-    page.value = count.value;
-    getAllPublications(page.value);
-})
-
-</script>
 
 <style scoped lang="scss">
 @import '../styles/Components/buttons';
@@ -205,6 +264,12 @@ watchEffect(() => {
         align-items: flex-start;
         margin-top: 1rem;
 
+        img {
+            width: 100%;
+            height: 100%;
+            border-radius: 15px 15px 0px 0px;
+        }
+
         &__details {
 
             &__input {
@@ -222,6 +287,40 @@ watchEffect(() => {
 
             &__button {
                 @include button-primary;
+            }
+        }
+    }
+
+    &__interaction {
+        display: flex;
+        background-color: rgb(255, 255, 255);
+        width: 100%;
+        border-radius: 0px 0px 15px 15px;
+        margin-bottom: 20px;
+
+        &__like {
+            width: 50%;
+
+            button {
+                width: 100%;
+                height: 100%;
+                background-color: #FFFFFF;
+                border: none;
+                cursor: pointer;
+                border-radius: 0 0 0 10px;
+            }
+        }
+
+        &__comment {
+            width: 50%;
+
+            button {
+                width: 100%;
+                height: 100%;
+                background-color: #FFFFFF;
+                border: none;
+                cursor: pointer;
+                border-radius: 0 0 10px 0;
             }
         }
     }

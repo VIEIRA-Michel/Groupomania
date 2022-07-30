@@ -78,32 +78,52 @@ exports.createPublication = (req, res, next) => {
     if (req.file) {
         publication.picture = `${req.protocol}://${req.get('host')}/images/${req.file.filename}`;
     };
-
+    console.log(req);
     let sql = `INSERT INTO publications (content, picture, user_id, created_at) VALUES (?, ?, ?, ?);`;
     connection.query(
         sql, [publication.content, publication.picture, publication.user_id, publication.created_at], function (err, results) {
+            console.log(results);
             if (err) {
                 console.log(err)
                 res.status(500).json({ message: 'Erreur lors de la création de la publication' });
             }
             if (!err) {
-                console.log('le resultat', results);
-                res.status(201).json({ message: 'Publication créée ! ' })
+                sql = `SELECT id AS publication_id, content, picture, user_id, created_at as publication_created, updated_at FROM publications WHERE id = ?;`;
+                connection.query(
+                    sql, [results.insertId], function (err, results) {
+                        if (err) {
+                            console.log(err);
+                            res.status(500).json({ message: 'Erreur lors de la récupération de la publications' });
+                        } else {
+                            res.status(201).json({ message: 'Publication créée !', data: results })
+                        }
+                    }
+                )
             }
 
         })
 }
 
 exports.updatePublication = (req, res, next) => {
-    const publicationObject = { ...req.body }
-    console.log('publicationObject', publicationObject);
     let now = new Date();
     let today = date.format(now, 'YYYY-MM-DD HH:mm:ss');
-    let publication = {
-        content: req.body.content,
-        picture: req.body.picture,
-        updated_at: today
-    };
+
+
+    let publication = req.file ?
+        {
+            ...req.body,
+            picture: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`,
+            updated_at: today
+        } : { ...req.body, updated_at: today };
+    // let publication = {
+    //     content: req.body.content,
+    //     picture: req.body.picture,
+    //     updated_at: today,
+    // };
+    // if (req.file) {
+    //     publication.picture = `${req.protocol}://${req.get('host')}/images/${req.file.filename}`;
+    // }
+    console.log(req.body.content);
     let sql = `UPDATE publications SET content = ?, picture = ?, updated_at = ? WHERE id = ?;`;
     connection.query(
         sql, [publication.content, publication.picture, publication.updated_at, req.params.id], function (err, results) {
@@ -111,8 +131,19 @@ exports.updatePublication = (req, res, next) => {
                 console.log(err)
                 res.status(500).json({ message: 'Erreur lors de la modification de la publication' });
             } else {
-                console.log(results);
-                res.status(200).json({ message: 'Publication modifiée ! ' })
+                // console.log(results);
+                // res.status(200).json({ message: 'Publication modifiée ! ' })
+                sql = `SELECT id AS publication_id, content, picture, user_id, created_at as publication_created, updated_at FROM publications WHERE id = ?;`;
+                connection.query(
+                    sql, [req.params.id], function (err, results) {
+                        if (err) {
+                            console.log(err);
+                            res.status(500).json({ message: 'Erreur lors de la récupération de la publications' });
+                        } else {
+                            res.status(200).json({ message: 'Publication modifiée !', data: results })
+                        }
+                    }
+                )
             }
         }
     )
@@ -129,8 +160,7 @@ exports.deletePublication = (req, res, next) => {
                 if (results.length === 0) {
                     res.status(404).json({ message: 'Publication non trouvée' });
                 } else {
-                    const filename = results[0].picture.split('/images/')[1];
-                    fs.unlink(`images/${filename}`, () => {
+                    if (results[0].picture == null) {
                         sql = `DELETE FROM publications WHERE id = ?;`;
                         connection.query(
                             sql, [req.params.id], function (err, results) {
@@ -142,7 +172,22 @@ exports.deletePublication = (req, res, next) => {
                                 }
                             }
                         )
-                    })
+                    } else {
+                        const filename = results[0].picture.split('/images/')[1];
+                        fs.unlink(`images/${filename}`, () => {
+                            sql = `DELETE FROM publications WHERE id = ?;`;
+                            connection.query(
+                                sql, [req.params.id], function (err, results) {
+                                    if (err) {
+                                        console.log(err);
+                                        res.status(500).json({ message: 'Erreur lors de la suppression de la publication' });
+                                    } else {
+                                        res.status(200).json({ message: 'Publication supprimée ! ' })
+                                    }
+                                }
+                            )
+                        })
+                    }
                 }
             }
         }

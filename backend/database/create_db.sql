@@ -55,7 +55,7 @@ CREATE TABLE publications (
     content TEXT(128),
     picture TEXT(128),
     user_id INTEGER,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
     created_at DATETIME,
     updated_at DATETIME
 );
@@ -63,17 +63,17 @@ CREATE TABLE publications (
 CREATE TABLE publication_user_liked (
     id INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,
     user_id INTEGER,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
     publication_id INTEGER,
-    FOREIGN KEY (publication_id) REFERENCES publications(id) ON DELETE RESTRICT ON UPDATE CASCADE
+    FOREIGN KEY (publication_id) REFERENCES publications(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE comments (
     id INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,
     user_id INTEGER,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
     publication_id INTEGER,
-    FOREIGN KEY (publication_id) REFERENCES publications(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    FOREIGN KEY (publication_id) REFERENCES publications(id) ON DELETE CASCADE ON UPDATE CASCADE,
     content TEXT,
     created_at DATETIME
 );
@@ -82,8 +82,8 @@ CREATE TABLE requests_friendship (
     id INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,
     user_id_sender INTEGER,
     user_id_recipient INTEGER,
-    FOREIGN KEY (user_id_sender) REFERENCES users(id) ON DELETE RESTRICT ON UPDATE CASCADE,
-    FOREIGN KEY (user_id_recipient) REFERENCES users(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    FOREIGN KEY (user_id_sender) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (user_id_recipient) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
     request_date DATETIME,
     approve_date DATETIME
 );

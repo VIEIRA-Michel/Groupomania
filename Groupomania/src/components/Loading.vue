@@ -1,23 +1,17 @@
+<script setup lang="ts">
+</script>
 <template>
-    <div class="loading">
-        <!-- <div class="loading__content">
-            <div class="loading__content__text"> -->
-                Chargement des données
-            <!-- </div> -->
-            <!-- <div class="loading__content__spinner">
-                <div class="spinner"></div>
-            </div> -->
-        <!-- </div> -->
-    </div>
+  <div class="loading">
+    Chargement des données
+  </div>
 </template>
-
-<script setup></script>
 
 <style scoped lang="scss">
 @keyframes fade {
   0% {
     opacity: 0.5;
   }
+
   100% {
     opacity: 1;
   }
@@ -28,13 +22,16 @@
     transform: scaleX(0);
     transform-origin: 0 0;
   }
+
   50% {
     transform: scaleX(1);
     transform-origin: 0 0;
   }
+
   51% {
     transform-origin: 100% 0;
   }
+
   100% {
     transform: scaleX(0);
     transform-origin: 100% 0;

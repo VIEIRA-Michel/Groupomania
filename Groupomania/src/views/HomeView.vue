@@ -58,12 +58,12 @@ function logout() {
                 <router-link to="/">
                     <div>Accueil</div>
                 </router-link>
-                <router-link to="/friends">
+                <!-- <router-link to="/friends"> -->
                     <div>Amis</div>
-                </router-link>
-                <router-link to="/profil">
+                <!-- </router-link> -->
+                <!-- <router-link to="/profil"> -->
                     <div>Profil</div>
-                </router-link>
+                <!-- </router-link> -->
                 <a v-if="connected" @click="logout" class="logout">
                     Déconnexion
                 </a>
