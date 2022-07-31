@@ -1,36 +1,38 @@
 <script setup lang="ts">
-
+import { useCommentsStore } from '../shared/stores/commentsStore';
+import { reactive, ref, watchEffect, computed } from 'vue';
+const commentsStore = useCommentsStore();
+const user: any | null = JSON.parse(localStorage.getItem('user'));
+console.log(user.email)
 const props = defineProps({
-    comments: {},
+    comments: [],
+    limit: Number,
+    from: Number,
 });
-// comment: {
-//     publication_id: number;
-//     publication_content: string;
-//     publication_picture?: string;
-//     user_id: number;
-//     publication_created: string;
-//     publication_updated_at?: string;
-//     lastname: string;
-//     firstname: string;
-//     email: string;
-//     role_id: number;
-//     account_disabled?: boolean;
-//     comment_id: number;
-//     comment_user_id: number;
-//     comment_publication_id: number;
-//     comment_content: string;
-//     comment_created_at: string;
-// },
 
-console.log(props.comments[0]);
-for (let comment of props.comments[0]) {
-    console.log(comment.publication_id);
+const emit = defineEmits<{
+    (e: 'getMore'): any;
+}>();
+
+
+const commentary = computed(() => {
+    return commentsStore.$state.comments;
+});
+    console.log('commentary', commentary.value.length, 'limit', props.limit, 'offset', props.from);
+
+const displayButton = computed(() => {
+    return commentsStore.$state.comments.length;
+});
+
+function deleteComment(comment: any) {
+    console.log(comment.publication_id, comment.comment_id)
+    commentsStore.deleteComment(comment.publication_id, comment.comment_id);
 }
 
 </script>
 
 <template>
-    <div v-for="com in props.comments[0]" class="post">
+    <div v-for="com in commentary" class="post">
         <div class="post__details">
             <div class="post__details__info">
                 <div class="post__details__info__avatar">
@@ -48,15 +50,57 @@ for (let comment of props.comments[0]) {
                     </div> -->
                 </div>
             </div>
-
+        </div>
+        <div class="post__button">
+            <button v-if="user.email == com.email" @click="deleteComment(com)" class="post__button__delete">Supprimer commentaire</button>
         </div>
     </div>
+    <div class="more-post">
+        <button v-if="displayButton == props.limit + props.from" @click="emit('getMore')" class="more-post__button">
+            Afficher plus de commentaires
+        </button>
+    </div>
+    <!-- <div class="create_post">
+        <div class="create_post__input">
+            <textarea class="create_post__input__textarea" placeholder="Ecrivez votre commentaire..."></textarea>
+        </div>
+        <div class="create_post__button">
+            <button class="create_post__button__button">Publier</button>
+        </div>
+    </div> -->
+    <div class="create_post">
+                <div class="create_post__top">
+                    <div class="create_post__top__details">
+                        <div class="create_post__top__details__avatar">
+                            <img src="https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50?s=200"
+                                alt="avatar" />
+                        </div>
+                        <div class="create_post__top__details__info">
+                            <div class="create_post__top__details__info__name">
+                                <span>Michel Vieira</span>
+                                <!-- <span>{{ user.firstname + ' ' + user.lastname }}</span> -->
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+                <div class="create_post__content">
+                    <div class="create_post__content__details">
+                        <form>
+                            <input type="text" class="create_post__content__details__input">
+                            <button class="create_post__content__details__button">Publier</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
 
 </template>
 
 <style scoped lang="scss">
 .post {
-
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     // filter: drop-shadow(0 0 0.75rem #4E5166);
     &__details {
         display: flex;

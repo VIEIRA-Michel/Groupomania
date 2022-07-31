@@ -30,20 +30,44 @@ export const useCommentsStore = defineStore({
                     authorization: `Bearer ${localStorage.getItem('token')}`
                 }
             }).then(response => {
-                console.log('response', response);
-                if(store.$state.comments) {
-                    store.$patch({
-                        comments: [...store.$state.comments, response.data.comments],
-                    });
-                } else {
-                    store.$patch({
-                        comments: response.data.comments,
-                    });
+                let com = ref();
+                for(let comment of response.data.comments) {
+                    com.value = comment;
+                    if(store.$state.comments) {
+                        store.$patch({
+                            comments: [...store.$state.comments, com.value],
+                        });
+                    } else {
+                        store.$patch({
+                            comments: [com.value],
+                        });
+                    }
                 }
             }).catch(error => {
                 console.log(error);
             });
 
         },
+        deleteComment: (publication_id:number, id: number) => {
+            const store = useCommentsStore();
+            axios({
+                method: 'delete',
+                url: `http://localhost:3000/api/publications/${publication_id}/comments/${id}`,
+                headers: {
+                    'Content-Type': 'application/json',
+                    authorization: `Bearer ${localStorage.getItem('token')}`
+                }
+            }).then(response => {
+                let updateComments = store.$state.comments.filter(item => {
+                    console.log('item', item);
+                    return item.comment_id !== id;
+                }
+                );
+                console.log(updateComments);
+                store.$patch({
+                    comments: updateComments
+                });
+            })
+        }
     },
 });

@@ -25,7 +25,9 @@ let inputValue = reactive({
     content: '',
     picture: ''
 });
-
+let limitValue = ref(5);
+let from = ref(0);
+let more = ref(false);
 function onPickFile(event: any) {
     inputValue.picture = event.target.files[0];
 }
@@ -89,23 +91,31 @@ getMyInformation();
 //     console.log('params, publication-component', params);
 // })
 
-function getComments(id: number) {
-    let limitValue = ref(5);
-    let from = ref(0);
-    console.log('id', id);
-    commentsStore.getAllComments(id, limitValue.value, from.value);
-    setTimeout(() => {
-        if (comment.value === undefined) {
-            comment.value = commentsStore.$state.comments;
-        } else {
-            // comment.value = commentsStore.$state.comments;
-            comment.value = [...comment.value, commentsStore.$state.comments];
-        }
-        displayComments.value = true;
-    }, 3000);
-
+function getComments(id: number, more?: boolean) {
+    if (more) {
+        from.value = from.value + limitValue.value;
+        limitValue.value = limitValue.value + limitValue.value;
+    };
+    if (commentsStore.$state.comments.length >= from.value) {
+        commentsStore.getAllComments(id, limitValue.value, from.value);
+        setTimeout(() => {
+            if (comment.value === undefined) {
+                console.log("comment value est egal a undefined");
+                comment.value = commentsStore.$state.comments;
+            } else {
+                // comment.value = commentsStore.$state.comments;
+                console.log("on incrémente le comment state");
+                comment.value = [...comment.value, commentsStore.$state.comments];
+            }
+            displayComments.value = true;
+        }, 3000);
+    }
 }
-console.log(commentsStore.$state.comments);
+
+function deleteComment(id: number) {
+    
+}
+
 </script>
 
 <template>
@@ -189,7 +199,8 @@ console.log(commentsStore.$state.comments);
                                 <!-- <button><u>Afficher les
                                         commentaires</u></button> -->
                                 <div v-if="displayComments">
-                                    <Comment :comments="comment" />
+                                    <Comment :comments="comment" :limit="limitValue" :from="from" 
+                                    @getMore="getComments(publication.publication_id, true)" />
                                 </div>
                             </div>
                         </div>

@@ -85,7 +85,8 @@ CREATE TABLE requests_friendship (
     FOREIGN KEY (user_id_sender) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY (user_id_recipient) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
     request_date DATETIME,
-    approve_date DATETIME
+    approve_date DATETIME,
+    denied_date DATETIME
 );
 
 SET foreign_key_checks = 1;
