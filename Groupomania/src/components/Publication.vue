@@ -36,27 +36,17 @@ const authStore = useAuthStore();
 let loading = ref(publicationsStore.$state.isLoading);
 
 
-function createPublication(event: any, inputValue: any) {
-    event.preventDefault();
-    // console.log(inputValue);
-    let result = publicationsStore.createPublication(inputValue);
-    return result;
+function createPublication(inputValue: any) {
+    if (inputValue != "") {
+        publicationsStore.createPublication(inputValue);
+        inputValue.content = '';
+        inputValue.picture = '';
+    };
 }
 
 let getUser: any = localStorage.getItem('user');
 let user: any = JSON.parse(getUser);
 
-
-
-// async function getAllPublications(page: number) {
-//     let result = await publicationsStore.getAllPublications(page);
-//     setTimeout(() => {
-//         console.log('le result : ', result);
-//         arrayPublications.value = publicationsStore.$state.publications;
-//         numberOfPages.value = publicationsStore.$state.numberOfPages;
-//         loading.value = false;
-//     }, 3000);
-// }
 
 function getAllPublications(page: number) {
     let result = publicationsStore.getAllPublications(page);
@@ -100,11 +90,8 @@ function getComments(id: number, more?: boolean) {
         commentsStore.getAllComments(id, limitValue.value, from.value);
         setTimeout(() => {
             if (comment.value === undefined) {
-                console.log("comment value est egal a undefined");
                 comment.value = commentsStore.$state.comments;
             } else {
-                // comment.value = commentsStore.$state.comments;
-                console.log("on incrémente le comment state");
                 comment.value = [...comment.value, commentsStore.$state.comments];
             }
             displayComments.value = true;
@@ -113,7 +100,7 @@ function getComments(id: number, more?: boolean) {
 }
 
 function deleteComment(id: number) {
-    
+
 }
 
 </script>
@@ -141,7 +128,7 @@ function deleteComment(id: number) {
                 </div>
                 <div class="post__content">
                     <div class="post__content__details">
-                        <form @submit.prevent="createPublication($event, inputValue)">
+                        <form @submit.prevent="createPublication(inputValue)">
                             <input type="text" v-model="inputValue.content" class="post__content__details__input">
                             <input type="file" ref="fileInput" accept="image/*" @change="onPickFile"
                                 class="post__content__details__file">
@@ -199,7 +186,7 @@ function deleteComment(id: number) {
                                 <!-- <button><u>Afficher les
                                         commentaires</u></button> -->
                                 <div v-if="displayComments">
-                                    <Comment :comments="comment" :limit="limitValue" :from="from" 
+                                    <Comment :comments="comment" :limit="limitValue" :from="from" :idPublication="publication.publication_id"
                                     @getMore="getComments(publication.publication_id, true)" />
                                 </div>
                             </div>
