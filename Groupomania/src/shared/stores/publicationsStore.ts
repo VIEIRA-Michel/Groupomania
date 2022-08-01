@@ -46,25 +46,32 @@ export const usePublicationsStore = defineStore({
                     editMode: false,
                 });
                 console.log('voici obj', obj.value)
-                if (!store.$state.publications) {
-                    store.$patch({
-                        publications: [obj.value]
-                    });
-                } else {
-                    store.$patch({
-                        publications: [...store.$state.publications, obj.value]
-                    })
-                }
-                console.log(store.$state.publications)
+                // if (!store.$state.publications) {
+                //     store.$patch({
+                //         publications: [obj.value]
+                //     });
+                // } else {
+                //     store.$patch({
+                //         publications: [...store.$state.publications, obj.value]
+                //     })
+                // }
+                // console.log(store.$state.publications)
+                store.getAllPublications();
             }).catch(error => {
                 console.log(error);
             });
         },
-        getAllPublications: (page: number) => {
+        getAllPublications: (page?: number) => {
+            let BASE_URL = ""
+            if (page) {
+                BASE_URL = `http://localhost:3000/api/publications/?page=${page}`;
+            } else {
+                BASE_URL = 'http://localhost:3000/api/publications';
+            }
             const store = usePublicationsStore();
             axios({
                 method: 'get',
-                url: `http://localhost:3000/api/publications/?page=${page}`,
+                url: BASE_URL,
                 headers: {
                     'Content-Type': 'application/json',
                     authorization: `Bearer ${localStorage.getItem('token')}`
@@ -73,8 +80,11 @@ export const usePublicationsStore = defineStore({
                 const store = usePublicationsStore();
                 if (response.data.Publications) {
                     response.data.Publications = response.data.Publications.map((publication: any) => {
+                        // console.log(publication);
+                        store.getLikes(publication.publication_id);
                         return {
                             editMode: false,
+                            likes: [],
                             ...publication,
                         }
                     });
@@ -106,19 +116,9 @@ export const usePublicationsStore = defineStore({
                     Authorization: `Bearer ${localStorage.getItem('token')}`
                 },
                 data: formData,
-                // File: update.picture,
             }).then(response => {
                 console.log('response', response)
-                const store = usePublicationsStore();
-                let updatePublications = store.$state.publications.map(item => {
-                    if (item.publication_id == id) {
-                        return update.content, update.picture;
-                    }
-                    return item;
-                });
-                store.$patch({
-                    publications: updatePublications
-                });
+                store.getAllPublications();
             }).catch(error => {
                 console.log(error);
             });
@@ -142,7 +142,66 @@ export const usePublicationsStore = defineStore({
                 store.$patch({
                     publications: updatePublications
                 });
-            })
+            }).catch(error => {
+                console.log(error);
+            });
+        },
+        getLikes: (id: number) => {
+            const store = usePublicationsStore();
+            axios({
+                method: 'get',
+                url: `http://localhost:3000/api/publications/${id}`,
+                headers: {
+                    'Content-Type': 'application/json',
+                    authorization: `Bearer ${localStorage.getItem('token')}`
+                }
+            }).then(response => {
+                response.data.data = response.data.data.map((publication: any) => {
+                    return {
+                        user_id: publication.user_id,
+                        lastname: publication.user_lastname,
+                        firstname: publication.user_firstname,
+                        // profil_picture: publication.picture,
+                    };
+                })
+                let publication: any = store.$state.publications.map(item => {
+                    if (item.publication_id == id) {
+                        for (let post of response.data.data) {
+                            item.likes?.push(post);
+                        }
+                    }
+                    return item;
+                });
+                store.$patch({
+                    publications: publication
+                });
+            }).catch(error => {
+                console.log(error);
+            });
+        },
+        likeOrDislike: (id: number, value?: number | string) => {
+            console.log(value);
+            if (value == '1' || value == 1) {
+                console.log('like');
+            } else {
+                console.log('je retire mon like');
+            }
+            const store = usePublicationsStore();
+            axios({
+                method: 'post',
+                url: `http://localhost:3000/api/publications/${id}`,
+                headers: {
+                    'Content-Type': 'application/json',
+                    authorization: `Bearer ${localStorage.getItem('token')}`
+                },
+                data: {
+                    liked: value,
+                },
+            }).then(response => {
+                store.getLikes(id);
+            }).catch(error => {
+                console.log(error);
+            });
         }
     }
 });

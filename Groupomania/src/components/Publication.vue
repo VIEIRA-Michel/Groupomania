@@ -11,10 +11,13 @@ const publicationsStore = usePublicationsStore();
 const commentsStore = useCommentsStore();
 let arrayPublications = ref();
 
-const publications = computed(() => {
-    // console.log('computed', publicationsStore.$state.publications);
+let publications = computed(() => {
     return publicationsStore.$state.publications;
 });
+
+// const userLiked = computed(() => {
+//     return publicationsStore.$state.userLiked;
+// });
 
 let displayComments = ref(false);
 let comment = ref();
@@ -31,6 +34,7 @@ let more = ref(false);
 function onPickFile(event: any) {
     inputValue.picture = event.target.files[0];
 }
+let hasLiked = ref();
 
 const authStore = useAuthStore();
 let loading = ref(publicationsStore.$state.isLoading);
@@ -57,7 +61,6 @@ function getAllPublications(page: number) {
     }, 3000);
 }
 function editPublication(id: number, update: any) {
-    // console.log('publication component voici lupdate', update.post);
     publicationsStore.updatePublication(id, update.post);
 }
 
@@ -71,6 +74,7 @@ async function getMyInformation() {
 }
 getAllPublications(page.value);
 getMyInformation();
+
 
 // watchEffect(() => {
 //     loading.value = true;
@@ -99,9 +103,44 @@ function getComments(id: number, more?: boolean) {
     }
 }
 
-function deleteComment(id: number) {
+console.log(publications)
+function likePublication(publication: any) {
+    // console.log(publication.likes)
+    // let newArray = ref<any>();
+    // newArray = publicationsStore.$state.publications.map((like: any) => {
+    //     if (like.publication_id == publication.publication_id) {
+    //         console.log(like.likes);
+    //         for (let i = 0; i < like.likes.length; i++) {
+    //             console.log(like.likes[i].user_id);
+    //             if (like.likes[i].user_id == user.user_id) {
+    //                 console.log('je splice')
+    //                 return like.likes.splice(i, 1);
+    //             } else {
+    //                 console.log('je push')
+    //                 return like.likes.push(user)
+    //             }
+    //         }
+    //         return like
+    //     }
+    // });
+    // console.log(newArray);
 
-}
+    //     publicationsStore.$state.publications = publicationsStore.$state.publications.map((like: any) => {
+    //     if (like.publication_id == publication.publication_id) {
+    //         console.log(like.likes);
+    //         for (let i = 0; i < like.likes.length; i++) {
+    //             if (like.likes[i].user_id == user.id) {
+    //                 console.log('je splice')
+    //                 return like.likes.splice(i, 1);
+    //             } else {
+    //                 console.log('je push')
+    //                 return like.likes.push(user)
+    //             }
+    //         }
+    //         return like
+    //     }
+    // });
+};
 
 </script>
 
@@ -141,53 +180,59 @@ function deleteComment(id: number) {
                 <div v-for="publication in publications">
                     <div v-if="!publication.editMode">
                         <div class="post">
-                            <div class="post__top">
-                                <div class="post__top__details">
-                                    <div class="post__top__details__avatar">
-                                        <img src="https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50?s=200"
-                                            alt="avatar" />
-                                    </div>
-                                    <div class="post__top__details__info">
-                                        <div class="post__top__details__info__name">
-                                            <span>{{ publication.firstname + ' ' + publication.lastname }}</span>
+                            <div class="post__information">
+                                <div class="post__top">
+                                    <div class="post__top__details">
+                                        <div class="post__top__details__avatar">
+                                            <img src="https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50?s=200"
+                                                alt="avatar" />
                                         </div>
-                                        <div class="post__top__details__info__date">
-                                            <span>{{ 'Publiée le ' + publication.created_at }}</span>
+                                        <div class="post__top__details__info">
+                                            <div class="post__top__details__info__name">
+                                                <span>{{ publication.firstname + ' ' + publication.lastname }}</span>
+                                            </div>
+                                            <div class="post__top__details__info__date">
+                                                <span>{{ 'Publiée le ' + publication.created_at }}</span>
+                                            </div>
                                         </div>
                                     </div>
+                                    <div class="post__top__button">
+                                        <button @click.stop="publication.editMode = true">
+                                            Modifier
+                                        </button>
+                                        <button @click="deletePublication(publication.publication_id)">
+                                            Supprimer
+                                        </button>
+                                    </div>
                                 </div>
-                                <div class="post__top__button">
-                                    <button @click.stop="publication.editMode = true">
-                                        Modifier
-                                    </button>
-                                    <button @click="deletePublication(publication.publication_id)">
-                                        Supprimer
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="post__content">
-                                <p>{{ publication.content }}</p>
-                                <img :src="publication.picture" alt="">
-                            </div>
-                            <div class="post__interaction">
-                                <div class="post__interaction__like">
-                                    <!-- <span>{{ publication.likes }}</span> -->
-                                    <button type="button"><span>15</span> J'aime</button>
-                                    <!-- <button @click="like" type="button">J'aime</button> -->
-                                </div>
-                                <div class="post__interaction__comment">
-                                    <!-- <span>{{ publication.comments.length }}</span> -->
-                                    <button @click.stop="getComments(publication.publication_id)"
-                                        type="button">Commentaires</button>
-                                    <!-- <button @click="comment" type="button">Commenter</button> -->
+                                <div class="post__content">
+                                    <p>{{ publication.content }}</p>
+                                    <img :src="publication.picture" alt="">
                                 </div>
                             </div>
-                            <div class="post__interaction__comment__list">
-                                <!-- <button><u>Afficher les
-                                        commentaires</u></button> -->
-                                <div v-if="displayComments">
-                                    <Comment :comments="comment" :limit="limitValue" :from="from" :idPublication="publication.publication_id"
-                                    @getMore="getComments(publication.publication_id, true)" />
+                            <div class="post__likeAndComment">
+                                <div class="post__interaction">
+                                    <div class="post__interaction__like">
+
+                                        <!-- <span>{{ publication.likes }}</span> -->
+                                        <button @click.stop="likePublication(publication)" type="button"><span>{{publication.likes.length}}</span> J'aime</button>
+                                        <!-- <button @click="like" type="button">J'aime</button> -->
+                                    </div>
+                                    <div class="post__interaction__comment">
+                                        <!-- <span>{{ publication.comments.length }}</span> -->
+                                        <button @click.stop="getComments(publication.publication_id)"
+                                            type="button">Commentaires</button>
+                                        <!-- <button @click="comment" type="button">Commenter</button> -->
+                                    </div>
+                                </div>
+                                <div class="post__interaction__comment__list">
+                                    <!-- <button><u>Afficher les
+                                            commentaires</u></button> -->
+                                    <div v-if="displayComments">
+                                        <Comment :comments="comment" :limit="limitValue" :from="from"
+                                            :idPublication="publication.publication_id"
+                                            @getMore="getComments(publication.publication_id, true)" />
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -216,12 +261,15 @@ function deleteComment(id: number) {
 
 .post {
     width: 50rem;
-    padding: 20px;
     border-radius: 15px;
     margin: 3rem auto auto auto;
     backdrop-filter: blur(5px);
     background-color: rgb(227, 226, 226);
     filter: drop-shadow(0 0 0.75rem #4E5166);
+
+    &__information {
+        padding: 20px;
+    }
 
     &__top {
         display: flex;
@@ -289,12 +337,16 @@ function deleteComment(id: number) {
         }
     }
 
+    &__likeAndComment {
+        padding: 10px 20px;
+    }
+
     &__interaction {
         display: flex;
-        background-color: rgb(255, 255, 255);
         width: 100%;
         border-radius: 0px 0px 15px 15px;
-        margin-bottom: 20px;
+        border-top: 1px solid #b7b7b7;
+        padding: 5px 0px;
 
         &__like {
             width: 50%;
@@ -302,10 +354,9 @@ function deleteComment(id: number) {
             button {
                 width: 100%;
                 height: 100%;
-                background-color: #FFFFFF;
+                background-color: #e3e2e2;
                 border: none;
                 cursor: pointer;
-                border-radius: 0 0 0 10px;
             }
         }
 
@@ -315,10 +366,15 @@ function deleteComment(id: number) {
             button {
                 width: 100%;
                 height: 100%;
-                background-color: #FFFFFF;
+                background-color: #e3e2e2;
                 border: none;
                 cursor: pointer;
-                border-radius: 0 0 10px 0;
+            }
+
+            &__list {
+                // border-top: 1px solid #b7b7b7;
+                // padding: 5px 0px;
+                // margin-top: 10px;
             }
         }
     }

@@ -107,23 +107,13 @@ exports.createPublication = (req, res, next) => {
 exports.updatePublication = (req, res, next) => {
     let now = new Date();
     let today = date.format(now, 'YYYY-MM-DD HH:mm:ss');
-
-
     let publication = req.file ?
         {
             ...req.body,
             picture: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`,
             updated_at: today
         } : { ...req.body, updated_at: today };
-    // let publication = {
-    //     content: req.body.content,
-    //     picture: req.body.picture,
-    //     updated_at: today,
-    // };
-    // if (req.file) {
-    //     publication.picture = `${req.protocol}://${req.get('host')}/images/${req.file.filename}`;
-    // }
-    console.log(req.body.content);
+
     let sql = `UPDATE publications SET content = ?, picture = ?, updated_at = ? WHERE id = ?;`;
     connection.query(
         sql, [publication.content, publication.picture, publication.updated_at, req.params.id], function (err, results) {
@@ -131,19 +121,7 @@ exports.updatePublication = (req, res, next) => {
                 console.log(err)
                 res.status(500).json({ message: 'Erreur lors de la modification de la publication' });
             } else {
-                // console.log(results);
-                // res.status(200).json({ message: 'Publication modifiée ! ' })
-                sql = `SELECT id AS publication_id, content, picture, user_id, created_at as publication_created, updated_at FROM publications WHERE id = ?;`;
-                connection.query(
-                    sql, [req.params.id], function (err, results) {
-                        if (err) {
-                            console.log(err);
-                            res.status(500).json({ message: 'Erreur lors de la récupération de la publications' });
-                        } else {
-                            res.status(200).json({ message: 'Publication modifiée !', data: results })
-                        }
-                    }
-                )
+                res.status(200).json({ message: 'Publication modifiée ! ' })
             }
         }
     )
@@ -199,58 +177,63 @@ exports.likePublication = (req, res, next) => {
         user_id: req.user.userId,
         publication_id: req.params.id
     };
-    let sqlSearch = `SELECT * FROM publication_user_liked WHERE user_id = ? AND publication_id = ?;`;
-    connection.query(
-        sqlSearch, [like.user_id, like.publication_id], function (err, results) {
-            console.log('faut check ca', results);
-            if (err) {
-                console.log(err)
-                res.status(500).json({ message: 'Erreur lors de la recherche du like' });
-            } else {
-                if (results.length === 0) {
-                    let sql = `INSERT INTO publication_user_liked (user_id, publication_id) VALUES (?, ?);`;
-                    connection.query(
-                        sql, [like.user_id, like.publication_id], function (err, results) {
-                            if (err) {
-                                console.log(err)
-                                res.status(500).json({ message: 'Erreur lors de la création du like' });
-                            }
-                            if (!err) {
-                                res.status(200).json({ message: 'Like ajouté ! ' })
-                            }
+    if (req.body.liked === 1) {
+        let sql = `INSERT INTO publication_user_liked (user_id, publication_id) VALUES (?, ?);`;
+        connection.query(
+            sql, [like.user_id, like.publication_id], function (err, results) {
+                if (err) {
+                    console.log(err)
+                    res.status(500).json({ message: 'Erreur lors de la création du like' });
+                }
+                if (!err) {
+                    res.status(200).json({ message: 'Like ajouté ! ', results: results, liked: true })
+                }
 
-                        }
-                    )
-                } else {
-                    let sqlDeleteLike = `DELETE FROM publication_user_liked WHERE user_id = ? AND publication_id = ?;`;
-                    connection.query(
-                        sqlDeleteLike, [like.user_id, like.publication_id], function (err, results) {
-                            if (err) {
-                                console.log(err)
-                                res.status(500).json({ message: 'Erreur lors de la suppression du like' });
-                            }
-                            if (!err) {
-                                res.status(200).json({ message: 'Like supprimé ! ' })
-                            }
-                        }
-                    )
+            }
+        )
+    } else {
+        let sqlDeleteLike = `DELETE FROM publication_user_liked WHERE user_id = ? AND publication_id = ?;`;
+        connection.query(
+            sqlDeleteLike, [like.user_id, like.publication_id], function (err, results) {
+                if (err) {
+                    console.log(err)
+                    res.status(500).json({ message: 'Erreur lors de la suppression du like' });
+                }
+                if (!err) {
+                    res.status(200).json({ message: 'Like supprimé ! ', results: results, liked: false })
                 }
             }
-        }
-    )
+        )
+    }
 }
 
-
-exports.getOnePublication = (req, res, next) => {
-    let sql = `SELECT * FROM publications WHERE id = ?;`;
+exports.getLikes = (req, res, next) => {
+    let sql = `SELECT publication_user_liked.id as idLike, publication_user_liked.user_id as user_id_who_liked, publication_user_liked.publication_id as publication_id, users.id as user_id, users.lastname as user_lastname, users.firstname as user_firstname, users.account_disabled as account_disabled FROM publication_user_liked LEFT JOIN users ON users.id = publication_user_liked.user_id AND users.account_disabled IS NULL WHERE publication_user_liked.publication_id = ?;`;
     connection.query(
         sql, [req.params.id], function (err, results) {
             if (err) {
                 console.log(err);
-                res.status(500).json({ message: 'Erreur lors de la récupération de la publication' });
+                res.status(500).json({ message: 'Erreur lors de la récupération des likes' });
             } else {
-                res.status(200).json({ Publication: results });
+                // console.log('like', results);
+                res.status(200).json({ message: 'Likes récupérés ! ', data: results, idPublication: req.params.id });
             }
         }
     )
 }
+
+
+
+// exports.getOnePublication = (req, res, next) => {
+//     let sql = `SELECT * FROM publications WHERE id = ?;`;
+//     connection.query(
+//         sql, [req.params.id], function (err, results) {
+//             if (err) {
+//                 console.log(err);
+//                 res.status(500).json({ message: 'Erreur lors de la récupération de la publication' });
+//             } else {
+//                 res.status(200).json({ Publication: results });
+//             }
+//         }
+//     )
+// }

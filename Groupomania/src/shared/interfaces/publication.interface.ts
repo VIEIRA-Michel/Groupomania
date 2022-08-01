@@ -29,6 +29,9 @@ export interface Publication {
     user_id: number,
     newContent?: string | null,
     newPicture?: string | null,
+    likes?: [] | null,
+    numberOfLikes?: number | null,
+    numberOfComments?: number | null,
 }
 
 // export interface Publication {

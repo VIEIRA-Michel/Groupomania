@@ -151,11 +151,12 @@ exports.changePassword = (req, res, next) => {
 }
 
 exports.me = (req, res, next) => {
-    let sql = `SELECT lastname, firstname, email, birthday FROM users WHERE id = ?;`;
+    let sql = `SELECT id, lastname, firstname, email, birthday FROM users WHERE id = ?;`;
     connection.query(
         sql, [req.user.userId], function (err, results) {
             if (err) throw err;
             res.status(200).json({
+                user_id: results[0].id,
                 lastname: results[0].lastname,
                 firstname: results[0].firstname,
                 email: results[0].email,

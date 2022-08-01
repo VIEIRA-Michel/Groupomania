@@ -25,7 +25,7 @@ const displayButton = computed(() => {
     return commentsStore.$state.comments.length;
 });
 
-function createComment(event:any, publication_id: any, inputComment: string) {
+function createComment(event: any, publication_id: any, inputComment: string) {
     event.preventDefault();
     console.log(event);
     // console.log(publication_id);
@@ -44,52 +44,59 @@ function deleteComment(comment: any) {
 </script>
 
 <template>
-    <div v-for="com in commentary" class="post">
-        <div class="post__details">
-            <div class="post__details__info">
-                <div class="post__details__info__avatar">
-                    <img src="https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50?s=200" alt="avatar" />
-                </div>
-                <div class="post__details__info__commentary">
-                    <div class="post__details__info__commentary__name">
-                        <span>{{ com.firstname + ' ' + com.lastname }}</span>
+    <div class="container-post">
+        <div v-for="com in commentary" class="post">
+            <div class="post__details">
+                <div class="post__details__info">
+                    <div class="post__details__info__avatar">
+                        <img src="https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50?s=200"
+                            alt="avatar" />
                     </div>
-                    <div class="post__details__info__commentary__content">
-                        <p>{{ com.comment_content }}</p>
-                    </div>
-                    <!-- <div class="post__details__info__commentary__date">
+                    <div class="post__details__info__commentary">
+                        <div class="post__details__info__commentary__name">
+                            <span>{{ com.firstname + ' ' + com.lastname }}</span>
+                        </div>
+                        <div class="post__details__info__commentary__content">
+                            <p>{{ com.comment_content }}</p>
+                        </div>
+                        <!-- <div class="post__details__info__commentary__date">
                         <span>{{ 'Publiée le ' + com.comment_created_at }}</span>
                     </div> -->
+                    </div>
                 </div>
             </div>
+            <div class="post__button">
+                <button v-if="user.email == com.email" @click="deleteComment(com)"
+                    class="post__button__delete">Supprimer
+                    commentaire</button>
+            </div>
         </div>
-        <div class="post__button">
-            <button v-if="user.email == com.email" @click="deleteComment(com)" class="post__button__delete">Supprimer
-                commentaire</button>
+        <div class="more-post">
+            <button v-if="displayButton == props.limit + props.from" @click="emit('getMore')" class="more-post__button">
+                Afficher plus de commentaires
+            </button>
         </div>
-    </div>
-    <div class="more-post">
-        <button v-if="displayButton == props.limit + props.from" @click="emit('getMore')" class="more-post__button">
-            Afficher plus de commentaires
-        </button>
-    </div>
-    <div class="create_post">
-        <div class="create_post__top">
-            <div class="create_post__top__details">
-                <div class="create_post__top__details__avatar">
-                    <img src="https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50?s=200" alt="avatar" />
+        <div class="create_post">
+            <div class="create_post__top">
+                <div class="create_post__top__details">
+                    <div class="create_post__top__details__avatar">
+                        <img src="https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50?s=200"
+                            alt="avatar" />
+                    </div>
+
+                </div>
+            </div>
+            <div class="create_post_info">
+                <div class="create_post__info__content">
+                    <form>
+                        <input type="text" v-model="inputComment" class="create_post__info__content__input"
+                            placeholder="Écrivez un commentaire...">
+                        <button @click="createComment($event, props.idPublication, inputComment)"
+                            class="create_post__info__content__button">Publier</button>
+                    </form>
                 </div>
 
             </div>
-        </div>
-        <div class="create_post_info">
-            <div class="create_post__info__content">
-                <form>
-                    <input type="text" v-model="inputComment" class="create_post__info__content__input" placeholder="Écrivez un commentaire...">
-                    <button @click="createComment($event, props.idPublication, inputComment)" class="create_post__info__content__button">Publier</button>
-                </form>
-            </div>
-
         </div>
     </div>
 
@@ -98,10 +105,16 @@ function deleteComment(comment: any) {
 <style scoped lang="scss">
 @import '../styles/Utils/variables';
 
+.container-post {
+    padding-top: 10px;
+    border-top: 1px solid #b7b7b7;
+}
+
 .post {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-top: 20px;
 
     &__details {
         display: flex;
