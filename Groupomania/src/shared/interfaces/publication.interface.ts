@@ -4,6 +4,7 @@ export interface Publication {
     content: string,
     created_at: string,
     editMode: boolean,
+    displayComments: boolean,
     email?: string,
     firstname?: string,
     gender_id?: number | null,
@@ -32,15 +33,4 @@ export interface Publication {
     likes?: [] | null,
     numberOfLikes?: number | null,
     numberOfComments?: number | null,
-}
-
-// export interface Publication {
-//     publication_id: number;
-//     content: string;
-//     picture?: string;
-//     user_id: number;
-//     publication_created: string;
-//     updated_at?: string;
-//     editMode: boolean;
-//     done: boolean;
-// }
+};

@@ -7,6 +7,7 @@ interface CommentState {
     isLoading: boolean;
     numberOfPages: number;
     comments: Comment[];
+    numOfResults: number;
 }
 
 export const useCommentsStore = defineStore({
@@ -15,6 +16,7 @@ export const useCommentsStore = defineStore({
         comments: [] as Comment[],
         isLoading: true,
         numberOfPages: 1,
+        numOfResults: 0,
     }),
     getters: {
         commentsList: (state: CommentState) => state.comments,
@@ -30,19 +32,26 @@ export const useCommentsStore = defineStore({
                     authorization: `Bearer ${localStorage.getItem('token')}`
                 }
             }).then(response => {
+                // console.log(response);
                 let com = ref();
+                // console.log('response', response);
                 for (let comment of response.data.comments) {
+                    // console.log('comment', comment);
                     com.value = comment;
                     if (store.$state.comments) {
                         store.$patch({
                             comments: [...store.$state.comments, com.value],
+                            numOfResults : response.data.numOfResults,
                         });
                     } else {
                         store.$patch({
                             comments: [com.value],
+                            numOfResults : response.data.numOfResults,
                         });
                     }
+                    // console.log(store.$state.comments);
                 }
+                
             }).catch(error => {
                 console.log(error);
             });

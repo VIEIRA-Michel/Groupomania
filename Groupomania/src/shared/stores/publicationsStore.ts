@@ -4,9 +4,10 @@ import { ref } from 'vue';
 import type { Publication } from '../interfaces/publication.interface';
 
 interface PublicationState {
-    isLoading: boolean;
-    numberOfPages: number;
     publications: Publication[];
+    isLoading: boolean;
+    numOfResults: number;
+    numberOfPages: number;
 }
 
 export const usePublicationsStore = defineStore({
@@ -14,6 +15,7 @@ export const usePublicationsStore = defineStore({
     state: (): PublicationState => ({
         publications: [] as Publication[],
         isLoading: true,
+        numOfResults: 0,
         numberOfPages: 1,
     }),
     getters: {
@@ -22,11 +24,8 @@ export const usePublicationsStore = defineStore({
     actions: {
         createPublication: (inputValue: any) => {
             let formData = new FormData();
-            // console.log(inputValue.picture);
             formData.append('content', inputValue.content);
             formData.append('picture', inputValue.picture);
-            console.log(formData.get('content'));
-            console.log(formData.get('picture'));
             axios({
                 method: 'post',
                 url: 'http://localhost:3000/api/publications',
@@ -43,19 +42,8 @@ export const usePublicationsStore = defineStore({
                     user_id: response.data.data[0].user_id,
                     publication_created: response.data.data[0].publication_created,
                     updated_at: response.data.data[0].updated_at,
-                    editMode: false,
+                    // editMode: false,
                 });
-                console.log('voici obj', obj.value)
-                // if (!store.$state.publications) {
-                //     store.$patch({
-                //         publications: [obj.value]
-                //     });
-                // } else {
-                //     store.$patch({
-                //         publications: [...store.$state.publications, obj.value]
-                //     })
-                // }
-                // console.log(store.$state.publications)
                 store.getAllPublications();
             }).catch(error => {
                 console.log(error);
@@ -80,10 +68,10 @@ export const usePublicationsStore = defineStore({
                 const store = usePublicationsStore();
                 if (response.data.Publications) {
                     response.data.Publications = response.data.Publications.map((publication: any) => {
-                        // console.log(publication);
                         store.getLikes(publication.publication_id);
                         return {
-                            editMode: false,
+                            // editMode: false,
+                            // displayComments: false,
                             likes: [],
                             ...publication,
                         }
@@ -92,22 +80,21 @@ export const usePublicationsStore = defineStore({
                         publications: response.data.Publications,
                         numberOfPages: response.data.numOfPages,
                         isLoading: false,
+                        numOfResults: response.data.numOfResults,
                     });
                 } else {
                     console.log(response.data.message);
                 }
+                // console.log()
             }).catch(error => {
                 console.log(error);
             });
         },
         updatePublication: (id: number, update: any) => {
-            console.log('update:', update.content);
             let formData = new FormData();
             formData.append('content', update.content);
             formData.append('picture', update.picture);
             const store = usePublicationsStore();
-            console.log(formData.get('content'));
-            console.log(formData.get('picture'));
             axios({
                 method: 'put',
                 url: `http://localhost:3000/api/publications/${id}`,
@@ -117,7 +104,6 @@ export const usePublicationsStore = defineStore({
                 },
                 data: formData,
             }).then(response => {
-                console.log('response', response)
                 store.getAllPublications();
             }).catch(error => {
                 console.log(error);
@@ -138,7 +124,6 @@ export const usePublicationsStore = defineStore({
                     return item.publication_id !== id;
                 }
                 );
-                console.log(updatePublications);
                 store.$patch({
                     publications: updatePublications
                 });

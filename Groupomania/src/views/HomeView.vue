@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router';
 import Publication from '../components/Publication.vue';
-import { reactive, ref } from 'vue';
+import { computed, reactive, ref } from 'vue';
 import { useAuthStore } from '../shared/stores/authStore';
 
 const authStore = useAuthStore();
@@ -9,7 +9,11 @@ const token = localStorage.getItem('token');
 const connected = ref(!!token)
 const open = ref(false);
 
+const isConnected = computed(() => {
+    return authStore.$state.isConnected;
+});
 
+let hasAccount = ref(true);
 let userInput = reactive({
     lastname: '',
     firstname: '',
@@ -23,27 +27,23 @@ let loginInput = reactive({
     password: ''
 });
 
-async function register(userInput: any) {
-    let result = await authStore.register(userInput.lastname, userInput.firstname, userInput.email, userInput.password, userInput.confirmPassword);
-    setTimeout(() => {
-        // location.reload();
-    }, 500);
-    return result;
+function register(userInput: any) {
+    authStore.register(userInput.lastname, userInput.firstname, userInput.email, userInput.password, userInput.confirmPassword);
 };
 
-async function login(loginInput: any) {
-    let result = await authStore.login(loginInput.email, loginInput.password);
-        setTimeout(() => {
-        // location.reload();
-    }, 500);
-    return result;
+function login(loginInput: any) {
+    authStore.login(loginInput.email, loginInput.password);
 }
 
 function logout() {
     authStore.logout();
-    // location.reload();
 }
 
+function checkIsConnected() {
+    authStore.checkToken();
+}
+
+checkIsConnected();
 </script>
 
 <template>
@@ -58,19 +58,15 @@ function logout() {
                 <router-link to="/">
                     <div>Accueil</div>
                 </router-link>
-                <!-- <router-link to="/friends"> -->
-                    <div>Amis</div>
-                <!-- </router-link> -->
-                <!-- <router-link to="/profil"> -->
-                    <div>Profil</div>
-                <!-- </router-link> -->
-                <a v-if="connected" @click="logout" class="logout">
+                <div>Amis</div>
+                <div>Profil</div>
+                <a v-if="isConnected" @click="logout()" class="logout">
                     Déconnexion
                 </a>
             </div>
         </header>
 
-        <div v-if="!connected" class="home">
+        <div v-if="!isConnected" class="home">
             <div class="container">
                 <div class="container__header">
                     <div class="container__header__title">
@@ -84,7 +80,7 @@ function logout() {
                 </div>
                 <div class="container__content">
                     <div class="container__content__form">
-                        <form @submit.prevent="login(loginInput)">
+                        <form v-if="hasAccount" @submit.prevent="login(loginInput)">
                             <div class="container__content__form__login">
                                 <label for="email">Email</label>
                                 <input type="email" id="email" v-model="loginInput.email" />
@@ -97,64 +93,49 @@ function logout() {
                                 <button>Connexion</button>
                             </div>
                         </form>
+                        <form v-else @submit.prevent="register(userInput)">
+                            <div class="container__content__form__register">
+                                <label for="lastname">Nom</label>
+                                <input type="text" id="lastname" v-model="userInput.lastname" />
+                            </div>
+                            <div class="container__content__form__register">
+                                <label for="firstname">Prénom</label>
+                                <input type="text" id="firstname" v-model="userInput.firstname" />
+                            </div>
+                            <div class="container__content__form__register">
+                                <label for="email">Email</label>
+                                <input type="email" id="email" v-model="userInput.email" />
+                            </div>
+                            <div class="container__content__form__register">
+                                <label for="password">Mot de passe</label>
+                                <input type="password" id="password" v-model="userInput.password" />
+                            </div>
+                            <div class="container__content__form__register">
+                                <label for="confirmPassword">Confirmation du mot de passe</label>
+                                <input type="password" id="confirmPassword" v-model="userInput.confirmPassword" />
+                            </div>
+                            <div class="container__content__form__register">
+                                <button>S'enregistrer</button>
+                            </div>
+                        </form>
                     </div>
                     <div class="welcome">
                         <div class="welcome__content">
                             <p>Apprenez en plus sur les gens qui vous entourent au quotidien en échangeant avec eux</p>
                             <div class="welcome__content__container">
-                                <button @click="open = true" class="welcome__content__container__button">
+                                <button @click="hasAccount = false" class="welcome__content__container__button">
                                     S'inscrire
                                 </button>
-                                <Teleport to="body">
-                                    <div v-if="open" @click="open = false"
-                                        class="calc d-flex flex-row justify-content-center align-items-center">
-                                        <div @click.stop class="modal-container">
-
-                                            <h2>Rejoindre <span>Groupomania</span></h2>
-                                            <div class="modal-container__form">
-                                                <form @submit.prevent="register(userInput)">
-                                                    <div class="modal-container__form__row">
-                                                        <label for="lastname">Nom</label>
-                                                        <input type="text" id="lastname" v-model="userInput.lastname" />
-                                                    </div>
-                                                    <div class="modal-container__form__row">
-                                                        <label for="firstname">Prénom</label>
-                                                        <input type="text" id="firstname"
-                                                            v-model="userInput.firstname" />
-                                                    </div>
-                                                    <div class="modal-container__form__row">
-                                                        <label for="email">Email</label>
-                                                        <input type="email" id="email" v-model="userInput.email" />
-                                                    </div>
-                                                    <div class="modal-container__form__row">
-                                                        <label for="password">Mot de passe</label>
-                                                        <input type="password" id="password"
-                                                            v-model="userInput.password" />
-                                                    </div>
-                                                    <div class="modal-container__form__row">
-                                                        <label for="confirmPassword">Confirmation du mot de
-                                                            passe</label>
-                                                        <input type="password" id="confirmPassword"
-                                                            v-model="userInput.confirmPassword" />
-                                                    </div>
-                                                    <div class="modal-container__form__row">
-                                                        <button>S'enregistrer</button>
-                                                    </div>
-                                                </form>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </Teleport>
+                                <button @click="hasAccount = true" class="welcome__content__container__button">
+                                    Se connecter
+                                </button>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="hero-banner">
-                <img src="../assets/home.svg" alt="">
-            </div>
         </div>
-        <div v-else-if="connected">
+        <div v-else-if="isConnected">
             <Publication />
         </div>
 
@@ -181,8 +162,12 @@ header {
         font-size: 20px;
         height: 80px;
         width: 100%;
-        padding-right: 3%;
         align-items: center;
+
+        div {
+
+            margin-left: 30px;
+        }
 
         a {
             text-decoration: none;
@@ -230,7 +215,7 @@ img {
         display: flex;
         flex-direction: column;
         align-items: center;
-        width: 50%;
+        width: 100%;
         background-color: white;
 
         span {
@@ -261,10 +246,60 @@ img {
 
                 form {
                     display: flex;
-                    align-items: end;
+                    flex-direction: column;
                 }
 
                 &__login {
+
+                    margin-bottom: 15px;
+                    display: flex;
+                    flex-direction: column;
+
+                    label {
+                        font-weight: 800;
+                        text-align: center;
+                    }
+
+                    input {
+                        border-radius: 20px;
+                        height: 2em;
+                        text-align: center;
+                    }
+
+                    button {
+                        background-color: #FD2D01;
+                        border-color: #FD2D01;
+                        color: #fff;
+                        font-size: 1.5rem;
+                        padding: 10px 20px;
+                        border-radius: 5px;
+                        border-width: 1px;
+                        border-style: solid;
+                        cursor: pointer;
+                        transition: all 0.3s ease-in-out;
+                        margin: 0 10px;
+                    }
+                }
+
+                &__register {
+                    display: flex;
+                    flex-direction: column;
+
+                    margin-bottom: 15px;
+                    display: flex;
+                    flex-direction: column;
+
+                    label {
+                        font-weight: 800;
+                        text-align: center;
+                    }
+
+                    input {
+                        border-radius: 20px;
+                        height: 2em;
+                        text-align: center;
+                    }
+
                     button {
                         background-color: #FD2D01;
                         border-color: #FD2D01;

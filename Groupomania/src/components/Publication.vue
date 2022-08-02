@@ -4,12 +4,10 @@ import PublicationForm from './PublicationForm.vue';
 import Comment from './Comment.vue';
 import { reactive, ref, watchEffect, computed } from 'vue';
 import { useAuthStore } from '../shared/stores/authStore';
-import type { Publication } from '../shared/interfaces/publication.interface';
 import { usePublicationsStore } from '../shared/stores/publicationsStore';
 import { useCommentsStore } from '../shared/stores/commentsStore';
 const publicationsStore = usePublicationsStore();
 const commentsStore = useCommentsStore();
-let arrayPublications = ref();
 
 let publications = computed(() => {
     return publicationsStore.$state.publications;
@@ -19,8 +17,6 @@ let publications = computed(() => {
 //     return publicationsStore.$state.userLiked;
 // });
 
-let displayComments = ref(false);
-let comment = ref();
 let page = ref(1);
 let count = ref(1);
 let numberOfPages = ref();
@@ -35,6 +31,7 @@ function onPickFile(event: any) {
     inputValue.picture = event.target.files[0];
 }
 let hasLiked = ref();
+let postIdOnState = ref();
 
 const authStore = useAuthStore();
 let loading = ref(publicationsStore.$state.isLoading);
@@ -55,7 +52,6 @@ let user: any = JSON.parse(getUser);
 function getAllPublications(page: number) {
     let result = publicationsStore.getAllPublications(page);
     setTimeout(() => {
-        arrayPublications.value = publicationsStore.$state.publications;
         numberOfPages.value = publicationsStore.$state.numberOfPages;
         loading.value = false;
     }, 3000);
@@ -68,12 +64,11 @@ function deletePublication(id: number) {
     publicationsStore.deletePublication(id);
 }
 
-async function getMyInformation() {
-    let result = await authStore.getMyInformations();
-    return result;
+async function checkToken() {
+    authStore.checkToken();
 }
 getAllPublications(page.value);
-getMyInformation();
+checkToken();
 
 
 // watchEffect(() => {
@@ -85,25 +80,54 @@ getMyInformation();
 //     console.log('params, publication-component', params);
 // })
 
-function getComments(id: number, more?: boolean) {
+
+function getComments(publication: any, more?: boolean) {
+
+    if (postIdOnState !== publication.publication_id) {
+        commentsStore.$reset();
+    }
+    // console.log(postIdOnState);
     if (more) {
         from.value = from.value + limitValue.value;
         limitValue.value = limitValue.value + limitValue.value;
     };
     if (commentsStore.$state.comments.length >= from.value) {
-        commentsStore.getAllComments(id, limitValue.value, from.value);
+        commentsStore.getAllComments(publication.publication_id, limitValue.value, from.value);
         setTimeout(() => {
-            if (comment.value === undefined) {
-                comment.value = commentsStore.$state.comments;
-            } else {
-                comment.value = [...comment.value, commentsStore.$state.comments];
-            }
-            displayComments.value = true;
-        }, 3000);
+
+            // AVANT
+            // let state = publicationsStore.publicationList;
+            // console.log(state)
+            // state = state.map((item: any) => {
+            //     if (item.displayComments == true) {
+            //         item.displayComments == false;
+            //     }
+            //     return item;
+            // });
+            // publicationsStore.$patch({
+            //     publications: state,
+            // });
+
+            // APRES
+            let newState = ref();
+            newState = publicationsStore.$state.publications.map((item: any) => {
+                if (item.publication_id === postIdOnState.value) {
+                    item.displayComments = false;
+                } else if (item.publication_id == publication.publication_id) {
+                    item.displayComments = true;
+                }
+                // if (item.displayComments == true) {
+                //     item.displayComments == false;
+                // }
+                // return item;
+            });
+            console.log(publicationsStore.$state.publications);
+            // publication.displayComments = true;
+            postIdOnState.value = publication.publication_id;
+        }, 1000);
     }
 }
 
-console.log(publications)
 function likePublication(publication: any) {
     // console.log(publication.likes)
     // let newArray = ref<any>();
@@ -141,15 +165,16 @@ function likePublication(publication: any) {
     //     }
     // });
 };
-
+console.log(publications)
 </script>
 
 <template>
     <div>
-        <div v-if="loading">
+        <!-- <div v-if="loading">
             <Loading />
-        </div>
-        <div v-else-if="!loading">
+        </div> -->
+        <div>
+        <!-- <div v-else-if="!loading"> -->
             <div v-if="user" class="post">
                 <div class="post__top">
                     <div class="post__top__details">
@@ -176,10 +201,10 @@ function likePublication(publication: any) {
                     </div>
                 </div>
             </div>
-            <div v-if="arrayPublications">
+            <div v-if="publications.length > 0">
                 <div v-for="publication in publications">
                     <div v-if="!publication.editMode">
-                        <div class="post">
+                        <div class="post" :data-id="publication.publication_id">
                             <div class="post__information">
                                 <div class="post__top">
                                     <div class="post__top__details">
@@ -215,21 +240,20 @@ function likePublication(publication: any) {
                                     <div class="post__interaction__like">
 
                                         <!-- <span>{{ publication.likes }}</span> -->
-                                        <button @click.stop="likePublication(publication)" type="button"><span>{{publication.likes.length}}</span> J'aime</button>
+                                        <button @click.stop="likePublication(publication)" type="button"><span>{{
+                                                publication.likes.length
+                                        }}</span> J'aime</button>
                                         <!-- <button @click="like" type="button">J'aime</button> -->
                                     </div>
                                     <div class="post__interaction__comment">
                                         <!-- <span>{{ publication.comments.length }}</span> -->
-                                        <button @click.stop="getComments(publication.publication_id)"
+                                        <button @click.stop="getComments(publication)"
                                             type="button">Commentaires</button>
-                                        <!-- <button @click="comment" type="button">Commenter</button> -->
                                     </div>
                                 </div>
                                 <div class="post__interaction__comment__list">
-                                    <!-- <button><u>Afficher les
-                                            commentaires</u></button> -->
-                                    <div v-if="displayComments">
-                                        <Comment :comments="comment" :limit="limitValue" :from="from"
+                                    <div v-if="publication.displayComments">
+                                        <Comment :limit="limitValue" :from="from"
                                             :idPublication="publication.publication_id"
                                             @getMore="getComments(publication.publication_id, true)" />
                                     </div>
@@ -263,6 +287,7 @@ function likePublication(publication: any) {
     width: 50rem;
     border-radius: 15px;
     margin: 3rem auto auto auto;
+    padding: 20px;
     backdrop-filter: blur(5px);
     background-color: rgb(227, 226, 226);
     filter: drop-shadow(0 0 0.75rem #4E5166);

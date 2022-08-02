@@ -1,24 +1,20 @@
-import { defineStore } from 'pinia';
+import { defineStore, storeToRefs } from 'pinia';
 import axios from 'axios';
 
 export interface IAuthStore {
-    // isConnected: boolean | null;
+    isConnected: boolean | null;
     user: any | null;
-    // token: string | null;
+    token: string | null;
 }
 
 export const useAuthStore = defineStore({
     id: "auth",
     state: (): IAuthStore => ({
-        // isConnected: null,
+        isConnected: false,
         user: {},
-        // token: '',
+        token: '',
     }),
-    getters: {
-        // isLogged: (state) => this.checkToken(),
-        // token: (state) => state.token,
-    },
-    
+    getters: {},
     actions: {
         register(lastname: string, firstname: string, email: string, password: string, confirmPassword: string) {
             if (lastname && firstname && email && password && confirmPassword) {
@@ -33,45 +29,61 @@ export const useAuthStore = defineStore({
                             password: password,
                         }
                     }).then(response => {
-                        this.login(email, password);
+                        const store = useAuthStore();
+                        localStorage.setItem('token', response.data.accessToken);
+                        localStorage.setItem('user', JSON.stringify(response.data.user));
+                        store.$patch({
+                            user: response.data.user,
+                            token: response.data.accessToken,
+                            isConnected: true,
+                        });
                     }).catch(error => {
                         console.log(error);
                     });
                 }
             }
         },
-        login(username: string, password: string){
-
-            const api = axios.create({
-                baseURL: 'http://localhost:3000/api',
-                timeout: 2500,
-            });
-            let data = { email: username, password: password };
-            axios.post(`http://localhost:3000/api/auth/login`,
-                data).then((response => {
-                    localStorage.setItem('token', response.data.accessToken);
-                    // this.$state.token = response.data.accessToken;
-                    // this.$state.isConnected = true;
-                    // console.log(this.isLogged)
-                    console.log(response);
-                    return response;
-
-                }))
+        login(username: string, password: string) {
+            const store = useAuthStore();
+            axios({
+                method: 'post',
+                url: 'http://localhost:3000/api/auth/login',
+                data: {
+                    email: username,
+                    password: password,
+                },
+            }).then((response => {
+                console.log(response)
+                localStorage.setItem('token', response.data.accessToken);
+                // localStorage.setItem('user', JSON.stringify(response.data.user));
+                store.$patch({
+                    user: response.data.user,
+                    token: response.data.accessToken,
+                    isConnected: true,
+                });
+            }))
                 .catch((error => {
                     console.log(error);
                 }))
         },
         logout: () => {
+            const store = useAuthStore();
             localStorage.removeItem('token');
             localStorage.removeItem('user');
-            // state.isConnected = false;
-            // console.log(state);
+            store.$reset();
         },
-        checkToken: (state: any) => {
+        checkToken: () => {
+            const store = useAuthStore();
             const token = localStorage.getItem('token');
-            if (token) {
-                state.isConnected = true;
+            if (!token) {
+                localStorage.clear()
+            } else {
+                store.$patch({
+                    token: token,
+                    isConnected: true,
+                })
             }
+            store.getMyInformations();
         },
         getMyInformations: () => {
             axios({
@@ -81,13 +93,12 @@ export const useAuthStore = defineStore({
                     authorization: `Bearer ${localStorage.getItem('token')}`
                 }
             }).then(response => {
-                // console.log(response.data);
+                console.log(response.data);
                 const store = useAuthStore();
-                // store.$patch({
-                //     user: response.data,
-                // });
-                localStorage.setItem('user', JSON.stringify(response.data));
-                return response.data;
+                store.$patch({
+                    user: response.data,
+                    isConnected: true,
+                });
             }).catch(error => {
                 console.log(error);
             });

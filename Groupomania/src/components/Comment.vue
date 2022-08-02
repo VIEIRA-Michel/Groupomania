@@ -5,10 +5,11 @@ const commentsStore = useCommentsStore();
 const user: any | null = JSON.parse(localStorage.getItem('user'));
 const inputComment = ref<string>("");
 const props = defineProps({
-    comments: [],
+    // comments: [],
     limit: Number,
     from: Number,
     idPublication: Number,
+    displayComments: Boolean,
 });
 
 const emit = defineEmits<{
@@ -18,6 +19,9 @@ const emit = defineEmits<{
 
 const commentary = computed(() => {
     return commentsStore.$state.comments;
+});
+const numOfResults = computed(() => {
+    return commentsStore.$state.numOfResults;
 });
 // console.log('commentary', commentary.value.length, 'limit', props.limit, 'offset', props.from);
 
@@ -35,12 +39,13 @@ function createComment(event: any, publication_id: any, inputComment: string) {
     };
 }
 
-
 function deleteComment(comment: any) {
     console.log(comment.publication_id, comment.comment_id)
     commentsStore.deleteComment(comment.publication_id, comment.comment_id);
 }
 
+console.log(commentary.value.length);
+console.log(numOfResults.value);
 </script>
 
 <template>
@@ -72,7 +77,7 @@ function deleteComment(comment: any) {
             </div>
         </div>
         <div class="more-post">
-            <button v-if="displayButton == props.limit + props.from" @click="emit('getMore')" class="more-post__button">
+            <button v-if="displayButton !== numOfResults.value" @click="emit('getMore')" class="more-post__button">
                 Afficher plus de commentaires
             </button>
         </div>
@@ -108,60 +113,62 @@ function deleteComment(comment: any) {
 .container-post {
     padding-top: 10px;
     border-top: 1px solid #b7b7b7;
-}
 
-.post {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 20px;
-
-    &__details {
+    .post {
         display: flex;
-        flex-direction: column;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 20px;
 
-        &__info {
+        &__details {
             display: flex;
-            align-items: start;
+            flex-direction: column;
 
-            &__avatar {
-                width: 50px;
-                height: 50px;
-                border-radius: 50%;
-                overflow: hidden;
-                margin-right: 10px;
+            &__info {
+                display: flex;
+                align-items: start;
 
-                img {
-                    width: 100%;
-                }
-            }
+                &__avatar {
+                    width: 50px;
+                    height: 50px;
+                    border-radius: 50%;
+                    overflow: hidden;
+                    margin-right: 10px;
 
-            &__commentary {
-                background: #FFFFFF;
-                border-radius: 25px;
-                padding: 10px 15px;
-                margin-bottom: 10px;
-                box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.2), 0px 1px 1px 0px rgba(0, 0, 0, 0.14), 0px 2px 1px -1px rgba(0, 0, 0, 0.12);
-
-                &__name {
-                    // display: flex;
-                    // align-items: center;
-                    // margin-bottom: 5px;
-
-                    span {
-                        font-weight: 700;
+                    img {
+                        width: 100%;
                     }
                 }
 
-                &__content {
-                    p {
-                        margin: 0;
+                &__commentary {
+                    background: #FFFFFF;
+                    border-radius: 25px;
+                    padding: 10px 15px;
+                    margin-bottom: 10px;
+                    box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.2), 0px 1px 1px 0px rgba(0, 0, 0, 0.14), 0px 2px 1px -1px rgba(0, 0, 0, 0.12);
+
+                    &__name {
+                        // display: flex;
+                        // align-items: center;
+                        // margin-bottom: 5px;
+
+                        span {
+                            font-weight: 700;
+                        }
+                    }
+
+                    &__content {
+                        p {
+                            margin: 0;
+                        }
                     }
                 }
             }
         }
     }
 }
+
+
 
 .create_post {
     display: flex;

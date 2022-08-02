@@ -35,10 +35,11 @@ exports.signup = (req, res, next) => {
 };
 
 exports.login = (req, res, next) => {
+    console.log(req.body);
     let user = {
         email: req.body.email
     };
-    let sql = `SELECT id, email, password FROM users WHERE email = ?;`;
+    let sql = `SELECT id, firstname, lastname, email, password FROM users WHERE email = ?;`;
     connection.query(
         sql, [user.email], function (err, results) {
             if (err) throw err;
@@ -57,8 +58,7 @@ exports.login = (req, res, next) => {
                                 email: results[0].email
                             },
                             process.env.ACCESS_TOKEN_SECRET,
-                            { expiresIn: '120m' }
-                        ),
+                            { expiresIn: '120m' }),
                         refreshToken: jwt.sign(
                             {
                                 userId: results[0].id,
@@ -68,7 +68,13 @@ exports.login = (req, res, next) => {
                                 email: results[0].email
                             },
                             process.env.REFRESH_TOKEN_SECRET,
-                            { expiresIn: '120m' })
+                            { expiresIn: '120m' }),
+                        user: {
+                            user_id: results[0].id,
+                            firstname: results[0].firstname,
+                            lastname: results[0].lastname,
+                            email: results[0].email
+                        }
                     })
                 })
                 .catch(error => res.status(500).json({ message: error }))
@@ -125,26 +131,27 @@ exports.changePassword = (req, res, next) => {
                         return res.status(401).json({ error: 'Mot de passe incorrect !' });
                     }
                     if (req.body.newPassword === req.body.confirmPassword) {
-                    bcrypt.hash(req.body.newPassword, 10)
-                        .then(hash => {
-                            let sql = `UPDATE users SET password = ? WHERE id = ?;`;
-                            connection.query(
-                                sql, [hash, req.user.userId], function (err, results) {
-                                    if (err) {
-                                        console.log(err)
-                                        res.status(500).json({ message: 'Erreur lors du changement du mot de passe' });
+                        bcrypt.hash(req.body.newPassword, 10)
+                            .then(hash => {
+                                let sql = `UPDATE users SET password = ? WHERE id = ?;`;
+                                connection.query(
+                                    sql, [hash, req.user.userId], function (err, results) {
+                                        if (err) {
+                                            console.log(err)
+                                            res.status(500).json({ message: 'Erreur lors du changement du mot de passe' });
+                                        }
+                                        if (!err) {
+                                            console.log('le resultat', results);
+                                            res.status(200).json({ message: 'Mot de passe changé ! ' })
+                                        }
                                     }
-                                    if (!err) {
-                                        console.log('le resultat', results);
-                                        res.status(200).json({ message: 'Mot de passe changé ! ' })
-                                    }
-                                }
-                            )
-                        })
-                        .catch(error => res.status(500).json({ message: error }));
-                } else {
-                    return res.status(401).json({ error: 'Les mots de passe ne correspondent pas !' });
-                }})
+                                )
+                            })
+                            .catch(error => res.status(500).json({ message: error }));
+                    } else {
+                        return res.status(401).json({ error: 'Les mots de passe ne correspondent pas !' });
+                    }
+                })
                 .catch(error => res.status(500).json({ message: error }))
         }
     )
@@ -160,7 +167,6 @@ exports.me = (req, res, next) => {
                 lastname: results[0].lastname,
                 firstname: results[0].firstname,
                 email: results[0].email,
-                birthday: results[0].birthday
             })
-        }   )
+        })
 }
