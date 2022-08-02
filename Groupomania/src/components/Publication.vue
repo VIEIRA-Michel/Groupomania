@@ -6,12 +6,15 @@ import { reactive, ref, watchEffect, computed } from 'vue';
 import { useAuthStore } from '../shared/stores/authStore';
 import { usePublicationsStore } from '../shared/stores/publicationsStore';
 import { useCommentsStore } from '../shared/stores/commentsStore';
+
+const authStore = useAuthStore();
 const publicationsStore = usePublicationsStore();
 const commentsStore = useCommentsStore();
 
-let publications = computed(() => {
-    return publicationsStore.$state.publications;
-});
+checkToken();
+
+let publications = computed(() => publicationsStore.$state.publications);
+let user = computed(() => authStore.$state.user);
 
 // const userLiked = computed(() => {
 //     return publicationsStore.$state.userLiked;
@@ -27,13 +30,13 @@ let inputValue = reactive({
 let limitValue = ref(5);
 let from = ref(0);
 let more = ref(false);
+
 function onPickFile(event: any) {
     inputValue.picture = event.target.files[0];
 }
 let hasLiked = ref();
 let postIdOnState = ref();
 
-const authStore = useAuthStore();
 let loading = ref(publicationsStore.$state.isLoading);
 
 
@@ -44,10 +47,6 @@ function createPublication(inputValue: any) {
         inputValue.picture = '';
     };
 }
-
-let getUser: any = localStorage.getItem('user');
-let user: any = JSON.parse(getUser);
-
 
 function getAllPublications(page: number) {
     let result = publicationsStore.getAllPublications(page);
@@ -116,13 +115,10 @@ function getComments(publication: any, more?: boolean) {
                 } else if (item.publication_id == publication.publication_id) {
                     item.displayComments = true;
                 }
-                // if (item.displayComments == true) {
-                //     item.displayComments == false;
-                // }
-                // return item;
+                return item
             });
             console.log(publicationsStore.$state.publications);
-            // publication.displayComments = true;
+            publication.displayComments = true;
             postIdOnState.value = publication.publication_id;
         }, 1000);
     }

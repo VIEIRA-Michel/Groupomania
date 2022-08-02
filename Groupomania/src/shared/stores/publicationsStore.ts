@@ -42,7 +42,7 @@ export const usePublicationsStore = defineStore({
                     user_id: response.data.data[0].user_id,
                     publication_created: response.data.data[0].publication_created,
                     updated_at: response.data.data[0].updated_at,
-                    // editMode: false,
+                    editMode: false,
                 });
                 store.getAllPublications();
             }).catch(error => {
@@ -70,8 +70,8 @@ export const usePublicationsStore = defineStore({
                     response.data.Publications = response.data.Publications.map((publication: any) => {
                         store.getLikes(publication.publication_id);
                         return {
-                            // editMode: false,
-                            // displayComments: false,
+                            editMode: false,
+                            displayComments: false,
                             likes: [],
                             ...publication,
                         }
@@ -85,7 +85,6 @@ export const usePublicationsStore = defineStore({
                 } else {
                     console.log(response.data.message);
                 }
-                // console.log()
             }).catch(error => {
                 console.log(error);
             });
