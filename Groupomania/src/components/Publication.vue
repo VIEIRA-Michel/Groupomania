@@ -6,6 +6,8 @@ import { reactive, ref, watchEffect, computed } from 'vue';
 import { useAuthStore } from '../shared/stores/authStore';
 import { usePublicationsStore } from '../shared/stores/publicationsStore';
 import { useCommentsStore } from '../shared/stores/commentsStore';
+import moment from 'moment';
+moment().format();
 
 const authStore = useAuthStore();
 const publicationsStore = usePublicationsStore();
@@ -85,42 +87,28 @@ function getComments(publication: any, more?: boolean) {
     if (postIdOnState !== publication.publication_id) {
         commentsStore.$reset();
     }
-    // console.log(postIdOnState);
     if (more) {
         from.value = from.value + limitValue.value;
         limitValue.value = limitValue.value + limitValue.value;
     };
     if (commentsStore.$state.comments.length >= from.value) {
         commentsStore.getAllComments(publication.publication_id, limitValue.value, from.value);
-        setTimeout(() => {
+        let state = publicationsStore.publicationList;
+        console.log(state)
+        state = state.map((item: any) => {
+            if (item.publication_id === postIdOnState.value) {
+                item.displayComments = false;
+            }
+            else if (item.publication_id == publication.publication_id) {
+                item.displayComments = true;
+            }
+            return item;
+        });
+        publicationsStore.$patch({
+            publications: state,
+        });
+        postIdOnState.value = publication.publication_id;
 
-            // AVANT
-            // let state = publicationsStore.publicationList;
-            // console.log(state)
-            // state = state.map((item: any) => {
-            //     if (item.displayComments == true) {
-            //         item.displayComments == false;
-            //     }
-            //     return item;
-            // });
-            // publicationsStore.$patch({
-            //     publications: state,
-            // });
-
-            // APRES
-            let newState = ref();
-            newState = publicationsStore.$state.publications.map((item: any) => {
-                if (item.publication_id === postIdOnState.value) {
-                    item.displayComments = false;
-                } else if (item.publication_id == publication.publication_id) {
-                    item.displayComments = true;
-                }
-                return item
-            });
-            console.log(publicationsStore.$state.publications);
-            publication.displayComments = true;
-            postIdOnState.value = publication.publication_id;
-        }, 1000);
     }
 }
 
@@ -170,7 +158,7 @@ console.log(publications)
             <Loading />
         </div> -->
         <div>
-        <!-- <div v-else-if="!loading"> -->
+            <!-- <div v-else-if="!loading"> -->
             <div v-if="user" class="post">
                 <div class="post__top">
                     <div class="post__top__details">
@@ -250,7 +238,7 @@ console.log(publications)
                                 <div class="post__interaction__comment__list">
                                     <div v-if="publication.displayComments">
                                         <Comment :limit="limitValue" :from="from"
-                                            :idPublication="publication.publication_id"
+                                            :idPublication="publication.publication_id" :user="user"
                                             @getMore="getComments(publication.publication_id, true)" />
                                     </div>
                                 </div>

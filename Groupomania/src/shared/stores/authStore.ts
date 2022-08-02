@@ -55,7 +55,6 @@ export const useAuthStore = defineStore({
             }).then((response => {
                 console.log(response)
                 localStorage.setItem('token', response.data.accessToken);
-                // localStorage.setItem('user', JSON.stringify(response.data.user));
                 store.$patch({
                     user: response.data.user,
                     token: response.data.accessToken,
@@ -93,7 +92,6 @@ export const useAuthStore = defineStore({
                     authorization: `Bearer ${localStorage.getItem('token')}`
                 }
             }).then(response => {
-                console.log(response.data);
                 const store = useAuthStore();
                 store.$patch({
                     user: response.data,

@@ -2,7 +2,7 @@
 import { useCommentsStore } from '../shared/stores/commentsStore';
 import { reactive, ref, watchEffect, computed } from 'vue';
 const commentsStore = useCommentsStore();
-const user: any | null = JSON.parse(localStorage.getItem('user'));
+// const user: any | null = JSON.parse(localStorage.getItem('user'));
 const inputComment = ref<string>("");
 const props = defineProps({
     // comments: [],
@@ -10,6 +10,7 @@ const props = defineProps({
     from: Number,
     idPublication: Number,
     displayComments: Boolean,
+    user: Object,
 });
 
 const emit = defineEmits<{
@@ -23,7 +24,6 @@ const commentary = computed(() => {
 const numOfResults = computed(() => {
     return commentsStore.$state.numOfResults;
 });
-// console.log('commentary', commentary.value.length, 'limit', props.limit, 'offset', props.from);
 
 const displayButton = computed(() => {
     return commentsStore.$state.comments.length;
@@ -32,7 +32,6 @@ const displayButton = computed(() => {
 function createComment(event: any, publication_id: any, inputComment: string) {
     event.preventDefault();
     console.log(event);
-    // console.log(publication_id);
     if (inputComment != "") {
         commentsStore.createComment(publication_id, inputComment);
         inputComment = "";
@@ -71,13 +70,13 @@ console.log(numOfResults.value);
                 </div>
             </div>
             <div class="post__button">
-                <button v-if="user.email == com.email" @click="deleteComment(com)"
+                <button v-if="props.user.email == com.email" @click="deleteComment(com)"
                     class="post__button__delete">Supprimer
                     commentaire</button>
             </div>
         </div>
         <div class="more-post">
-            <button v-if="displayButton !== numOfResults.value" @click="emit('getMore')" class="more-post__button">
+            <button v-if="displayButton < numOfResults.value" @click="emit('getMore')" class="more-post__button">
                 Afficher plus de commentaires
             </button>
         </div>
