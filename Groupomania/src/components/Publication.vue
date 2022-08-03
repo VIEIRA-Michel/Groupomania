@@ -13,41 +13,39 @@ const authStore = useAuthStore();
 const publicationsStore = usePublicationsStore();
 const commentsStore = useCommentsStore();
 
-checkToken();
-
 let publications = computed(() => publicationsStore.$state.publications);
 let user = computed(() => authStore.$state.user);
-
-// const userLiked = computed(() => {
-//     return publicationsStore.$state.userLiked;
-// });
-
+let isLoading = computed(() => publicationsStore.$state.isLoading);
 let page = ref(1);
 let count = ref(1);
 let numberOfPages = ref();
-let inputValue = reactive({
-    content: '',
-    picture: ''
-});
+let content = ref('');
+let picture = ref();
 let limitValue = ref(5);
 let from = ref(0);
 let more = ref(false);
-
+let colorButton = ref('');
 function onPickFile(event: any) {
-    inputValue.picture = event.target.files[0];
+    picture = event.target.files[0];
 }
-let hasLiked = ref();
+
 let postIdOnState = ref();
 
 let loading = ref(publicationsStore.$state.isLoading);
 
 
-function createPublication(inputValue: any) {
-    if (inputValue != "") {
-        publicationsStore.createPublication(inputValue);
-        inputValue.content = '';
-        inputValue.picture = '';
+function createPublication(ref?: any) {
+    publicationsStore.createPublication(content.value, picture);
+    if (content.value != "") {
+        console.log('on a ecrit quelque choses')
+        content.value = '';
     };
+    if (picture.value != '') {
+        console.log('on a uploadé une image')
+        picture.value = '';
+        ref.fileInput.files[0].value = '';
+        document.querySelector('#file').value = '';
+    }
 }
 
 function getAllPublications(page: number) {
@@ -55,7 +53,7 @@ function getAllPublications(page: number) {
     setTimeout(() => {
         numberOfPages.value = publicationsStore.$state.numberOfPages;
         loading.value = false;
-    }, 3000);
+    }, 1500);
 }
 function editPublication(id: number, update: any) {
     publicationsStore.updatePublication(id, update.post);
@@ -65,21 +63,17 @@ function deletePublication(id: number) {
     publicationsStore.deletePublication(id);
 }
 
-async function checkToken() {
-    authStore.checkToken();
+async function checkIsConnected() {
+    authStore.getMyInformations();
 }
 getAllPublications(page.value);
-checkToken();
+checkIsConnected();
 
-
-// watchEffect(() => {
-//     loading.value = true;
-//     page.value = count.value;
-//     getAllPublications(page.value);
-// })
-// publicationsStore.$subscribe((params) => {
-//     console.log('params, publication-component', params);
-// })
+watchEffect(() => {
+    loading.value = true;
+    page.value = count.value;
+    getAllPublications(page.value);
+})
 
 
 function getComments(publication: any, more?: boolean) {
@@ -113,52 +107,16 @@ function getComments(publication: any, more?: boolean) {
 }
 
 function likePublication(publication: any) {
-    // console.log(publication.likes)
-    // let newArray = ref<any>();
-    // newArray = publicationsStore.$state.publications.map((like: any) => {
-    //     if (like.publication_id == publication.publication_id) {
-    //         console.log(like.likes);
-    //         for (let i = 0; i < like.likes.length; i++) {
-    //             console.log(like.likes[i].user_id);
-    //             if (like.likes[i].user_id == user.user_id) {
-    //                 console.log('je splice')
-    //                 return like.likes.splice(i, 1);
-    //             } else {
-    //                 console.log('je push')
-    //                 return like.likes.push(user)
-    //             }
-    //         }
-    //         return like
-    //     }
-    // });
-    // console.log(newArray);
-
-    //     publicationsStore.$state.publications = publicationsStore.$state.publications.map((like: any) => {
-    //     if (like.publication_id == publication.publication_id) {
-    //         console.log(like.likes);
-    //         for (let i = 0; i < like.likes.length; i++) {
-    //             if (like.likes[i].user_id == user.id) {
-    //                 console.log('je splice')
-    //                 return like.likes.splice(i, 1);
-    //             } else {
-    //                 console.log('je push')
-    //                 return like.likes.push(user)
-    //             }
-    //         }
-    //         return like
-    //     }
-    // });
+    publicationsStore.likePublication(publication.publication_id);
 };
-console.log(publications)
 </script>
 
 <template>
     <div>
-        <!-- <div v-if="loading">
+        <div v-if="isLoading">
             <Loading />
-        </div> -->
-        <div>
-            <!-- <div v-else-if="!loading"> -->
+        </div>
+        <div v-else-if="!isLoading">
             <div v-if="user" class="post">
                 <div class="post__top">
                     <div class="post__top__details">
@@ -176,10 +134,10 @@ console.log(publications)
                 </div>
                 <div class="post__content">
                     <div class="post__content__details">
-                        <form @submit.prevent="createPublication(inputValue)">
-                            <input type="text" v-model="inputValue.content" class="post__content__details__input">
+                        <form @submit.prevent="createPublication($refs)">
+                            <input type="text" v-model="content" class="post__content__details__input">
                             <input type="file" ref="fileInput" accept="image/*" @change="onPickFile"
-                                class="post__content__details__file">
+                                class="post__content__details__file" id="file">
                             <button class="post__content__details__button">Publier</button>
                         </form>
                     </div>
@@ -198,7 +156,8 @@ console.log(publications)
                                         </div>
                                         <div class="post__top__details__info">
                                             <div class="post__top__details__info__name">
-                                                <span>{{ publication.firstname + ' ' + publication.lastname }}</span>
+                                                <span>{{ publication.firstname + ' ' + publication.lastname
+                                                }}</span>
                                             </div>
                                             <div class="post__top__details__info__date">
                                                 <span>{{ 'Publiée le ' + publication.created_at }}</span>
@@ -215,8 +174,8 @@ console.log(publications)
                                     </div>
                                 </div>
                                 <div class="post__content">
-                                    <p>{{ publication.content }}</p>
-                                    <img :src="publication.picture" alt="">
+                                    <p v-if="publication.content">{{ publication.content }}</p>
+                                    <img v-if="publication.picture" :src="publication.picture" alt="">
                                 </div>
                             </div>
                             <div class="post__likeAndComment">
@@ -224,9 +183,11 @@ console.log(publications)
                                     <div class="post__interaction__like">
 
                                         <!-- <span>{{ publication.likes }}</span> -->
-                                        <button @click.stop="likePublication(publication)" type="button"><span>{{
-                                                publication.likes.length
-                                        }}</span> J'aime</button>
+                                        <button @click.stop="likePublication(publication)"
+                                            v-bind:class="[publication.iLike ? 'liked' : '']">
+                                            <span>{{
+                                                    publication.likes.length
+                                            }}</span> J'aime</button>
                                         <!-- <button @click="like" type="button">J'aime</button> -->
                                     </div>
                                     <div class="post__interaction__comment">
@@ -238,7 +199,7 @@ console.log(publications)
                                 <div class="post__interaction__comment__list">
                                     <div v-if="publication.displayComments">
                                         <Comment :limit="limitValue" :from="from"
-                                            :idPublication="publication.publication_id" :user="user"
+                                            :publication_id="publication.publication_id" :user="user"
                                             @getMore="getComments(publication.publication_id, true)" />
                                     </div>
                                 </div>
@@ -310,6 +271,7 @@ console.log(publications)
             button {
                 @include button-primary;
             }
+
         }
     }
 
@@ -366,6 +328,10 @@ console.log(publications)
                 background-color: #e3e2e2;
                 border: none;
                 cursor: pointer;
+            }
+
+            .liked {
+                background-color: #FFD7D7;
             }
         }
 

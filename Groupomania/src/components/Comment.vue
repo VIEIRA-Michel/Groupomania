@@ -1,14 +1,18 @@
 <script setup lang="ts">
 import { useCommentsStore } from '../shared/stores/commentsStore';
-import { reactive, ref, watchEffect, computed } from 'vue';
+import { reactive, ref, watchEffect, computed, onMounted } from 'vue';
 const commentsStore = useCommentsStore();
 // const user: any | null = JSON.parse(localStorage.getItem('user'));
-const inputComment = ref<string>("");
+let inputComment = ref("");
+
+onMounted(() => {
+    inputComment.style = "width: 500px"
+})
 const props = defineProps({
     // comments: [],
     limit: Number,
     from: Number,
-    idPublication: Number,
+    publication_id: Number,
     displayComments: Boolean,
     user: Object,
 });
@@ -29,12 +33,12 @@ const displayButton = computed(() => {
     return commentsStore.$state.comments.length;
 });
 
-function createComment(event: any, publication_id: any, inputComment: string) {
+function createComment(event: any) {
     event.preventDefault();
     console.log(event);
-    if (inputComment != "") {
-        commentsStore.createComment(publication_id, inputComment);
-        inputComment = "";
+    if (this.inputComment != "") {
+        commentsStore.createComment(this.publication_id, this.inputComment);
+        this.inputComment = "";
     };
 }
 
@@ -95,7 +99,7 @@ console.log(numOfResults.value);
                     <form>
                         <input type="text" v-model="inputComment" class="create_post__info__content__input"
                             placeholder="Écrivez un commentaire...">
-                        <button @click="createComment($event, props.idPublication, inputComment)"
+                        <button @click="createComment($event)"
                             class="create_post__info__content__button">Publier</button>
                     </form>
                 </div>

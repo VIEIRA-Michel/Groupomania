@@ -2,6 +2,8 @@ import { defineStore } from 'pinia';
 import axios from 'axios';
 import { ref } from 'vue';
 import type { Publication } from '../interfaces/publication.interface';
+import { useAuthStore } from '../stores/authStore';
+
 
 interface PublicationState {
     publications: Publication[];
@@ -20,34 +22,36 @@ export const usePublicationsStore = defineStore({
     }),
     getters: {
         publicationList: (state: PublicationState) => state.publications,
+        likeList: (state: PublicationState) => state.publications.map(publication => publication.likes),
     },
     actions: {
-        createPublication: (inputValue: any) => {
+        createPublication: (content: string, picture?: any) => {
+            console.log(content, picture);
             let formData = new FormData();
-            formData.append('content', inputValue.content);
-            formData.append('picture', inputValue.picture);
-            axios({
-                method: 'post',
-                url: 'http://localhost:3000/api/publications',
-                headers: {
-                    Authorization: `Bearer ${localStorage.getItem('token')}`
-                },
-                data: formData,
-            }).then(response => {
-                const store = usePublicationsStore();
-                let obj = ref({
-                    publication_id: response.data.data[0].publication_id,
-                    content: response.data.data[0].content,
-                    picture: response.data.data[0].picture,
-                    user_id: response.data.data[0].user_id,
-                    publication_created: response.data.data[0].publication_created,
-                    updated_at: response.data.data[0].updated_at,
-                    editMode: false,
-                });
-                store.getAllPublications();
-            }).catch(error => {
-                console.log(error);
-            });
+            if (content) {
+                formData.append('content', content);
+            }
+            if (picture) {
+                formData.append('picture', picture);
+            }
+            if (content || picture) {
+                axios({
+                    method: 'post',
+                    url: 'http://localhost:3000/api/publications',
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem('token')}`
+                    },
+                    data: formData,
+                }).then(response => {
+                    const store = usePublicationsStore();
+                    store.getAllPublications();
+                }).catch(error => {
+                    console.log(error);
+                    if (error.response.status === 403) {
+                        useAuthStore().logout();
+                    }
+                })
+            };
         },
         getAllPublications: (page?: number) => {
             let BASE_URL = ""
@@ -82,11 +86,20 @@ export const usePublicationsStore = defineStore({
                         isLoading: false,
                         numOfResults: response.data.numOfResults,
                     });
-                } else {
-                    console.log(response.data.message);
+                }
+                else {
+                    store.$patch({
+                        publications: [],
+                        numberOfPages: 1,
+                        isLoading: false,
+                        numOfResults: 0,
+                    });
                 }
             }).catch(error => {
                 console.log(error);
+                if (error.response.status === 403) {
+                    useAuthStore().logout();
+                }
             });
         },
         updatePublication: (id: number, update: any) => {
@@ -106,6 +119,9 @@ export const usePublicationsStore = defineStore({
                 store.getAllPublications();
             }).catch(error => {
                 console.log(error);
+                if (error.response.status === 403) {
+                    useAuthStore().logout();
+                }
             });
         },
         deletePublication: (id: number) => {
@@ -119,7 +135,6 @@ export const usePublicationsStore = defineStore({
             }).then(response => {
                 const store = usePublicationsStore();
                 let updatePublications = store.$state.publications.filter(item => {
-                    console.log('item', item.publication_id);
                     return item.publication_id !== id;
                 }
                 );
@@ -128,6 +143,9 @@ export const usePublicationsStore = defineStore({
                 });
             }).catch(error => {
                 console.log(error);
+                if (error.response.status === 403) {
+                    useAuthStore().logout();
+                }
             });
         },
         getLikes: (id: number) => {
@@ -140,6 +158,8 @@ export const usePublicationsStore = defineStore({
                     authorization: `Bearer ${localStorage.getItem('token')}`
                 }
             }).then(response => {
+                const authStore = useAuthStore();
+                const user_id: any = authStore.$state.user.user_id;
                 response.data.data = response.data.data.map((publication: any) => {
                     return {
                         user_id: publication.user_id,
@@ -148,11 +168,24 @@ export const usePublicationsStore = defineStore({
                         // profil_picture: publication.picture,
                     };
                 })
+
                 let publication: any = store.$state.publications.map(item => {
                     if (item.publication_id == id) {
                         for (let post of response.data.data) {
                             item.likes?.push(post);
                         }
+                    };
+                    let hasLiked = item.likes.map((item: any) => {
+                        if (item.user_id == user_id) {
+                            return true;
+                        } else {
+                            return false;
+                        }
+                    });
+                    if (hasLiked.includes(true)) {
+                        item.iLike = true;
+                    } else {
+                        item.iLike = false;
                     }
                     return item;
                 });
@@ -161,15 +194,12 @@ export const usePublicationsStore = defineStore({
                 });
             }).catch(error => {
                 console.log(error);
+                if (error.response.status === 403) {
+                    useAuthStore().logout();
+                }
             });
         },
-        likeOrDislike: (id: number, value?: number | string) => {
-            console.log(value);
-            if (value == '1' || value == 1) {
-                console.log('like');
-            } else {
-                console.log('je retire mon like');
-            }
+        likePublication: (id: number) => {
             const store = usePublicationsStore();
             axios({
                 method: 'post',
@@ -178,13 +208,30 @@ export const usePublicationsStore = defineStore({
                     'Content-Type': 'application/json',
                     authorization: `Bearer ${localStorage.getItem('token')}`
                 },
-                data: {
-                    liked: value,
-                },
             }).then(response => {
-                store.getLikes(id);
+                const authStore = useAuthStore();
+                const user: any = authStore.$state.user;
+                let state = store.$state.publications.map((item: any) => {
+                    if (item.publication_id == id) {
+                        item.iLike = response.data.liked;
+                        if (response.data.liked == true) {
+                            item.likes.push(user);
+                        } else {
+                            item.likes = item.likes.filter((item: any) => {
+                                return item.user_id !== user.user_id;
+                            });
+                        }
+                    }
+                    return item;
+                })
+                store.$patch({
+                    publications: state
+                });
             }).catch(error => {
                 console.log(error);
+                if (error.response.status === 403) {
+                    useAuthStore().logout();
+                }
             });
         }
     }

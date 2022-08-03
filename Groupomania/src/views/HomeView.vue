@@ -5,9 +5,9 @@ import { computed, reactive, ref } from 'vue';
 import { useAuthStore } from '../shared/stores/authStore';
 
 const authStore = useAuthStore();
-const token = localStorage.getItem('token');
-const connected = ref(!!token)
 const open = ref(false);
+
+checkIsConnected();
 
 const isConnected = computed(() => {
     return authStore.$state.isConnected;
@@ -40,10 +40,10 @@ function logout() {
 }
 
 function checkIsConnected() {
-    authStore.checkToken();
+    authStore.getMyInformations();
 }
 
-checkIsConnected();
+
 </script>
 
 <template>

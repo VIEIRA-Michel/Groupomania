@@ -53,7 +53,7 @@ export const useAuthStore = defineStore({
                     password: password,
                 },
             }).then((response => {
-                console.log(response)
+                // console.log(response)
                 localStorage.setItem('token', response.data.accessToken);
                 store.$patch({
                     user: response.data.user,
@@ -67,24 +67,17 @@ export const useAuthStore = defineStore({
         },
         logout: () => {
             const store = useAuthStore();
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
+            localStorage.clear();
             store.$reset();
         },
-        checkToken: () => {
+        getMyInformations: () => {
             const store = useAuthStore();
-            const token = localStorage.getItem('token');
-            if (!token) {
-                localStorage.clear()
-            } else {
+            let token = localStorage.getItem('token');
+            if (token) {
                 store.$patch({
-                    token: token,
                     isConnected: true,
                 })
-            }
-            store.getMyInformations();
-        },
-        getMyInformations: () => {
+            };
             axios({
                 method: 'get',
                 url: 'http://localhost:3000/api/user/me',
@@ -92,12 +85,14 @@ export const useAuthStore = defineStore({
                     authorization: `Bearer ${localStorage.getItem('token')}`
                 }
             }).then(response => {
-                const store = useAuthStore();
                 store.$patch({
                     user: response.data,
                     isConnected: true,
                 });
             }).catch(error => {
+                if(error.response.status === 403) {
+                    useAuthStore().logout();
+                }
                 console.log(error);
             });
         }

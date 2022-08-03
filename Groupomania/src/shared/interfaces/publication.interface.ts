@@ -28,9 +28,8 @@ export interface Publication {
     sender_requestId?: null | number, 
     sender_userId?: null | number,
     user_id: number,
-    newContent?: string | null,
-    newPicture?: string | null,
     likes?: [] | null,
+    iLike: boolean,
     numberOfLikes?: number | null,
     numberOfComments?: number | null,
 };

@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import axios from 'axios';
 import { ref } from 'vue';
 import type { Comment } from '../interfaces/comment.interface';
+import { useAuthStore } from '../stores/authStore';
 
 interface CommentState {
     isLoading: boolean;
@@ -54,6 +55,9 @@ export const useCommentsStore = defineStore({
                 
             }).catch(error => {
                 console.log(error);
+                if(error.response.status === 403) {
+                    useAuthStore().logout();
+                }
             });
 
         },
@@ -76,6 +80,11 @@ export const useCommentsStore = defineStore({
                 store.$patch({
                     comments: updateComments
                 });
+            }).catch(error => {
+                console.log(error);
+                if(error.response.status === 403) {
+                    useAuthStore().logout();
+                }
             })
         },
         createComment: (publication_id: number, comment: string) => {
@@ -121,6 +130,9 @@ export const useCommentsStore = defineStore({
                 }
             }).catch(error => {
                 console.log(error);
+                if(error.response.status === 403) {
+                    useAuthStore().logout();
+                }
             }
             );
 
