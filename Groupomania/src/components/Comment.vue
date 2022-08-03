@@ -5,9 +5,6 @@ const commentsStore = useCommentsStore();
 // const user: any | null = JSON.parse(localStorage.getItem('user'));
 let inputComment = ref("");
 
-onMounted(() => {
-    inputComment.style = "width: 500px"
-})
 const props = defineProps({
     // comments: [],
     limit: Number,

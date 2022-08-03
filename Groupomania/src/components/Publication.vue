@@ -21,6 +21,7 @@ let count = ref(1);
 let numberOfPages = ref();
 let content = ref('');
 let picture = ref();
+let pictureName = ref<any>();
 let limitValue = ref(5);
 let from = ref(0);
 let more = ref(false);
@@ -35,15 +36,18 @@ let loading = ref(publicationsStore.$state.isLoading);
 
 
 function createPublication(ref?: any) {
-    publicationsStore.createPublication(content.value, picture);
+    if(picture.name == pictureName.value) {
+        publicationsStore.createPublication(content.value)
+    } else {
+        publicationsStore.createPublication(content.value, picture)
+    }
+
     if (content.value != "") {
         console.log('on a ecrit quelque choses')
         content.value = '';
     };
-    if (picture.value != '') {
-        console.log('on a uploadé une image')
-        picture.value = '';
-        ref.fileInput.files[0].value = '';
+    if (picture.name.length > 0) {
+        pictureName.value = picture.name;
         document.querySelector('#file').value = '';
     }
 }
@@ -137,7 +141,7 @@ function likePublication(publication: any) {
                         <form @submit.prevent="createPublication($refs)">
                             <input type="text" v-model="content" class="post__content__details__input">
                             <input type="file" ref="fileInput" accept="image/*" @change="onPickFile"
-                                class="post__content__details__file" id="file">
+                                @submit="picture = ''" class="post__content__details__file" id="file">
                             <button class="post__content__details__button">Publier</button>
                         </form>
                     </div>

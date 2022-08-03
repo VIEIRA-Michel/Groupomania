@@ -10,6 +10,8 @@ interface PublicationState {
     isLoading: boolean;
     numOfResults: number;
     numberOfPages: number;
+    contentInput: string | null;
+    pictureInput: string | File | null;
 }
 
 export const usePublicationsStore = defineStore({
@@ -19,20 +21,28 @@ export const usePublicationsStore = defineStore({
         isLoading: true,
         numOfResults: 0,
         numberOfPages: 1,
+        contentInput: null, 
+        pictureInput: null,
     }),
     getters: {
         publicationList: (state: PublicationState) => state.publications,
         likeList: (state: PublicationState) => state.publications.map(publication => publication.likes),
     },
     actions: {
-        createPublication: (content: string, picture?: any) => {
-            console.log(content, picture);
+        createPublication: (content?: string, picture?: any) => {
+            const store = usePublicationsStore();
             let formData = new FormData();
             if (content) {
-                formData.append('content', content);
+                store.$patch({
+                    contentInput: content,
+                })
+                formData.append('content', store.$state.contentInput);
             }
             if (picture) {
-                formData.append('picture', picture);
+                store.$patch({
+                    pictureInput: picture,
+                })
+                formData.append('picture', store.$state.pictureInput);
             }
             if (content || picture) {
                 axios({
@@ -43,7 +53,7 @@ export const usePublicationsStore = defineStore({
                     },
                     data: formData,
                 }).then(response => {
-                    const store = usePublicationsStore();
+                    store.$reset();
                     store.getAllPublications();
                 }).catch(error => {
                     console.log(error);
@@ -54,13 +64,13 @@ export const usePublicationsStore = defineStore({
             };
         },
         getAllPublications: (page?: number) => {
+            const store = usePublicationsStore();
             let BASE_URL = ""
             if (page) {
                 BASE_URL = `http://localhost:3000/api/publications/?page=${page}`;
             } else {
                 BASE_URL = 'http://localhost:3000/api/publications';
             }
-            const store = usePublicationsStore();
             axios({
                 method: 'get',
                 url: BASE_URL,
@@ -69,7 +79,6 @@ export const usePublicationsStore = defineStore({
                     authorization: `Bearer ${localStorage.getItem('token')}`
                 }
             }).then(response => {
-                const store = usePublicationsStore();
                 if (response.data.Publications) {
                     response.data.Publications = response.data.Publications.map((publication: any) => {
                         store.getLikes(publication.publication_id);
