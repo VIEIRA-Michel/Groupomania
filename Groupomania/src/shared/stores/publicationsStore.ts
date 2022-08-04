@@ -79,6 +79,7 @@ export const usePublicationsStore = defineStore({
                     authorization: `Bearer ${localStorage.getItem('token')}`
                 }
             }).then(response => {
+                console.log(response);
                 if (response.data.Publications) {
                     response.data.Publications = response.data.Publications.map((publication: any) => {
                         store.getLikes(publication.publication_id);

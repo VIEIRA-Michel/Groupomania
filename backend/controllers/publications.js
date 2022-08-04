@@ -5,7 +5,7 @@ const fs = require('fs');
 exports.getAllPublications = (req, res, next) => {
     const resultsPerPage = 5;
     let sql = `SELECT publications.id as publication_id, content, picture, user_id, publications.created_at as publication_created, updated_at, 
-    users.id, users.lastname, users.firstname, users.gender_id, users.birthday, users.email, users.role_id, users.created_at, users.account_disabled, 
+    users.id, users.picture_url, users.lastname, users.firstname, users.gender_id, users.birthday, users.email, users.role_id, users.created_at, users.account_disabled, 
     senders.id as sender_requestId, senders.user_id_sender as sender_userId, senders.user_id_recipient as sender_recipientId, senders.request_date as sender_requestDate, senders.approve_date as sender_approveDate, senders.denied_date as sender_deniedDate, 
     recipients.id as recipient_requestId, recipients.user_id_sender as recipient_senderId , recipients.user_id_recipient as recipient_userId, recipients.request_date as recipient_requestDate, recipients.approve_date as recipient_approveDate, recipients.denied_date as recipient_deniedDate FROM publications 
     LEFT JOIN users ON users.id = publications.user_id AND users.account_disabled IS NULL LEFT JOIN requests_friendship senders ON users.id = senders.user_id_sender LEFT JOIN requests_friendship recipients ON users.id = recipients.user_id_recipient WHERE users.id = ? OR (senders.user_id_recipient = ? AND senders.approve_date IS NOT NULL) OR (recipients.user_id_sender = ? AND recipients.approve_date IS NOT NULL) GROUP BY publication_id;`;
@@ -28,7 +28,7 @@ exports.getAllPublications = (req, res, next) => {
                     }
                     const startingLimit = (page - 1) * resultsPerPage;
                     sql = `SELECT publications.id as publication_id, content, picture, user_id, publications.created_at as publication_created, updated_at, 
-                           users.id, users.lastname, users.firstname, users.gender_id, users.birthday, users.email, users.role_id, users.created_at, users.account_disabled, 
+                           users.id, users.picture_url, users.lastname, users.firstname, users.gender_id, users.birthday, users.email, users.role_id, users.created_at, users.account_disabled, 
                            senders.id as sender_requestId, senders.user_id_sender as sender_userId, senders.user_id_recipient as sender_recipientId, senders.request_date as sender_requestDate, senders.approve_date as sender_approveDate, senders.denied_date as sender_deniedDate, 
                            recipients.id as recipient_requestId, recipients.user_id_sender as recipient_senderId , recipients.user_id_recipient as recipient_userId, recipients.request_date as recipient_requestDate, recipients.approve_date as recipient_approveDate, recipients.denied_date as recipient_deniedDate FROM publications 
                            LEFT JOIN users ON users.id = publications.user_id AND users.account_disabled IS NULL LEFT JOIN requests_friendship senders ON users.id = senders.user_id_sender LEFT JOIN requests_friendship recipients ON users.id = recipients.user_id_recipient WHERE users.id = ? OR (senders.user_id_recipient = ? AND senders.approve_date IS NOT NULL) OR (recipients.user_id_sender = ? AND recipients.approve_date IS NOT NULL) GROUP BY publication_id LIMIT ${startingLimit}, ${resultsPerPage};`
@@ -215,7 +215,7 @@ exports.likePublication = (req, res, next) => {
 
 
 exports.getLikes = (req, res, next) => {
-    let sql = `SELECT publication_user_liked.id as idLike, publication_user_liked.user_id as user_id_who_liked, publication_user_liked.publication_id as publication_id, users.id as user_id, users.lastname as user_lastname, users.firstname as user_firstname, users.account_disabled as account_disabled FROM publication_user_liked LEFT JOIN users ON users.id = publication_user_liked.user_id AND users.account_disabled IS NULL WHERE publication_user_liked.publication_id = ?;`;
+    let sql = `SELECT publication_user_liked.id as idLike, publication_user_liked.user_id as user_id_who_liked, publication_user_liked.publication_id as publication_id, users.id as user_id, users.picture_url, users.lastname as user_lastname, users.firstname as user_firstname, users.account_disabled as account_disabled FROM publication_user_liked LEFT JOIN users ON users.id = publication_user_liked.user_id AND users.account_disabled IS NULL WHERE publication_user_liked.publication_id = ?;`;
     connection.query(
         sql, [req.params.id], function (err, results) {
             if (err) {
@@ -227,19 +227,3 @@ exports.getLikes = (req, res, next) => {
         }
     )
 }
-
-
-
-// exports.getOnePublication = (req, res, next) => {
-//     let sql = `SELECT * FROM publications WHERE id = ?;`;
-//     connection.query(
-//         sql, [req.params.id], function (err, results) {
-//             if (err) {
-//                 console.log(err);
-//                 res.status(500).json({ message: 'Erreur lors de la récupération de la publication' });
-//             } else {
-//                 res.status(200).json({ Publication: results });
-//             }
-//         }
-//     )
-// }

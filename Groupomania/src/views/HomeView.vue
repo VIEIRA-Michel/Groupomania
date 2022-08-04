@@ -3,6 +3,7 @@ import { useRoute } from 'vue-router';
 import Publication from '../components/Publication.vue';
 import { computed, reactive, ref } from 'vue';
 import { useAuthStore } from '../shared/stores/authStore';
+import NavigationBar from '../components/NavigationBar.vue';
 
 const authStore = useAuthStore();
 const open = ref(false);
@@ -11,6 +12,10 @@ checkIsConnected();
 
 const isConnected = computed(() => {
     return authStore.$state.isConnected;
+});
+
+const user = computed(() => {
+    return authStore.$state.user;
 });
 
 let hasAccount = ref(true);
@@ -48,24 +53,7 @@ function checkIsConnected() {
 
 <template>
     <div>
-        <header>
-            <div class="logo">
-                <router-link to="/">
-                    <img src="../assets/icon-left-font-monochrome-black.svg" alt="logo-groupomania">
-                </router-link>
-            </div>
-            <div class="menu">
-                <router-link to="/">
-                    <div>Accueil</div>
-                </router-link>
-                <div>Amis</div>
-                <div>Profil</div>
-                <a v-if="isConnected" @click="logout()" class="logout">
-                    Déconnexion
-                </a>
-            </div>
-        </header>
-
+        <NavigationBar :user="user" :isConnected="isConnected" @logout="logout()" />
         <div v-if="!isConnected" class="home">
             <div class="container">
                 <div class="container__header">
@@ -123,10 +111,10 @@ function checkIsConnected() {
                         <div class="welcome__content">
                             <p>Apprenez en plus sur les gens qui vous entourent au quotidien en échangeant avec eux</p>
                             <div class="welcome__content__container">
-                                <button @click="hasAccount = false" class="welcome__content__container__button">
+                                <button v-if="hasAccount" @click="hasAccount = false" class="welcome__content__container__button">
                                     S'inscrire
                                 </button>
-                                <button @click="hasAccount = true" class="welcome__content__container__button">
+                                <button v-if="!hasAccount" @click="hasAccount = true" class="welcome__content__container__button">
                                     Se connecter
                                 </button>
                             </div>
@@ -148,43 +136,43 @@ function checkIsConnected() {
     font-family: 'Lato', sans-serif;
 }
 
-header {
-    display: flex;
-    justify-content: start;
-    background-color: #FFF;
-    width: 100%;
-    height: 100%;
-    filter: drop-shadow(0 0 0.75rem #4E5166);
+// header {
+//     display: flex;
+//     justify-content: start;
+//     background-color: #FFF;
+//     width: 100%;
+//     height: 100%;
+//     filter: drop-shadow(0 0 0.75rem #4E5166);
 
-    .menu {
-        font-family: 'Lato', sans-serif;
-        display: flex;
-        font-size: 20px;
-        height: 80px;
-        width: 100%;
-        align-items: center;
+//     .menu {
+//         font-family: 'Lato', sans-serif;
+//         display: flex;
+//         font-size: 20px;
+//         height: 80px;
+//         width: 100%;
+//         align-items: center;
 
-        div {
+//         div {
 
-            margin-left: 30px;
-        }
+//             margin-left: 30px;
+//         }
 
-        a {
-            text-decoration: none;
-            margin-left: 10%;
-            color: #4E5166;
-        }
-    }
-}
+//         a {
+//             text-decoration: none;
+//             margin-left: 10%;
+//             color: #4E5166;
+//         }
+//     }
+// }
 
 
-.logout {
-    background: #FD2D01;
-    padding: 10px;
-    border-radius: 5px;
-    color: #FFF !important;
-    cursor: pointer;
-}
+// .logout {
+//     background: #FD2D01;
+//     padding: 10px;
+//     border-radius: 5px;
+//     color: #FFF !important;
+//     cursor: pointer;
+// }
 
 .register {
     display: flex;
@@ -195,17 +183,17 @@ header {
     cursor: pointer;
 }
 
-.logo {
-    display: flex;
-    align-items: center;
-    padding-left: 3%;
-    width: 40%;
-}
+// .logo {
+//     display: flex;
+//     align-items: center;
+//     padding-left: 3%;
+//     width: 40%;
+// }
 
-img {
-    width: 60%;
-    height: 80%;
-}
+// img {
+//     width: 60%;
+//     height: 80%;
+// }
 
 .home {
     display: flex;

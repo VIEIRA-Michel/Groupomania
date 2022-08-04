@@ -39,7 +39,7 @@ exports.login = (req, res, next) => {
     let user = {
         email: req.body.email
     };
-    let sql = `SELECT id, firstname, lastname, email, password FROM users WHERE email = ?;`;
+    let sql = `SELECT id, picture_url, firstname, lastname, email, password FROM users WHERE email = ?;`;
     connection.query(
         sql, [user.email], function (err, results) {
             if (err) throw err;
@@ -48,10 +48,12 @@ exports.login = (req, res, next) => {
                     if (!valid) {
                         return res.status(401).json({ error: 'Mot de passe incorrect !' });
                     }
+                    console.log(results[0]);
                     res.status(200).json({
                         accessToken: jwt.sign(
                             {
                                 userId: results[0].id,
+                                picture_url: results[0].picture_url,
                                 firstname: results[0].firstname,
                                 lastname: results[0].lastname,
                                 role_id: results[0].role_id,
@@ -62,6 +64,7 @@ exports.login = (req, res, next) => {
                         refreshToken: jwt.sign(
                             {
                                 userId: results[0].id,
+                                picture_url: results[0].picture_url,
                                 firstname: results[0].firstname,
                                 lastname: results[0].lastname,
                                 role_id: results[0].role_id,
@@ -71,6 +74,7 @@ exports.login = (req, res, next) => {
                             { expiresIn: '120m' }),
                         user: {
                             user_id: results[0].id,
+                            picture_url: results[0].picture_url,
                             firstname: results[0].firstname,
                             lastname: results[0].lastname,
                             email: results[0].email
@@ -86,9 +90,9 @@ exports.updateProfil = (req, res, next) => {
     console.log(req.user.userId);
     const profilObject = { ...req.body }
     console.log('profilObject', profilObject);
-    let sql = `UPDATE users SET lastname = ?, firstname = ?, gender_id = ?, birthday = ? WHERE id = ?;`;
+    let sql = `UPDATE users SET picture_url = ? lastname = ?, firstname = ?, gender_id = ?, birthday = ? WHERE id = ?;`;
     connection.query(
-        sql, [profilObject.lastname, profilObject.firstname, profilObject.gender_id, profilObject.birthday, req.user.userId], function (err, results) {
+        sql, [profilObject.picture_url, profilObject.lastname, profilObject.firstname, profilObject.gender_id, profilObject.birthday, req.user.userId], function (err, results) {
             if (err) {
                 console.log(err)
                 res.status(500).json({ message: 'Erreur lors de la mise à jour du profil' });
@@ -158,12 +162,13 @@ exports.changePassword = (req, res, next) => {
 }
 
 exports.me = (req, res, next) => {
-    let sql = `SELECT id, lastname, firstname, email, birthday FROM users WHERE id = ?;`;
+    let sql = `SELECT id, picture_url, lastname, firstname, email, birthday FROM users WHERE id = ?;`;
     connection.query(
         sql, [req.user.userId], function (err, results) {
             if (err) throw err;
             res.status(200).json({
                 user_id: results[0].id,
+                picture_url: results[0].picture_url,
                 lastname: results[0].lastname,
                 firstname: results[0].firstname,
                 email: results[0].email,

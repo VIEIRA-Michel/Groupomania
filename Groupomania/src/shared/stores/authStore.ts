@@ -53,7 +53,7 @@ export const useAuthStore = defineStore({
                     password: password,
                 },
             }).then((response => {
-                // console.log(response)
+                console.log(response)
                 localStorage.setItem('token', response.data.accessToken);
                 store.$patch({
                     user: response.data.user,

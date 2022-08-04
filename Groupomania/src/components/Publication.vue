@@ -113,6 +113,8 @@ function getComments(publication: any, more?: boolean) {
 function likePublication(publication: any) {
     publicationsStore.likePublication(publication.publication_id);
 };
+
+console.log(user)
 </script>
 
 <template>
@@ -125,8 +127,7 @@ function likePublication(publication: any) {
                 <div class="post__top">
                     <div class="post__top__details">
                         <div class="post__top__details__avatar">
-                            <img src="https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50?s=200"
-                                alt="avatar" />
+                            <img :src="user.picture_url" alt="avatar" />
                         </div>
                         <div class="post__top__details__info">
                             <div class="post__top__details__info__name">
@@ -155,7 +156,7 @@ function likePublication(publication: any) {
                                 <div class="post__top">
                                     <div class="post__top__details">
                                         <div class="post__top__details__avatar">
-                                            <img src="https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50?s=200"
+                                            <img :src="publication.picture_url"
                                                 alt="avatar" />
                                         </div>
                                         <div class="post__top__details__info">
