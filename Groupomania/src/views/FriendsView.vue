@@ -12,6 +12,7 @@ const open = ref(false);
 
 checkIsConnected();
 
+friendshipStore.$reset();
 const isConnected = computed(() => {
     return authStore.$state.isConnected;
 });
@@ -49,6 +50,11 @@ function logout() {
 
 function replyToRequest(req: any, answer: string) {
     friendshipStore.acceptOrDeclineRequest(req, answer);
+}
+
+function removeFriend(id: number) {
+    // console.log(friend);
+    friendshipStore.removeFriend(id);
 }
 </script>
 
@@ -106,7 +112,7 @@ function replyToRequest(req: any, answer: string) {
                             </div>
                         </div>
                         <div class="friend-list__list__item__button">
-                            <button class="friend-list__list__item__button">Retirer</button>
+                            <button @click="removeFriend(friend.id)" class="friend-list__list__item__button">Retirer</button>
                         </div>
                     </div>
                 </div>
