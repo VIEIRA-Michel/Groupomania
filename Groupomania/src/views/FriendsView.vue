@@ -36,11 +36,10 @@ const friends = computed(() => {
     return friendshipStore.$state.friends;
 });
 function checkIsConnected() {
-    console.log(authStore.$state.isConnected);
+    authStore.getMyInformations();
     if (authStore.$state.isConnected == false) {
         window.location.href = '/';
     }
-    authStore.getMyInformations();
 }
 
 function logout() {
@@ -48,7 +47,9 @@ function logout() {
     window.location.href = '/';
 }
 
-console.log(requests);
+function replyToRequest(req: any, answer: string) {
+    friendshipStore.acceptOrDeclineRequest(req, answer);
+}
 </script>
 
 <template>
@@ -76,8 +77,8 @@ console.log(requests);
                                 </div>
                             </div>
                             <div class="friends-request-list__item__name__button">
-                                <button>Accepter</button>
-                                <button>Refuser</button>
+                                <button @click="replyToRequest(req, 'accepted')">Accepter</button>
+                                <button @click="replyToRequest(req, 'refused')">Refuser</button>
                             </div>
                         </div>
                     </div>
@@ -235,7 +236,7 @@ header {
                 box-shadow: 0px 1px 3px 0px rgb(0 0 0 / 20%), 0px 1px 1px 0px rgb(0 0 0 / 14%), 0px 2px 1px -1px rgb(0 0 0 / 12%);
                 padding: 20px;
                 border-radius: 20px;
-                margin: 20px;
+                margin: 10px;
                 width: 10%;
                 display: flex;
                 flex-direction: column;

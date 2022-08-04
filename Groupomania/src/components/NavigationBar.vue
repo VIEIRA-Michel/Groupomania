@@ -31,14 +31,6 @@ function isLogged() {
     return localStorage.getItem('token') !== null;
 }
 
-let connected = ref(isLogged());
-console.log('user is connected ?', connected);
-
-function logout() {
-    authStore.logout();
-    console.log(isLogged);
-}
-
 const props = defineProps<{
     user: {
         email: string,

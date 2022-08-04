@@ -48,7 +48,6 @@ export const useFriendshipStore = defineStore({
                         });
                     });
                 }
-
             }).catch(error => {
                 console.log(error);
                 if (error.response.status === 403) {
@@ -65,7 +64,6 @@ export const useFriendshipStore = defineStore({
                     Authorization: `Bearer ${localStorage.getItem('token')}`
                 },
             }).then(response => {
-                console.log(response)
                 response.data.data = response.data.data.map((item: any) => {
                     store.$patch((state: FriendshipState) => {
                         state.friends.push(item);
@@ -78,6 +76,60 @@ export const useFriendshipStore = defineStore({
                     useAuthStore().logout();
                 }
 
+            })
+        },
+        acceptOrDeclineRequest: (req: any, answer: string) => {
+            const store = useFriendshipStore();
+            axios({
+                method: 'put',
+                url: `http://localhost:3000/api/friends/requests/${req.sender}`,
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('token')}`
+                },
+                data: {
+                    response: answer
+                }
+            }).then(response => {
+                if (answer == 'refused') {
+                    let state = ref([]);
+                    store.$state.requests.map((item: any) => {
+                        if (item.sender !== req.sender) {
+                            state.value.push(item);
+                        }
+                    });
+                    console.log(state);
+                    store.$patch({
+                        requests: state.value,
+                    });
+                } else {
+                    let state = ref([]);
+                    store.$state.requests.map((item: any) => {
+                        if (item.sender !== req.sender) {
+                            state.value.push(item);
+                        } else {
+                            store.$patch({
+                                friends: [...store.$state.friends,
+                                {
+                                    id: req.sender,
+                                    firstname: req.firstname,
+                                    lastname: req.lastname,
+                                    picture_url: req.picture_url,
+                                    email: req.email,
+                                }
+                                ],
+                            })
+                        }
+                    })
+                    store.$patch({
+                        requests: state.value,
+                    });
+                }
+
+            }).catch(error => {
+                console.log(error);
+                if (error.response.status === 403) {
+                    useAuthStore().logout();
+                }
             })
         },
         removeFriend: (friend_id: number) => {
