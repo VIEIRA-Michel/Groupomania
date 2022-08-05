@@ -9,6 +9,7 @@ import { routes } from '../routes';
 const authStore = useAuthStore();
 const friendshipStore = useFriendshipStore();
 const open = ref(false);
+const search = ref('');
 
 checkIsConnected();
 
@@ -37,6 +38,10 @@ const friends = computed(() => {
     return friendshipStore.$state.friends;
 });
 
+const usersFound = computed(() => {
+    return friendshipStore.$state.searchResults;
+});
+
 function checkIsConnected() {
     authStore.getMyInformations();
     if (authStore.$state.isConnected == false) {
@@ -58,12 +63,48 @@ function removeFriend(id: number) {
     friendshipStore.removeFriend(id);
 }
 
+function searchUser(search: string) {
+    console.log(search);
+    friendshipStore.searchUser(search);
+}
+
+console.log(usersFound);
 </script>
 
 <template>
     <div>
         <NavigationBar :user="user" :isConnected="isConnected" @logout="logout()" />
         <div v-if="isConnected" class="container">
+            <div class="search-user">
+                <div class="search-user__title">Rechercher un utilisateur</div>
+                <div class="search-user__input">
+                    <input type="text" v-model="search"
+                        @keyup.enter="searchUser(search)" />
+                </div>
+                <div v-if="usersFound" class="search-user__results">
+                    <div class="search-user__results__list">
+                        <div v-for="user in usersFound" class="search-user__results__list__item">
+
+                            <div class="search-user__results__list__item__avatar">
+                                <img :src="user.picture_url" alt="avatar-1">
+                            </div>
+                            <div class="search-user__results__list__item__name">
+                                <div class="search-user__results__list__item__name__text">
+                                    <div class="search-user__results__list__item__name__text__firstname">
+                                        <span>{{ user.firstname }}</span>
+                                    </div>
+                                    <div class="search-user__results__list__item__name__text__lastname">
+                                        <span>{{ user.lastname }}</span>
+                                    </div>
+                                </div>
+                                <!-- <div class="search-user__results__list__item__name__button">
+                                    <button>Ajouter</button>
+                                </div> -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <div class="friends-request">
                 <div class="friends-request__title">
                     <div class="friends-request__title__text">
@@ -187,6 +228,86 @@ header {
 .container {
     display: flex;
     flex-direction: column;
+
+    .search-user {
+        &__title {
+            text-align: center;
+            margin-top: 20px;
+            font-weight: 700;
+        }
+
+        &__input {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        &__results {
+            &__list {
+                display: flex;
+                flex-direction: row;
+                flex-wrap: wrap;
+                margin: auto;
+                width: 70%;
+                justify-content: space-between;
+
+                &__item {
+                    margin: auto;
+                    padding: 15px;
+                    width: 20%;
+
+                    &__avatar {
+                        display: flex;
+                        justify-content: center;
+
+                        img {
+                            width: 50px;
+                            height: 50px;
+                        }
+                    }
+
+                    &__name {
+                        &__text {
+                            &__firstname {
+                                display: flex;
+                                justify-content: center;
+
+                                span {
+                                    font-size: 20px;
+                                    font-weight: bold;
+                                }
+                            }
+
+                            &__lastname {
+                                display: flex;
+                                justify-content: center;
+
+                                span {
+
+                                    font-size: 20px;
+                                    font-weight: bold;
+                                }
+                            }
+                        }
+
+                        &__button {
+                            button {
+                                height: 50px;
+                                width: 100%;
+                                border-radius: 5px;
+                                border: none;
+                                background: #FD2D01;
+                                color: #FFF !important;
+                                font-size: 20px;
+                                font-weight: bold;
+                                cursor: pointer;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     .friends-request {
         display: flex;

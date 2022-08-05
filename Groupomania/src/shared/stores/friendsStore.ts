@@ -10,6 +10,7 @@ interface FriendshipState {
     isLoading: boolean;
     numOfResults: number;
     numberOfPages: number;
+    searchResults: any[];
 }
 
 export const useFriendshipStore = defineStore({
@@ -20,6 +21,7 @@ export const useFriendshipStore = defineStore({
         isLoading: true,
         numOfResults: 0,
         numberOfPages: 1,
+        searchResults: [],
     }),
     getters: {
         friendsList: (state: FriendshipState) => state.friends,
@@ -64,7 +66,6 @@ export const useFriendshipStore = defineStore({
                     Authorization: `Bearer ${localStorage.getItem('token')}`
                 },
             }).then(response => {
-                console.log(response.data.results);
                 let newFriend = ref({
                     user_id: 0,
                     picture_url: '',
@@ -72,9 +73,7 @@ export const useFriendshipStore = defineStore({
                     lastname: '',
                 });
                 response.data.results.map((item: any) => {
-                    console.log(item);
-                    console.log(useAuthStore().$state.user.user_id);
-                    if(useAuthStore().$state.user.user_id == item.sender_user_id) {
+                    if (useAuthStore().$state.user.user_id == item.sender_user_id) {
                         newFriend.value = {
                             user_id: item.recipient_user_id,
                             picture_url: item.recipient_picture_url,
@@ -182,5 +181,28 @@ export const useFriendshipStore = defineStore({
                 }
             });
         },
+        searchUser: (search: string) => {
+            axios({
+                method: 'get',
+                url: `http://localhost:3000/api/friends/search/?search=${search}`,
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('token')}`
+                },
+            }).then(response => {
+                console.log(response.data.results);
+                response.data.results.map((item: any) => {
+                    console.log(item);
+                    useFriendshipStore().$patch((state: FriendshipState) => {
+                        state.searchResults.push(item);
+                    });
+                })
+            }).catch(error => {
+                console.log(error);
+                if (error.response.status === 403) {
+                    useAuthStore().logout();
+                }
+            })
+        }
+
     }
 });

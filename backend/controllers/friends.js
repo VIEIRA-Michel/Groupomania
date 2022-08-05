@@ -99,7 +99,7 @@ exports.replyToRequest = (req, res, next) => {
 
 exports.search = (req, res, next) => {
     let sql = `SELECT * FROM users WHERE lastname LIKE ? OR firstname LIKE ?;`;
-    let search = '%' + req.body.search + '%';
+    let search = '%' + req.query.search + '%';
     connection.query(
         sql, [search, search], function (err, results) {
             if (err) throw err;
