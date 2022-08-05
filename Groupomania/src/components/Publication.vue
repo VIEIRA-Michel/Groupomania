@@ -169,7 +169,7 @@ console.log(user)
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="post__top__button">
+                                    <div v-if="user.user_id == publication.user_id" class="post__top__button">
                                         <button @click.stop="publication.editMode = true">
                                             Modifier
                                         </button>

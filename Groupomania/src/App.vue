@@ -19,6 +19,5 @@ const route = useRoute()
 <style>
 body {
   margin: auto;
-  max-width: 1440px;
 }
 </style>

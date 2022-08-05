@@ -64,12 +64,36 @@ export const useFriendshipStore = defineStore({
                     Authorization: `Bearer ${localStorage.getItem('token')}`
                 },
             }).then(response => {
-                response.data.data = response.data.data.map((item: any) => {
+                console.log(response.data.results);
+                let newFriend = ref({
+                    user_id: 0,
+                    picture_url: '',
+                    firstname: '',
+                    lastname: '',
+                });
+                response.data.results.map((item: any) => {
+                    console.log(item);
+                    console.log(useAuthStore().$state.user.user_id);
+                    if(useAuthStore().$state.user.user_id == item.sender_user_id) {
+                        newFriend.value = {
+                            user_id: item.recipient_user_id,
+                            picture_url: item.recipient_picture_url,
+                            firstname: item.recipient_firstname,
+                            lastname: item.recipient_lastname,
+                        };
+                    } else {
+                        newFriend.value = {
+                            user_id: item.sender_user_id,
+                            picture_url: item.sender_picture_url,
+                            firstname: item.sender_firstname,
+                            lastname: item.sender_lastname,
+                        };
+                    }
                     store.$patch((state: FriendshipState) => {
-                        state.friends.push(item);
+                        state.friends.push(newFriend.value);
                         state.isLoading = false;
                     });
-                });
+                })
             }).catch(error => {
                 console.log(error);
                 if (error.response.status === 403) {

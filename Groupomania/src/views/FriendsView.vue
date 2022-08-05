@@ -36,6 +36,7 @@ const requests = computed(() => {
 const friends = computed(() => {
     return friendshipStore.$state.friends;
 });
+
 function checkIsConnected() {
     authStore.getMyInformations();
     if (authStore.$state.isConnected == false) {
@@ -56,6 +57,7 @@ function removeFriend(id: number) {
     // console.log(friend);
     friendshipStore.removeFriend(id);
 }
+
 </script>
 
 <template>
@@ -69,7 +71,7 @@ function removeFriend(id: number) {
                     </div>
                 </div>
                 <div class="friends-request__list">
-                    <div v-for="req in requests" class="friends-request__list__item">
+                    <div v-if="requests.length >= 1" v-for="req in requests" class="friends-request__list__item">
                         <div class="friends-request__list__item__avatar">
                             <img :src="req.picture_url" alt="avatar-1">
                         </div>
@@ -85,6 +87,13 @@ function removeFriend(id: number) {
                             <div class="friends-request-list__item__name__button">
                                 <button @click="replyToRequest(req, 'accepted')">Accepter</button>
                                 <button @click="replyToRequest(req, 'refused')">Refuser</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div v-else>
+                        <div class="friends-request__empty-requests">
+                            <div class="friends-request__empty-requests__text">
+                                <span>Vous n'avez aucune demande</span>
                             </div>
                         </div>
                     </div>
@@ -112,7 +121,8 @@ function removeFriend(id: number) {
                             </div>
                         </div>
                         <div class="friend-list__list__item__button">
-                            <button @click="removeFriend(friend.id)" class="friend-list__list__item__button">Retirer</button>
+                            <button @click="removeFriend(friend.id)"
+                                class="friend-list__list__item__button">Retirer</button>
                         </div>
                     </div>
                 </div>
@@ -184,6 +194,12 @@ header {
         align-items: center;
         margin-top: 20px;
 
+        &__title {
+            &__text {
+                font-weight: 700;
+            }
+        }
+
         &__list {
             margin-top: 30px;
             width: 70%;
@@ -221,6 +237,12 @@ header {
                 }
             }
         }
+
+        &__empty-requests {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
     }
 
     .friends-list {
@@ -230,6 +252,10 @@ header {
 
         &__title {
             margin-bottom: 20px;
+
+            &__text {
+                font-weight: 700;
+            }
         }
 
         &__list {
