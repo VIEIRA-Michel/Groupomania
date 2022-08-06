@@ -23,7 +23,7 @@ exports.getAllFriends = (req, res, next) => {
         sql, [req.user.userId, req.user.userId], function (err, results) {
             if (err) throw err;
             if (results === undefined || results.length === 0) {
-                res.status(200).json({ message: 'Vous n\'avez aucun ami !' });
+                res.status(200).json({ message: 'Vous n\'avez aucun ami !', results });
             }
             else {
                 res.status(200).json({ message: 'Vos amis : ', results });
@@ -98,10 +98,10 @@ exports.replyToRequest = (req, res, next) => {
 }
 
 exports.search = (req, res, next) => {
-    let sql = `SELECT * FROM users WHERE lastname LIKE ? OR firstname LIKE ?;`;
+    let sql = `SELECT users.id, users.picture_url, users.lastname, users.firstname, users.gender_id, users.birthday, users.email, users.password, users.role_id, users.created_at, users.account_disabled, requests_friendship.id as requestId, requests_friendship.user_id_sender as user_id_sender, requests_friendship.request_date, requests_friendship.approve_date, requests_friendship.denied_date FROM users LEFT JOIN requests_friendship ON requests_friendship.user_id_recipient = users.id WHERE user_id_sender = ? AND lastname LIKE ? OR firstname LIKE ? GROUP BY users.id;`;
     let search = '%' + req.query.search + '%';
     connection.query(
-        sql, [search, search], function (err, results) {
+        sql, [req.user.userId, search, search], function (err, results) {
             if (err) throw err;
 
             if (results === undefined || results.length === 0) {
@@ -128,6 +128,22 @@ exports.deleteFriend = (req, res, next) => {
             }
             else if (results.affectedRows == 1) {
                 res.status(200).json({ message: 'Vous n\'êtes plus ami avec cet utilisateur désormais !' });
+            }
+        }
+    )
+}
+
+exports.cancelRequest = (req, res, next) => {
+    let sql = `DELETE FROM requests_friendship WHERE user_id_sender = ? AND user_id_recipient = ? AND approve_date IS NULL AND denied_date IS NULL;`;
+    connection.query(
+        sql, [req.user.userId, req.params.id], function (err, results) {
+            if (err) throw err;
+            if (results.affectedRows == 0) {
+                res.status(400).json({ message: 'Vous n\'avez pas de demande d\'amitié en cours avec cet utilisateur !' });
+            }
+            else if (results.affectedRows == 1) {
+                console.log(results);
+                res.status(200).json({ message: 'Votre demande d\'amitié a été annulée !' });
             }
         }
     )

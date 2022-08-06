@@ -120,7 +120,6 @@ export const useFriendshipStore = defineStore({
                             state.value.push(item);
                         }
                     });
-                    console.log(state);
                     store.$patch({
                         requests: state.value,
                     });
@@ -139,8 +138,7 @@ export const useFriendshipStore = defineStore({
                                 email: req.email,
                             });
                         }
-                    })
-                    console.log(stateFriends)
+                    });
                     store.$patch({
                         requests: stateRequests.value,
                         friends: [...store.$state.friends, ...stateFriends.value],
@@ -163,11 +161,11 @@ export const useFriendshipStore = defineStore({
                     authorization: `Bearer ${localStorage.getItem('token')}`
                 }
             }).then(response => {
-                console.log(response);
                 const store = useFriendshipStore();
                 let state = ref([]);
                 store.$state.friends.map((item: any) => {
-                    if (item.id !== id) {
+                    console.log(item);
+                    if (item.user_id !== id) {
                         state.value.push(item);
                     }
                 });
@@ -182,6 +180,11 @@ export const useFriendshipStore = defineStore({
             });
         },
         searchUser: (search: string) => {
+            const store = useFriendshipStore();
+            useFriendshipStore().$patch({
+                searchResults: [],
+                isLoading: true,
+            });
             axios({
                 method: 'get',
                 url: `http://localhost:3000/api/friends/search/?search=${search}`,
@@ -189,20 +192,94 @@ export const useFriendshipStore = defineStore({
                     Authorization: `Bearer ${localStorage.getItem('token')}`
                 },
             }).then(response => {
-                console.log(response.data.results);
-                response.data.results.map((item: any) => {
-                    console.log(item);
-                    useFriendshipStore().$patch((state: FriendshipState) => {
-                        state.searchResults.push(item);
-                    });
-                })
+                let state = ref([]);
+                if (store.$state.friends.length > 0) {
+                    store.$state.friends.map((friend: any) => {
+                        response.data.results.map((item: any) => {
+                            if (friend.user_id == item.id) {
+                                item.isFriend = true;
+                            } else if (useAuthStore().$state.user.user_id == item.user_id_sender) {
+                                item.pending = true;
+                            }
+                            state.value.push(item);
+                        })
+                    })
+                } else {
+                    response.data.results.map((item: any) => {
+                        if (useAuthStore().$state.user.user_id == item.user_id_sender) {
+                            item.pending = true;
+                        }
+                        state.value.push(item);
+                    })
+                };
+                useFriendshipStore().$patch({
+                    searchResults: state.value,
+                    isLoading: false,
+                });
             }).catch(error => {
                 console.log(error);
                 if (error.response.status === 403) {
                     useAuthStore().logout();
                 }
             })
-        }
+        },
+        sendFriendRequest: (user: any) => {
+            const store = useFriendshipStore();
+            axios({
+                method: 'post',
+                url: `http://localhost:3000/api/friends/search/${user.id}`,
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('token')}`
+                },
+                data: {
+                    user_id: user.id,
+                    firstname: user.firstname,
+                    lastname: user.lastname,
+                    picture_url: user.picture_url,
+                    email: user.email,
+                }
+            }).then(response => {
+                useFriendshipStore().$state.searchResults.map((item: any) => {
+                    if (item.id == user.id) {
+                        item.pending = true;
+                    }
+                    return item;
+                });
+            }).catch(error => {
+                console.log(error);
+                if (error.response.status === 403) {
+                    useAuthStore().logout();
+                }
+            })
+        },
+        cancelRequest: (user: any) => {
+            axios({
+                method: 'delete',
+                url: `http://localhost:3000/api/friends/search/${user.id}`,
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('token')}`
+                }
+            }).then(response => {
+                let state = ref([]);
+                useFriendshipStore().$state.searchResults.map((item: any) => {
+                    if (item.id == user.id) {
+                        item.pending = false;
+                        state.value.push(item);
+                    }
+                    if (item.id !== user.id) {
+                        state.value.push(item);
+                    }
+                });
+                useFriendshipStore().$patch({
+                    searchResults: state.value,
+                });
+            }).catch(error => {
+                console.log(error);
+                if (error.response.status === 403) {
+                    useAuthStore().logout();
+                }
+            })
+        },
 
     }
 });

@@ -4,7 +4,6 @@ import { computed, reactive, ref } from 'vue';
 import { useAuthStore } from '../shared/stores/authStore';
 import { useFriendshipStore } from '../shared/stores/friendsStore';
 import NavigationBar from '../components/NavigationBar.vue';
-import { routes } from '../routes';
 
 const authStore = useAuthStore();
 const friendshipStore = useFriendshipStore();
@@ -14,6 +13,7 @@ const search = ref('');
 checkIsConnected();
 
 friendshipStore.$reset();
+
 const isConnected = computed(() => {
     return authStore.$state.isConnected;
 });
@@ -64,10 +64,18 @@ function removeFriend(id: number) {
 }
 
 function searchUser(search: string) {
-    console.log(search);
     friendshipStore.searchUser(search);
 }
 
+function sendFriendRequest(user: any) {
+    friendshipStore.sendFriendRequest(user);
+}
+
+function cancelRequest(user: any) {
+    friendshipStore.cancelRequest(user);
+}
+
+// console.log(friends);
 console.log(usersFound);
 </script>
 
@@ -78,8 +86,7 @@ console.log(usersFound);
             <div class="search-user">
                 <div class="search-user__title">Rechercher un utilisateur</div>
                 <div class="search-user__input">
-                    <input type="text" v-model="search"
-                        @keyup.enter="searchUser(search)" />
+                    <input type="text" v-model="search" @keyup.enter="searchUser(search)" />
                 </div>
                 <div v-if="usersFound" class="search-user__results">
                     <div class="search-user__results__list">
@@ -97,9 +104,11 @@ console.log(usersFound);
                                         <span>{{ user.lastname }}</span>
                                     </div>
                                 </div>
-                                <!-- <div class="search-user__results__list__item__name__button">
-                                    <button>Ajouter</button>
-                                </div> -->
+                                <div class="search-user__results__list__item__name__button">
+                                    <button v-if="!user.isFriend && !user.pending" @click="sendFriendRequest(user)">Ajouter</button>
+                                    <button v-if="user.pending" @click="cancelRequest(user)" class="pending">En attente</button>
+                                    <button v-if="user.isFriend" @click="removeFriend(user.id)" class="friend">Ami</button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -146,7 +155,7 @@ console.log(usersFound);
                         Mes amis
                     </div>
                 </div>
-                <div class="friends-list__list">
+                <div v-if="friends.length > 0" class="friends-list__list">
                     <div v-for="friend in friends" class="friends-list__list__item">
                         <div class="friends-list__list__item__avatar">
                             <img :src="friend.picture_url" alt="avatar-1">
@@ -162,8 +171,15 @@ console.log(usersFound);
                             </div>
                         </div>
                         <div class="friend-list__list__item__button">
-                            <button @click="removeFriend(friend.id)"
+                            <button @click="removeFriend(friend.user_id)"
                                 class="friend-list__list__item__button">Retirer</button>
+                        </div>
+                    </div>
+                </div>
+                <div v-else>
+                    <div class="friends-list__empty-friends">
+                        <div class="friends-list__empty-friends__text">
+                            <span>Vous n'avez aucun ami</span>
                         </div>
                     </div>
                 </div>
@@ -239,7 +255,7 @@ header {
         &__input {
             display: flex;
             justify-content: center;
-            margin-top: 20px;
+            margin: 20px;
         }
 
         &__results {
@@ -252,9 +268,11 @@ header {
                 justify-content: space-between;
 
                 &__item {
-                    margin: auto;
+                    margin: 10px auto;
                     padding: 15px;
-                    width: 20%;
+                    width: 15%;
+                    box-shadow: 0px 1px 3px 0px rgb(0 0 0 / 20%), 0px 1px 1px 0px rgb(0 0 0 / 14%), 0px 2px 1px -1px rgb(0 0 0 / 12%);
+                    border-radius: 20px;
 
                     &__avatar {
                         display: flex;
@@ -301,6 +319,14 @@ header {
                                 font-size: 20px;
                                 font-weight: bold;
                                 cursor: pointer;
+                            }
+
+                            .pending {
+                                background: #4E5166;
+                            }
+
+                            .friend {
+                                background: #FFD7D7;
                             }
                         }
                     }
@@ -384,13 +410,14 @@ header {
             flex-direction: row;
             flex-wrap: wrap;
             justify-content: center;
+            width: 70%;
 
             &__item {
                 box-shadow: 0px 1px 3px 0px rgb(0 0 0 / 20%), 0px 1px 1px 0px rgb(0 0 0 / 14%), 0px 2px 1px -1px rgb(0 0 0 / 12%);
-                padding: 20px;
+                margin: 10px auto;
+                padding: 15px;
+                width: 15%;
                 border-radius: 20px;
-                margin: 10px;
-                width: 10%;
                 display: flex;
                 flex-direction: column;
                 align-items: center;
