@@ -4,6 +4,7 @@ import { computed, reactive, ref } from 'vue';
 import { useAuthStore } from '../shared/stores/authStore';
 import { useFriendshipStore } from '../shared/stores/friendsStore';
 import NavigationBar from '../components/NavigationBar.vue';
+import Loading from '../components/Loading.vue';
 
 const authStore = useAuthStore();
 const friendshipStore = useFriendshipStore();
@@ -38,6 +39,10 @@ const friends = computed(() => {
     return friendshipStore.$state.friends;
 });
 
+const isLoading = computed(() => {
+    return friendshipStore.$state.isLoading;
+})
+
 const usersFound = computed(() => {
     return friendshipStore.$state.searchResults;
 });
@@ -58,21 +63,31 @@ function replyToRequest(req: any, answer: string) {
     friendshipStore.acceptOrDeclineRequest(req, answer);
 }
 
-function removeFriend(id: number) {
+function removeFriend(user_id: number) {
     // console.log(friend);
-    friendshipStore.removeFriend(id);
+    friendshipStore.removeFriend(user_id);
 }
 
 function searchUser(search: string) {
+    friendshipStore.$patch({
+        isLoading: true,
+    });
+    friendshipStore.checkRequestsSended();
+    // setTimeout(() => {
+    //     friendshipStore.$patch({
+    //         isLoading: false,
+    //     });
+    //     friendshipStore.searchUser(search);
+    // }, 1500);
     friendshipStore.searchUser(search);
 }
 
-function sendFriendRequest(user: any) {
-    friendshipStore.sendFriendRequest(user);
+function sendFriendRequest(user_id: number) {
+    friendshipStore.sendFriendRequest(user_id);
 }
 
-function cancelRequest(user: any) {
-    friendshipStore.cancelRequest(user);
+function cancelRequest(user_id: number) {
+    friendshipStore.cancelRequest(user_id);
 }
 
 // console.log(friends);
@@ -105,9 +120,12 @@ console.log(usersFound);
                                     </div>
                                 </div>
                                 <div class="search-user__results__list__item__name__button">
-                                    <button v-if="!user.isFriend && !user.pending" @click="sendFriendRequest(user)">Ajouter</button>
-                                    <button v-if="user.pending" @click="cancelRequest(user)" class="pending">En attente</button>
-                                    <button v-if="user.isFriend" @click="removeFriend(user.id)" class="friend">Ami</button>
+                                    <button v-if="!user.isFriend && !user.pending"
+                                        @click="sendFriendRequest(user.user_id)">Ajouter</button>
+                                    <button v-if="user.pending" @click="cancelRequest(user.user_id)" class="pending">En
+                                        attente</button>
+                                    <button v-if="user.isFriend" @click="removeFriend(user.user_id)"
+                                        class="friend">Ami</button>
                                 </div>
                             </div>
                         </div>

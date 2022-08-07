@@ -11,6 +11,7 @@ interface FriendshipState {
     numOfResults: number;
     numberOfPages: number;
     searchResults: any[];
+    invitSendedTo: any[];
 }
 
 export const useFriendshipStore = defineStore({
@@ -22,9 +23,13 @@ export const useFriendshipStore = defineStore({
         numOfResults: 0,
         numberOfPages: 1,
         searchResults: [],
+        invitSendedTo: [],
     }),
     getters: {
         friendsList: (state: FriendshipState) => state.friends,
+        requestsList: (state: FriendshipState) => state.requests,
+        searchList: (state: FriendshipState) => state.searchResults,
+        invitationList: (state: FriendshipState) => state.invitSendedTo,
     },
     actions: {
         getRequests: () => {
@@ -162,15 +167,24 @@ export const useFriendshipStore = defineStore({
                 }
             }).then(response => {
                 const store = useFriendshipStore();
-                let state = ref([]);
+                let stateFriends = ref([]);
+                let stateSearch = ref([])
                 store.$state.friends.map((item: any) => {
                     console.log(item);
                     if (item.user_id !== id) {
-                        state.value.push(item);
+                        stateFriends.value.push(item);
                     }
                 });
+                store.$state.searchResults.map((result: any) => {
+                    console.log(result);
+                    if (result.user_id == id) {
+                        result.isFriend = false;
+                    }
+                    stateSearch.value.push(result);
+                })
                 store.$patch({
-                    friends: state.value,
+                    friends: stateFriends.value,
+                    searchResults: stateSearch.value,
                 });
             }).catch(error => {
                 console.log(error);
@@ -183,7 +197,6 @@ export const useFriendshipStore = defineStore({
             const store = useFriendshipStore();
             useFriendshipStore().$patch({
                 searchResults: [],
-                isLoading: true,
             });
             axios({
                 method: 'get',
@@ -194,27 +207,39 @@ export const useFriendshipStore = defineStore({
             }).then(response => {
                 let state = ref([]);
                 if (store.$state.friends.length > 0) {
-                    store.$state.friends.map((friend: any) => {
-                        response.data.results.map((item: any) => {
-                            if (friend.user_id == item.id) {
+                    response.data.results.map((item: any) => {
+                        store.$state.friends.map((friend: any) => {
+                            if (friend.user_id == item.user_id) {
                                 item.isFriend = true;
-                            } else if (useAuthStore().$state.user.user_id == item.user_id_sender) {
+                            }
+                        })
+                        store.$state.invitSendedTo.map((invit: any) => {
+                            console.log(invit)
+                            if (item.user_id == invit.id) {
                                 item.pending = true;
                             }
-                            state.value.push(item);
                         })
+                        state.value.push(item);
                     })
+                    useFriendshipStore().$patch({
+                        searchResults: state.value,
+                    });
+
                 } else {
+                    console.log(response);
+                    console.log(store.$state.invitSendedTo);
                     response.data.results.map((item: any) => {
-                        if (useAuthStore().$state.user.user_id == item.user_id_sender) {
-                            item.pending = true;
-                        }
+                        useFriendshipStore().$state.invitSendedTo.map((invit: any) => {
+                            console.log(invit);
+                            if (item.user_id == invit.id) {
+                                item.pending = true;
+                            }
+                        })
                         state.value.push(item);
                     })
                 };
                 useFriendshipStore().$patch({
                     searchResults: state.value,
-                    isLoading: false,
                 });
             }).catch(error => {
                 console.log(error);
@@ -223,24 +248,18 @@ export const useFriendshipStore = defineStore({
                 }
             })
         },
-        sendFriendRequest: (user: any) => {
+        sendFriendRequest: (user_id: number) => {
             const store = useFriendshipStore();
             axios({
                 method: 'post',
-                url: `http://localhost:3000/api/friends/search/${user.id}`,
+                url: `http://localhost:3000/api/friends/search/${user_id}`,
                 headers: {
                     Authorization: `Bearer ${localStorage.getItem('token')}`
-                },
-                data: {
-                    user_id: user.id,
-                    firstname: user.firstname,
-                    lastname: user.lastname,
-                    picture_url: user.picture_url,
-                    email: user.email,
                 }
             }).then(response => {
                 useFriendshipStore().$state.searchResults.map((item: any) => {
-                    if (item.id == user.id) {
+                    console.log(item);
+                    if (item.user_id == user_id) {
                         item.pending = true;
                     }
                     return item;
@@ -252,21 +271,21 @@ export const useFriendshipStore = defineStore({
                 }
             })
         },
-        cancelRequest: (user: any) => {
+        cancelRequest: (user_id: number) => {
             axios({
                 method: 'delete',
-                url: `http://localhost:3000/api/friends/search/${user.id}`,
+                url: `http://localhost:3000/api/friends/search/${user_id}`,
                 headers: {
                     Authorization: `Bearer ${localStorage.getItem('token')}`
                 }
             }).then(response => {
                 let state = ref([]);
                 useFriendshipStore().$state.searchResults.map((item: any) => {
-                    if (item.id == user.id) {
+                    if (item.user_id == user_id) {
                         item.pending = false;
                         state.value.push(item);
                     }
-                    if (item.id !== user.id) {
+                    if (item.user_id !== user_id) {
                         state.value.push(item);
                     }
                 });
@@ -280,6 +299,30 @@ export const useFriendshipStore = defineStore({
                 }
             })
         },
+        checkRequestsSended: () => {
+            axios({
+                method: 'get',
+                url: `http://localhost:3000/api/friends/requests/sended`,
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('token')}`
+                }
+            }).then(response => {
+                const store = useFriendshipStore();
+                let state = ref([]);
+                response.data.results.map((item: never) => {
+                    state.value.push(item);
+                });
+                console.log(response);
+                store.$patch({
+                    invitSendedTo: response.data.results,
+                });
+            }).catch(error => {
+                console.log(error);
+                if (error.response.status === 403) {
+                    useAuthStore().logout();
+                }
+            })
+        }
 
     }
 });
