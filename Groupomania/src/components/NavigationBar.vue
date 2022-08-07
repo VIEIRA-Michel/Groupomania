@@ -12,7 +12,7 @@
             <router-link to="/friends">
                 <div>Amis</div>
             </router-link>
-            <router-link to="/">
+            <router-link to="/profil">
                 <div>Profil</div>
             </router-link>
             <a v-if="props.isConnected" @click="emit('logout')" class="logout">

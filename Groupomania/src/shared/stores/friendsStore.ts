@@ -219,7 +219,10 @@ export const useFriendshipStore = defineStore({
                                 item.pending = true;
                             }
                         })
-                        state.value.push(item);
+                        if (useAuthStore().$state.user.user_id !== item.user_id) {
+                            console.log(item);
+                            state.value.push(item);
+                        }
                     })
                     useFriendshipStore().$patch({
                         searchResults: state.value,
@@ -235,7 +238,10 @@ export const useFriendshipStore = defineStore({
                                 item.pending = true;
                             }
                         })
-                        state.value.push(item);
+                        if (useAuthStore().$state.user.user_id !== item.user_id) {
+                            console.log(item);
+                            state.value.push(item);
+                        }
                     })
                 };
                 useFriendshipStore().$patch({

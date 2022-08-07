@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { useRoute } from 'vue-router';
 import { computed, reactive, ref } from 'vue';
 import { useAuthStore } from '../shared/stores/authStore';
 import { useFriendshipStore } from '../shared/stores/friendsStore';
