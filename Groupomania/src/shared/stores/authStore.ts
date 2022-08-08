@@ -5,6 +5,8 @@ export interface IAuthStore {
     isConnected: boolean | null;
     user: any | null;
     token: string | null;
+    invalidEmail: boolean;
+    invalidPassword: boolean;
 }
 
 export const useAuthStore = defineStore({
@@ -13,6 +15,8 @@ export const useAuthStore = defineStore({
         isConnected: false,
         user: {},
         token: '',
+        invalidEmail: false,
+        invalidPassword: false
     }),
     getters: {},
     actions: {
@@ -55,7 +59,17 @@ export const useAuthStore = defineStore({
                 });
             }))
                 .catch((error => {
-                    console.log(error);
+                    if (error.response.data.message == `L'adresse email n'existe pas !`) {
+                        store.$reset();
+                        store.$patch({
+                            invalidEmail: true,
+                        });
+                    } else {
+                        store.$reset();
+                        store.$patch({
+                            invalidPassword: true,
+                        });
+                    }
                 }))
         },
         logout: () => {
@@ -92,15 +106,15 @@ export const useAuthStore = defineStore({
         updateProfile: (update: any) => {
             console.log(update);
             let formData = new FormData();
-            if(update.picture_url !== undefined) {
+            if (update.picture_url !== undefined) {
                 console.log('on a une image!');
                 formData.append('picture', update.picture_url);
             }
-            if(update.email !== undefined) {
+            if (update.email !== undefined) {
                 formData.append('email', update.email);
                 console.log('on a un email!');
             }
-            if(update.password !== undefined) {
+            if (update.password !== undefined) {
                 formData.append('password', update.password);
                 console.log('on a un password!');
             }

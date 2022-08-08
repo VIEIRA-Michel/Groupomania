@@ -399,6 +399,12 @@ header {
                         @include button-primary;
                     }
                 }
+
+                &__avatar {
+                    img {
+                        width: 50px;
+                    }
+                }
             }
         }
 

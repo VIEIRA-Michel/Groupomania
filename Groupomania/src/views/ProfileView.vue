@@ -27,9 +27,6 @@ function logout() {
 };
 
 let userEdit = reactive({
-    // email: user.value.email,
-    // firstname: user.value.firstname,
-    // lastname: user.value.lastname,
     picture_url: user.value.picture_url,
     email: '',
     confirmEmail: '',

@@ -18,6 +18,15 @@ const user = computed(() => {
     return authStore.$state.user;
 });
 
+const invalidEmail = computed(() => {
+    return authStore.$state.invalidEmail;
+});
+
+const invalidPassword = computed(() => {
+    return authStore.$state.invalidPassword;
+});
+
+console.log('invalidEmail', invalidEmail.value, 'invalidPassword', invalidPassword.value);
 let hasAccount = ref(true);
 let userInput = reactive({
     lastname: '',
@@ -73,11 +82,13 @@ function checkIsConnected() {
                         <form v-if="hasAccount" @submit.prevent="login(loginInput)">
                             <div class="container__content__form__login">
                                 <label for="email">Email</label>
-                                <input type="email" id="email" v-model="loginInput.email" />
+                                <input type="email" id="email" :class="[invalidEmail ? 'invalidInput' : 'default']" v-model="loginInput.email" />
+                                <p v-if="invalidEmail" class="invalidText">Adresse email incorrecte</p>
                             </div>
                             <div class="container__content__form__login">
                                 <label for="password">Mot de passe</label>
-                                <input type="password" id="password" v-model="loginInput.password" />
+                                <input type="password" id="password" v-bind:class="[invalidPassword ? 'invalidInput' : 'default']" v-model="loginInput.password" />
+                                <p v-if="invalidPassword" class="invalidText">Mot de passe incorrect</p>
                             </div>
                             <div class="container__content__form__login">
                                 <button>Connexion</button>
@@ -137,45 +148,6 @@ function checkIsConnected() {
 * {
     font-family: 'Lato', sans-serif;
 }
-
-// header {
-//     display: flex;
-//     justify-content: start;
-//     background-color: #FFF;
-//     width: 100%;
-//     height: 100%;
-//     filter: drop-shadow(0 0 0.75rem #4E5166);
-
-//     .menu {
-//         font-family: 'Lato', sans-serif;
-//         display: flex;
-//         font-size: 20px;
-//         height: 80px;
-//         width: 100%;
-//         align-items: center;
-
-//         div {
-
-//             margin-left: 30px;
-//         }
-
-//         a {
-//             text-decoration: none;
-//             margin-left: 10%;
-//             color: #4E5166;
-//         }
-//     }
-// }
-
-
-// .logout {
-//     background: #FD2D01;
-//     padding: 10px;
-//     border-radius: 5px;
-//     color: #FFF !important;
-//     cursor: pointer;
-// }
-
 .register {
     display: flex;
     align-items: center;
@@ -184,22 +156,10 @@ function checkIsConnected() {
     padding: 10px;
     cursor: pointer;
 }
-
-// .logo {
-//     display: flex;
-//     align-items: center;
-//     padding-left: 3%;
-//     width: 40%;
-// }
-
-// img {
-//     width: 60%;
-//     height: 80%;
-// }
-
 .home {
     display: flex;
     flex-direction: row;
+    background: linear-gradient(to right, transparent, mistyrose),url('https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&cs=tinysrgb&w=1600');
 
     .container {
         display: flex;
@@ -244,6 +204,19 @@ function checkIsConnected() {
                     margin-bottom: 15px;
                     display: flex;
                     flex-direction: column;
+
+                    .invalidInput {
+                        border: #FD2D01 2px ridge;
+                    }
+
+                    .default {
+                        border: 2px ridge #4E5166;
+                    }
+
+                    .invalidText {
+                        color: #FD2D01;
+                        margin-top: 5px;
+                    }
 
                     label {
                         font-weight: 800;

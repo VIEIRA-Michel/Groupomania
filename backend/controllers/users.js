@@ -44,46 +44,53 @@ exports.login = (req, res, next) => {
     let sql = `SELECT id, picture_url, firstname, lastname, email, password FROM users WHERE email = ?;`;
     connection.query(
         sql, [user.email], function (err, results) {
-            if (err) throw err;
-            bcrypt.compare(req.body.password, results[0].password)
-                .then(valid => {
-                    if (!valid) {
-                        return res.status(401).json({ error: 'Mot de passe incorrect !' });
-                    }
-                    console.log(results[0]);
-                    res.status(200).json({
-                        accessToken: jwt.sign(
-                            {
-                                userId: results[0].id,
-                                picture_url: results[0].picture_url,
-                                firstname: results[0].firstname,
-                                lastname: results[0].lastname,
-                                role_id: results[0].role_id,
-                                email: results[0].email
-                            },
-                            process.env.ACCESS_TOKEN_SECRET,
-                            { expiresIn: '120m' }),
-                        refreshToken: jwt.sign(
-                            {
-                                userId: results[0].id,
-                                picture_url: results[0].picture_url,
-                                firstname: results[0].firstname,
-                                lastname: results[0].lastname,
-                                role_id: results[0].role_id,
-                                email: results[0].email
-                            },
-                            process.env.REFRESH_TOKEN_SECRET,
-                            { expiresIn: '120m' }),
-                        user: {
-                            user_id: results[0].id,
-                            picture_url: results[0].picture_url,
-                            firstname: results[0].firstname,
-                            lastname: results[0].lastname,
-                            email: results[0].email
-                        }
-                    })
-                })
-                .catch(error => res.status(500).json({ message: error }))
+            if (err) {
+                console.log(err);
+            } else {
+                if (results.length !== 0) {
+                    bcrypt.compare(req.body.password, results[0].password)
+                        .then(valid => {
+                            if (!valid) {
+                                return res.status(401).json({ error: 'Mot de passe incorrect !' });
+                            }
+                            console.log(results[0]);
+                            res.status(200).json({
+                                accessToken: jwt.sign(
+                                    {
+                                        userId: results[0].id,
+                                        picture_url: results[0].picture_url,
+                                        firstname: results[0].firstname,
+                                        lastname: results[0].lastname,
+                                        role_id: results[0].role_id,
+                                        email: results[0].email
+                                    },
+                                    process.env.ACCESS_TOKEN_SECRET,
+                                    { expiresIn: '120m' }),
+                                refreshToken: jwt.sign(
+                                    {
+                                        userId: results[0].id,
+                                        picture_url: results[0].picture_url,
+                                        firstname: results[0].firstname,
+                                        lastname: results[0].lastname,
+                                        role_id: results[0].role_id,
+                                        email: results[0].email
+                                    },
+                                    process.env.REFRESH_TOKEN_SECRET,
+                                    { expiresIn: '120m' }),
+                                user: {
+                                    user_id: results[0].id,
+                                    picture_url: results[0].picture_url,
+                                    firstname: results[0].firstname,
+                                    lastname: results[0].lastname,
+                                    email: results[0].email
+                                }
+                            })
+                        }).catch(error => res.status(500).json({ message: error }))
+                } else {
+                    res.status(401).json({ message: `L'adresse email n'existe pas !` });
+                }
+
+            }
         }
     )
 }
