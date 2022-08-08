@@ -45,7 +45,9 @@ function logout() {
 }
 
 function checkIsConnected() {
-    authStore.getMyInformations();
+    if(localStorage.getItem('token') !== null) {
+        authStore.getMyInformations();
+    }
 }
 
 

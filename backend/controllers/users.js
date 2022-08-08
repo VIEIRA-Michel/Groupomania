@@ -12,15 +12,16 @@ exports.signup = (req, res, next) => {
             const now = new Date();
             let today = date.format(now, 'YYYY-MM-DD');
             let user = {
+                picture_url: 'http://localhost:3000/images/photo-par-defaut.jpeg1659962478410.jpeg',
                 lastname: req.body.lastname,
                 firstname: req.body.firstname,
                 email: req.body.email,
                 password: hash,
                 created_at: today
             };
-            let sql = `INSERT INTO users (lastname, firstname, email, password, created_at) VALUES (?, ?, ?, ?, ?);`;
+            let sql = `INSERT INTO users (picture_url, lastname, firstname, email, password, created_at) VALUES (?, ?, ?, ?, ?, ?);`;
             connection.query(
-                sql, [user.lastname, user.firstname, user.email, user.password, user.created_at], function (err, results) {
+                sql, [user.picture_url, user.lastname, user.firstname, user.email, user.password, user.created_at], function (err, results) {
                     if (err) {
                         res.status(500).json({ message: 'Adresse email déjà utilisée' });
                     }

@@ -15,8 +15,9 @@ const user = computed(() => {
 });
 
 function checkIsConnected() {
-    authStore.getMyInformations();
-    if (authStore.$state.isConnected == false) {
+    if (localStorage.getItem('token') !== null) {
+        authStore.getMyInformations();
+    } else {
         window.location.href = '/';
     }
 };

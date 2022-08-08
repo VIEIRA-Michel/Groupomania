@@ -29,14 +29,7 @@ export const useAuthStore = defineStore({
                             password: password,
                         }
                     }).then(response => {
-                        const store = useAuthStore();
-                        localStorage.setItem('token', response.data.accessToken);
-                        localStorage.setItem('user', JSON.stringify(response.data.user));
-                        store.$patch({
-                            user: response.data.user,
-                            token: response.data.accessToken,
-                            isConnected: true,
-                        });
+                        useAuthStore().login(email, password);
                     }).catch(error => {
                         console.log(error);
                     });
