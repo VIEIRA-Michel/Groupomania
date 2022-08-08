@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, reactive } from 'vue';
 import { useAuthStore } from '../shared/stores/authStore';
 import NavigationBar from '../components/NavigationBar.vue';
 
@@ -25,16 +25,36 @@ function logout() {
     window.location.href = '/';
 };
 
-let userEdit = ref({
-    email: user.value.email,
-    firstname: user.value.firstname,
-    lastname: user.value.lastname,
+let userEdit = reactive({
+    // email: user.value.email,
+    // firstname: user.value.firstname,
+    // lastname: user.value.lastname,
     picture_url: user.value.picture_url,
-    user_id: user.value.user_id,
+    email: '',
+    confirmEmail: '',
     password: '',
     confirmPassword: ''
 });
 
+function previewPicture(e: any) {
+    const image = document.getElementById('picture');
+    userEdit.picture_url = e.target.files[0];
+    if (userEdit.picture_url) {
+        image.src = URL.createObjectURL(userEdit.picture_url);
+    }
+}
+
+function updateProfile(update?: any) {
+    if (update.password != update.confirmPassword) {
+        alert('Les mots de passe ne correspondent pas');
+        return;
+    } else if (update.email != update.confirmEmail) {
+        alert('Les adresses email ne correspondent pas');
+        return;
+    } else {
+        authStore.updateProfile(update);
+    }
+}
 </script>
 
 <template>
@@ -48,37 +68,39 @@ let userEdit = ref({
                 <div class="edit-profil__body">
                     <div class="edit-profil__body__content">
                         <div class="edit-profil__body__content__picture">
-                            <img :src="user.picture_url" alt="profil picture" />
+                            <img :src="user.picture_url" alt="profil picture" id="picture" />
                         </div>
                         <div class="edit-profil__body__content__form">
-                            <div class="edit-profil__body__content__form__input">
-                                <label for="picture">Photo de profil</label>
-                                <input type="file" id="picture" />
-                            </div>
-                            <div class="edit-profil__body__content__form__input">
-                                <label for="firstname">Prénom</label>
-                                <input type="text" id="firstname" v-model="userEdit.firstname" />
-                            </div>
-                            <div class="edit-profil__body__content__form__input">
-                                <label for="lastname">Nom</label>
-                                <input type="text" id="lastname" v-model="userEdit.lastname" />
-                            </div>
-                            <div class="edit-profil__body__content__form__input">
-                                <label for="email">Email</label>
-                                <input type="text" id="email" v-model="userEdit.email" />
-                            </div>
-                            <div class="edit-profil__body__content__form__input">
-                                <label for="password">Mot de passe</label>
-                                <input type="password" id="password" v-model="userEdit.password" />
-                            </div>
-                            <div class="edit-profil__body__content__form__input">
-                                <label for="passwordConfirm">Confirmation du mot de passe</label>
-                                <input type="password" id="passwordConfirm" v-model="userEdit.confirmPassword" />
-                            </div>
-                            <div class="edit-profil__body__content__form__button">
-                                <button>Annuler</button>
-                                <button>Confirmer</button>
-                            </div>
+                            <form @submit.prevent="updateProfile(userEdit)">
+                                <div class="edit-profil__body__content__form__input">
+                                    <label for="picture">Photo de profil</label>
+                                    <input type="file" accept="image/*" @change="previewPicture($event)" />
+                                </div>
+                                <!-- <div class="edit-profil__body__content__form__input">
+                                    <label for="lastname">Date de naissance</label>
+                                    <input type="date" id="birthday" v-model="userEdit.birthday" />
+                                </div> -->
+                                <div class="edit-profil__body__content__form__input">
+                                    <label for="email">Email</label>
+                                    <input type="text" id="email" v-model="userEdit.email" />
+                                </div>
+                                <div class="edit-profil__body__content__form__input">
+                                    <label for="confirmEmail">Confirmation de l'adresse email</label>
+                                    <input type="text" id="confirmEmail" v-model="userEdit.confirmEmail" />
+                                </div>
+                                <div class="edit-profil__body__content__form__input">
+                                    <label for="password">Mot de passe</label>
+                                    <input type="password" id="password" v-model="userEdit.password" />
+                                </div>
+                                <div class="edit-profil__body__content__form__input">
+                                    <label for="confirmPassword">Confirmation du mot de passe</label>
+                                    <input type="password" id="confirmPassword" v-model="userEdit.confirmPassword" />
+                                </div>
+                                <div class="edit-profil__body__content__form__button">
+                                    <button>Annuler</button>
+                                    <button>Confirmer</button>
+                                </div>
+                            </form>
                         </div>
                     </div>
                 </div>
@@ -202,6 +224,7 @@ header {
                         width: 70px;
                         height: 70px;
                         border-radius: 35px;
+                        object-fit: cover;
                     }
                 }
 

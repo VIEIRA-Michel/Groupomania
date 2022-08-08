@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt');
 const connection = require('../database/mysql_connexion');
 const jwt = require('jsonwebtoken');
 const date = require('date-and-time');
+const fs = require('fs');
 require('dotenv').config();
 
 exports.signup = (req, res, next) => {
@@ -87,24 +88,72 @@ exports.login = (req, res, next) => {
 }
 
 exports.updateProfil = (req, res, next) => {
-    console.log(req.user.userId);
-    const profilObject = { ...req.body }
-    console.log('profilObject', profilObject);
-    let sql = `UPDATE users SET picture_url = ? lastname = ?, firstname = ?, gender_id = ?, birthday = ? WHERE id = ?;`;
+    let sql = `SELECT * FROM users WHERE id = ?;`;
     connection.query(
-        sql, [profilObject.picture_url, profilObject.lastname, profilObject.firstname, profilObject.gender_id, profilObject.birthday, req.user.userId], function (err, results) {
+        sql, [req.user.userId], function (err, results) {
             if (err) {
-                console.log(err)
-                res.status(500).json({ message: 'Erreur lors de la mise à jour du profil' });
-            }
-            if (!err) {
-                console.log('le resultat', results);
-                res.status(200).json({ message: 'Profil mis à jour ! ' })
+                console.log(err);
+                res.status(500).json({ message: 'Erreur lors de la récupération du profil' });
+            } else {
+                if (results.length === 0) {
+                    res.status(404).json({ message: 'Utilisateur introuvable' });
+                } else {
+                    if (results[0].picture_url !== null) {
+                        const filename = results[0].picture_url.split('/images/')[1];
+                        fs.unlink(`images/${filename}`, () => {
+                            console.log('Image supprimée');
+                        });
+                    }
+                    let profile = req.file ?
+                        {
+                            ...req.body,
+                            picture: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`,
+                        } : { ...req.body };
+                    if (profile.email && profile.picture) {
+                        sql = 'UPDATE users SET picture_url = ?, email = ? WHERE id = ?;';
+                        connection.query(
+                            sql, [profile.picture, profile.email, req.user.userId], function (err, results) {
+                                if (err) {
+                                    console.log(err)
+                                    res.status(500).json({ message: 'Erreur lors de la mise à jour du profil' });
+                                }
+                                if (!err) {
+                                    res.status(200).json({ message: 'Profil mis à jour ! ' })
+                                }
+                            }
+                        )
+                    } else if (profile.picture && !profile.email) {
+                        sql = 'UPDATE users SET picture_url = ? WHERE id = ?;';
+                        connection.query(
+                            sql, [profile.picture, req.user.userId], function (err, results) {
+                                if (err) {
+                                    console.log(err)
+                                    res.status(500).json({ message: 'Erreur lors de la mise à jour du profil' });
+                                }
+                                if (!err) {
+                                    res.status(200).json({ message: 'Profil mis à jour ! ' })
+                                }
+                            }
+                        )
+                    } else if (profile.email && !profile.picture) {
+                        sql = 'UPDATE users SET email = ? WHERE id = ?;';
+                        connection.query(
+                            sql, [profile.email, req.user.userId], function (err, results) {
+                                if (err) {
+                                    console.log(err)
+                                    res.status(500).json({ message: 'Erreur lors de la mise à jour du profil' });
+                                }
+                                if (!err) {
+                                    res.status(200).json({ message: 'Profil mis à jour ! ' })
+                                }
+                            }
+                        )
+                    }
+                }
             }
         }
     )
 }
-
 exports.disabledProfil = (req, res, next) => {
     let sql = `UPDATE users SET account_disabled = ? WHERE id = ?;`;
     connection.query(

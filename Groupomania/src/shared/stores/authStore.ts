@@ -90,11 +90,44 @@ export const useAuthStore = defineStore({
                     isConnected: true,
                 });
             }).catch(error => {
-                if(error.response.status === 403) {
+                if (error.response.status === 403) {
                     useAuthStore().logout();
                 }
                 console.log(error);
             });
+        },
+        updateProfile: (update: any) => {
+            console.log(update);
+            let formData = new FormData();
+            if(update.picture_url !== undefined) {
+                console.log('on a une image!');
+                formData.append('picture', update.picture_url);
+            }
+            if(update.email !== undefined) {
+                formData.append('email', update.email);
+                console.log('on a un email!');
+            }
+            if(update.password !== undefined) {
+                formData.append('password', update.password);
+                console.log('on a un password!');
+            }
+            axios({
+                method: 'put',
+                url: 'http://localhost:3000/api/user/profil',
+                headers: {
+                    authorization: `Bearer ${localStorage.getItem('token')}`
+                },
+                data: formData
+            }).then(response => {
+                console.log(response);
+            }
+            ).catch(error => {
+                if (error.response.status === 403) {
+                    useAuthStore().logout();
+                }
+                console.log(error);
+            });
+
         }
 
     }
