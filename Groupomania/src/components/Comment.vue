@@ -30,11 +30,12 @@ const displayButton = computed(() => {
     return commentsStore.$state.comments.length;
 });
 
-function createComment(event: any) {
+function createComment(event: any, inputComment: any) {
     event.preventDefault();
-    console.log(event);
-    if (this.inputComment != "") {
-        commentsStore.createComment(this.publication_id, this.inputComment);
+    console.log(inputComment);
+    console.log(props.publication_id);
+    if (inputComment != "") {
+        commentsStore.createComment(props.publication_id, inputComment);
         this.inputComment = "";
     };
 }
@@ -43,9 +44,6 @@ function deleteComment(comment: any) {
     console.log(comment.publication_id, comment.comment_id)
     commentsStore.deleteComment(comment.publication_id, comment.comment_id);
 }
-
-console.log(commentary.value.length);
-console.log(numOfResults.value);
 </script>
 
 <template>
@@ -54,8 +52,7 @@ console.log(numOfResults.value);
             <div class="post__details">
                 <div class="post__details__info">
                     <div class="post__details__info__avatar">
-                        <img src="https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50?s=200"
-                            alt="avatar" />
+                        <img :src="props.user.picture_url" alt="avatar" />
                     </div>
                     <div class="post__details__info__commentary">
                         <div class="post__details__info__commentary__name">
@@ -71,9 +68,7 @@ console.log(numOfResults.value);
                 </div>
             </div>
             <div class="post__button">
-                <button v-if="props.user.email == com.email" @click="deleteComment(com)"
-                    class="post__button__delete">Supprimer
-                    commentaire</button>
+                <fa v-if="props.user.email == com.email" @click="deleteComment(com)" icon="fa-solid fa-trash-can" />
             </div>
         </div>
         <div class="more-post">
@@ -85,8 +80,7 @@ console.log(numOfResults.value);
             <div class="create_post__top">
                 <div class="create_post__top__details">
                     <div class="create_post__top__details__avatar">
-                        <img src="https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50?s=200"
-                            alt="avatar" />
+                        <img :src="props.user.picture_url" alt="avatar" />
                     </div>
 
                 </div>
@@ -96,8 +90,7 @@ console.log(numOfResults.value);
                     <form>
                         <input type="text" v-model="inputComment" class="create_post__info__content__input"
                             placeholder="Écrivez un commentaire...">
-                        <button @click="createComment($event)"
-                            class="create_post__info__content__button">Publier</button>
+                        <fa @click="createComment($event, inputComment)" icon="fa-solid fa-paper-plane" />
                     </form>
                 </div>
 
@@ -165,6 +158,8 @@ console.log(numOfResults.value);
                 }
             }
         }
+
+        &__button {}
     }
 }
 
@@ -214,18 +209,9 @@ console.log(numOfResults.value);
                     }
                 }
 
-                button {
-                    background-color: $color-primary;
-                    border-color: $color-primary;
-                    color: $color-bonus;
-                    font-size: 1rem;
-                    padding: 5px 10px;
-                    border-radius: 5px;
-                    border-width: 1px;
-                    border-style: solid;
+                svg {
                     cursor: pointer;
-                    transition: all 0.3s ease-in-out;
-                    margin: 0 10px;
+                    margin-left: 10px;
                 }
             }
         }

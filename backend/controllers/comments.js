@@ -6,6 +6,8 @@ exports.createComment = (req, res, next) => {
         publication_id: req.params.id,
         content: req.body.content,
     };
+
+    console.log(comment);
     let sql = `INSERT INTO comments (user_id, publication_id, content, created_at) VALUES (?, ?, ?, NOW());`;
     connection.query(
         sql, [comment.user_id, comment.publication_id, comment.content], function (err, results) {

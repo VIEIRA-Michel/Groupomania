@@ -137,8 +137,13 @@ console.log(user)
                         <form @submit.prevent="createPublication($refs)">
                             <input type="text" v-model="content" placeholder="Quoi de neuf ?"
                                 class="create_post__content__details__input">
-                            <input type="file" ref="fileInput" accept="image/*" @change="onPickFile"
-                                @submit="picture = ''" class="create_post__content__details__file" id="file">
+                            <div class="create_post__content__details">
+                                <input type="file" ref="fileInput" accept="image/*" @change="onPickFile"
+                                    @submit="picture = ''" class="create_post__content__details__file" id="file">
+                                <button class="create_post__content__details__button">
+                                    <fa icon="fa-solid fa-paper-plane" />
+                                </button>
+                            </div>
                         </form>
                     </div>
                 </div>
@@ -180,11 +185,9 @@ console.log(user)
                             <div class="post__likeAndComment">
                                 <div class="post__interaction">
                                     <div class="post__interaction__like">
-
-                                        <!-- <span>{{ publication.likes }}</span> -->
                                         <button @click.stop="likePublication(publication)"
                                             v-bind:class="[publication.iLike ? 'liked' : '']">
-                                            <span>{{ publication.likes.length }}</span>
+                                            <span>{{ publication.likes.length + '  ' }}</span>
                                             <fa icon="fa-solid fa-thumbs-up" />
                                         </button>
                                         <!-- <button @click="like" type="button">J'aime</button> -->
@@ -262,11 +265,22 @@ console.log(user)
 
     &__content {
         display: flex;
+        width: 100%;
         flex-direction: column-reverse;
         align-items: flex-start;
         padding: 10px 0 0 0;
 
         &__details {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            width: 100%;
+            justify-content: space-between;
+
+            form {
+                width: 100%;
+            }
+
             &__input {
                 width: 94%;
                 height: 30px;
@@ -275,17 +289,23 @@ console.log(user)
                 padding: 0px 7px 0px 7px;
                 background-color: rgb(255, 255, 255);
                 color: rgb(0, 0, 0);
+
             }
 
             &__file {
                 margin: 10px 0px;
+
+            }
+
+            &__button {
+                margin-right: 15px;
+                border: 1px solid #DBDBDB;
             }
         }
     }
 }
 
 .post {
-    max-height: 860px;
     display: flex;
     flex-direction: column;
     width: 470px;
@@ -328,6 +348,12 @@ console.log(user)
             display: flex;
             justify-content: end;
             width: 50%;
+
+            svg {
+                width: 20px;
+                height: 20px;
+                margin-right: 10px;
+            }
 
             button {
                 @include button-primary;
@@ -395,10 +421,6 @@ console.log(user)
         &__like {
             width: 50%;
 
-            :hover {
-                background-color: #DBDBDB;
-            }
-
             button {
                 width: 100%;
                 height: 100%;
@@ -406,11 +428,20 @@ console.log(user)
                 border: none;
                 cursor: pointer;
 
+                svg {
+                    width: 20px;
+                    height: 20px;
+                }
+
 
             }
 
             .liked {
                 background-color: #FFFFFF;
+
+                svg {
+                    color: #FD2D01;
+                }
             }
         }
 
@@ -423,6 +454,11 @@ console.log(user)
                 background-color: #FFFFFF;
                 border: none;
                 cursor: pointer;
+
+                svg {
+                    width: 20px;
+                    height: 20px;
+                }
             }
 
             &__list {

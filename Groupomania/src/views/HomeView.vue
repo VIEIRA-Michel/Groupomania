@@ -66,20 +66,24 @@ function checkIsConnected() {
     <div>
         <NavigationBar :user="user" :isConnected="isConnected" @logout="logout()" />
         <div v-if="!isConnected" class="home">
+            <div class="home__picture">
+                <img src="../assets/picture-home.png" alt="">
+            </div>
+            <div class="container-shadow">
+            </div>
             <div class="container">
                 <div class="container__header">
                     <div class="container__header__title">
-                        <h1>Bienvenue sur <span>Groupomania</span></h1>
+                        <h1><span>Groupomania</span></h1>
                     </div>
                     <div class="container__header__message">
-                        <p>Réseau social d'entreprise pour les personnes travaillant au sein du groupe
-                            <span>Groupomania</span>
+                        <p>Prenons le temps de mieux nous connaître et partageons ensemble chacune de nos victoires
                         </p>
                     </div>
                 </div>
                 <div class="container__content">
-                    <div class="container__content__form">
-                        <form v-if="hasAccount" @submit.prevent="login(loginInput)">
+                    <div v-if="hasAccount" class="container__content__form">
+                        <form @submit.prevent="login(loginInput)">
                             <div class="container__content__form__login">
                                 <label for="email">Email</label>
                                 <input type="email" id="email" :class="[invalidEmail ? 'invalidInput' : 'default']"
@@ -96,8 +100,14 @@ function checkIsConnected() {
                             <div class="container__content__form__login">
                                 <button>Connexion</button>
                             </div>
+                            <div class="container__content__form__message">
+                                Vous n'avez pas encore de compte ? <span v-if="hasAccount"
+                                    @click="hasAccount = false">Inscrivez-vous gratuitement</span>
+                            </div>
                         </form>
-                        <form v-else @submit.prevent="register(userInput)">
+                    </div>
+                    <div v-else class="container__content__form">
+                        <form @submit.prevent="register(userInput)">
                             <div class="container__content__form__register">
                                 <label for="lastname">Nom</label>
                                 <input type="text" id="lastname" v-model="userInput.lastname" />
@@ -121,21 +131,11 @@ function checkIsConnected() {
                             <div class="container__content__form__register">
                                 <button>S'enregistrer</button>
                             </div>
-                        </form>
-                    </div>
-                    <div class="welcome">
-                        <div class="welcome__content">
-                            <div class="welcome__content__container">
-                                <button v-if="hasAccount" @click="hasAccount = false"
-                                    class="welcome__content__container__button">
-                                    S'inscrire
-                                </button>
-                                <button v-if="!hasAccount" @click="hasAccount = true"
-                                    class="welcome__content__container__button">
-                                    Se connecter
-                                </button>
+                            <div class="container__content__form__message">
+                                Vous avez déjà un compte ? <span v-if="!hasAccount"
+                                    @click="hasAccount = true">Connectez-vous</span>
                             </div>
-                        </div>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -149,6 +149,8 @@ function checkIsConnected() {
 </template>
 
 <style scoped lang="scss">
+@import '../styles/Utils/keyframes';
+
 * {
     font-family: 'Lato', sans-serif;
 }
@@ -167,14 +169,28 @@ function checkIsConnected() {
     flex-direction: row;
     margin: 0;
 
+    &__picture {
+        img {
+            z-index: -1;
+            position: absolute;
+            left: 0;
+        }
+    }
+
+    .container-shadow {
+        height: 370px;
+        width: 100vw;
+        position: absolute;
+        background: linear-gradient(180deg, rgb(250, 250, 250) 19%, rgba(0, 212, 255, 0) 100%);
+    }
 
     .container {
         display: flex;
         flex-direction: column;
         align-items: center;
+        z-index: 1;
         width: 100%;
         height: 100%;
-        background: #FAFAFA;
 
         span {
             color: #FD2D01;
@@ -182,8 +198,21 @@ function checkIsConnected() {
 
 
         &__header {
+
+            &__title {
+                h1 {
+                    -webkit-animation: focus-in-expand 2.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) 1s both;
+                    animation: focus-in-expand 2.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) 1s both;
+                }
+            }
+
             &__message {
                 text-align: center;
+
+                p {
+                    -webkit-animation: text-focus-in 3s cubic-bezier(0.215, 0.610, 0.355, 1.000) 4s both;
+                    animation: text-focus-in 3s cubic-bezier(0.215, 0.610, 0.355, 1.000) 4s both;
+                }
             }
         }
 
@@ -194,12 +223,19 @@ function checkIsConnected() {
             height: 100%;
             width: 100%;
             padding: 0 3%;
+            -webkit-animation: slide-out-blurred-bottom 2.5s cubic-bezier(0.755, 0.050, 0.855, 0.060) 2.5s reverse both;
+            animation: slide-out-blurred-bottom 2.5s cubic-bezier(0.755, 0.050, 0.855, 0.060) 2.5s reverse both;
 
             &__form {
                 border-radius: 5px;
                 background: #FFFFFF;
                 border: 1px solid #DBDBDB;
                 padding: 20px;
+                -webkit-animation: focus-in-expand 1s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+                animation: focus-in-expand 1s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+
+
+
 
                 form {
                     display: flex;
@@ -214,6 +250,8 @@ function checkIsConnected() {
 
                     .invalidInput {
                         border: #FD2D01 2px ridge;
+                        -webkit-animation: shake-horizontal 0.8s cubic-bezier(0.455, 0.030, 0.515, 0.955) both;
+                        animation: shake-horizontal 0.8s cubic-bezier(0.455, 0.030, 0.515, 0.955) both;
                     }
 
                     .default {
@@ -251,6 +289,10 @@ function checkIsConnected() {
                             color: #FFFFFF;
                         }
                     }
+                }
+
+                &__message {
+                    cursor: pointer;
                 }
 
                 &__register {
@@ -309,6 +351,12 @@ function checkIsConnected() {
             width: 100%;
             height: 100%;
         }
+    }
+}
+
+.home_picture {
+    img {
+        position: absolute;
     }
 }
 

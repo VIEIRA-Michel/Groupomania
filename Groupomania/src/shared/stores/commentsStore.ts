@@ -87,8 +87,9 @@ export const useCommentsStore = defineStore({
                 }
             })
         },
-        createComment: (publication_id: number, comment: string) => {
+        createComment: (publication_id: number | undefined, comment: string) => {
             const store = useCommentsStore();
+            console.log(publication_id, comment)
             axios({
                 method: 'post',
                 url: `http://localhost:3000/api/publications/${publication_id}/comments`,
