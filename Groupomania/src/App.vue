@@ -9,15 +9,13 @@ const route = useRoute()
 </script>
 
 <template>
-  <div class="App">
     <router-view>
     </router-view>
-
-  </div>
 </template>
 
 <style>
 body {
   margin: auto;
+  background-color: #FAFAFA;
 }
 </style>

@@ -7,8 +7,9 @@ import Loading from '../components/Loading.vue';
 
 const authStore = useAuthStore();
 const friendshipStore = useFriendshipStore();
-const open = ref(false);
 const search = ref('');
+let open = ref(false);
+let modalRequest = ref(false);
 
 checkIsConnected();
 
@@ -64,6 +65,7 @@ function replyToRequest(req: any, answer: string) {
 
 function removeFriend(user_id: number) {
     // console.log(friend);
+    open.value = false;
     friendshipStore.removeFriend(user_id);
 }
 
@@ -86,11 +88,18 @@ function sendFriendRequest(user_id: number) {
 }
 
 function cancelRequest(user_id: number) {
+    modalRequest.value = false;
     friendshipStore.cancelRequest(user_id);
 }
 
 // console.log(friends);
-console.log(usersFound);
+function confirmRemoveFriend() {
+    open.value = true;
+}
+
+function confirmCancelRequest() {
+    modalRequest.value = true;
+}
 </script>
 
 <template>
@@ -120,12 +129,40 @@ console.log(usersFound);
                                 </div>
                                 <div class="search-user__results__list__item__name__button">
                                     <button v-if="!user.isFriend && !user.pending"
-                                        @click="sendFriendRequest(user.user_id)">Ajouter</button>
-                                    <button v-if="user.pending" @click="cancelRequest(user.user_id)" class="pending">En
-                                        attente</button>
-                                    <button v-if="user.isFriend" @click="removeFriend(user.user_id)"
-                                        class="friend">Ami</button>
+                                        @click="sendFriendRequest(user.user_id)">
+                                        <fa icon="fa-solid fa-user-plus" />
+                                    </button>
+                                    <button v-if="user.pending" @click="confirmCancelRequest()" class="pending">
+                                        <fa icon="fa-solid fa-user-clock" />
+                                    </button>
+                                    <button v-if="user.isFriend" @click="confirmRemoveFriend()" class="friend">
+                                        <fa icon="fa-solid fa-user-check" />
+                                    </button>
                                 </div>
+                                <Teleport to="body">
+                                    <div v-if="modalRequest" @click="modalRequest = false"
+                                        class="calc d-flex flex-row justify-content-center align-items-center">
+                                        <div @click.stop class="modal-container">
+
+                                            <div class="modal-container__content">
+                                                <div class="modal-container__content__header">
+                                                    <h5 class="modal-container__content__header__title">Êtes-vous
+                                                        certains de
+                                                        vouloir annuler votre demande d'amitié envers {{ user.firstname
+                                                        }} ?
+                                                    </h5>
+                                                </div>
+                                                <div class="modal-container__content__footer">
+                                                    <button @click="modalRequest = false" type="button"
+                                                        class="btn btn-secondary" data-dismiss="modal">Annuler</button>
+                                                    <button @click="cancelRequest(user.user_id)" type="button"
+                                                        class="btn btn-primary">Retirer
+                                                        {{ user.firstname }}</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </Teleport>
                             </div>
                         </div>
                     </div>
@@ -152,8 +189,12 @@ console.log(usersFound);
                                 </div>
                             </div>
                             <div class="friends-request-list__item__name__button">
-                                <button @click="replyToRequest(req, 'accepted')">Accepter</button>
-                                <button @click="replyToRequest(req, 'refused')">Refuser</button>
+                                <button @click="replyToRequest(req, 'refused')" class="refused">
+                                    <fa icon="fa-solid fa-xmark" />
+                                </button>
+                                <button @click="replyToRequest(req, 'accepted')" class="accepted" >
+                                    <fa icon="fa-solid fa-check" />
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -187,10 +228,39 @@ console.log(usersFound);
                                 </div>
                             </div>
                         </div>
-                        <div class="friend-list__list__item__button">
-                            <button @click="removeFriend(friend.user_id)"
-                                class="friend-list__list__item__button">Retirer</button>
+                        <div class="friends-list__list__item__button">
+
+                            <button class="friend" @click="confirmRemoveFriend()">
+                                <fa icon="fa-solid fa-user-minus" />
+                            </button>
+                            <!-- <button @click="removeFriend(friend.user_id)"
+                                class="friend-list__list__item__button">Retirer</button> -->
                         </div>
+                        <!--  -->
+                        <!-- Modal test -->
+                        <Teleport to="body">
+                            <div v-if="open" @click="open = false"
+                                class="calc d-flex flex-row justify-content-center align-items-center">
+                                <div @click.stop class="modal-container">
+
+                                    <div class="modal-container__content">
+                                        <div class="modal-container__content__header">
+                                            <h5 class="modal-container__content__header__title">Êtes-vous certains de
+                                                vouloir retirer {{ friend.firstname }} de votre liste d'amis ?</h5>
+                                        </div>
+                                        <div class="modal-container__content__footer">
+                                            <button @click="open = false" type="button" class="btn btn-secondary"
+                                                data-dismiss="modal">Annuler</button>
+                                            <button @click="removeFriend(friend.user_id)" type="button"
+                                                class="btn btn-primary">Retirer
+                                                {{ friend.firstname }}</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </Teleport>
+                        <!-- END -->
+                        <!--  -->
                     </div>
                 </div>
                 <div v-else>
@@ -213,56 +283,16 @@ console.log(usersFound);
     font-family: 'Lato', sans-serif;
 }
 
-header {
-    display: flex;
-    justify-content: start;
-    background-color: #FFF;
-    width: 100%;
-    height: 100%;
-    filter: drop-shadow(0 0 0.75rem #4E5166);
-
-    .menu {
-        font-family: 'Lato', sans-serif;
-        display: flex;
-        font-size: 20px;
-        height: 80px;
-        width: 100%;
-        align-items: center;
-
-        div {
-
-            margin-left: 30px;
-        }
-
-        a {
-            text-decoration: none;
-            margin-left: 10%;
-            color: #4E5166;
-        }
-    }
-}
-
-
-.logout {
-    background: #FD2D01;
-    padding: 10px;
-    border-radius: 5px;
-    color: #FFF !important;
-    cursor: pointer;
-}
-
-.logo {
-    display: flex;
-    align-items: center;
-    padding-left: 3%;
-    width: 40%;
-}
-
 .container {
     display: flex;
     flex-direction: column;
 
     .search-user {
+        background: #FFFFFF;
+        border: 1px solid #DBDBDB;
+        width: 70%;
+        margin: 10px auto 0px auto;
+
         &__title {
             text-align: center;
             margin-top: 20px;
@@ -286,10 +316,11 @@ header {
 
                 &__item {
                     margin: 10px auto;
+                    width: 90px;
                     padding: 15px;
-                    width: 15%;
-                    box-shadow: 0px 1px 3px 0px rgb(0 0 0 / 20%), 0px 1px 1px 0px rgb(0 0 0 / 14%), 0px 2px 1px -1px rgb(0 0 0 / 12%);
-                    border-radius: 20px;
+                    background: linear-gradient(180deg, #FFD7D7, transparent);
+                    border: 1px solid #DBDBDB;
+                    border-radius: 5px;
 
                     &__avatar {
                         display: flex;
@@ -303,6 +334,8 @@ header {
 
                     &__name {
                         &__text {
+                            margin-bottom: 5px;
+
                             &__firstname {
                                 display: flex;
                                 justify-content: center;
@@ -327,7 +360,7 @@ header {
 
                         &__button {
                             button {
-                                height: 50px;
+                                height: 30px;
                                 width: 100%;
                                 border-radius: 5px;
                                 border: none;
@@ -356,9 +389,14 @@ header {
         display: flex;
         flex-direction: column;
         align-items: center;
-        margin-top: 20px;
+        background: #FFFFFF;
+        border: 1px solid #DBDBDB;
+        width: 70%;
+        margin: 10px auto 0px auto;
 
         &__title {
+            margin-top: 20px;
+
             &__text {
                 font-weight: 700;
             }
@@ -373,8 +411,9 @@ header {
                 flex-direction: row;
                 padding: 10px;
                 margin-bottom: 20px;
-                box-shadow: 0px 1px 3px 0px rgb(0 0 0 / 20%), 0px 1px 1px 0px rgb(0 0 0 / 14%), 0px 2px 1px -1px rgb(0 0 0 / 12%);
-                border-radius: 20px;
+                border-radius: 5px;
+                background: linear-gradient(180deg, #FFD7D7, transparent);
+                border: 1px solid #DBDBDB;
 
                 &__name {
                     display: flex;
@@ -396,7 +435,22 @@ header {
                     }
 
                     button {
-                        @include button-primary;
+                        font-size: 1rem;
+                        width:40px;
+                        padding: 5px 10px;
+                        border-radius: 5px;
+                        border-width: 1px;
+                        border-style: solid;
+                        cursor: pointer;
+                        transition: all 0.3s ease-in-out;
+                        margin: 0 10px;
+                    }
+
+                    .refused {
+                        background: #ff7a7a;
+                    }
+                    .accepted {
+                        background: #bcffcb;
                     }
                 }
 
@@ -419,8 +473,13 @@ header {
         display: flex;
         flex-direction: column;
         align-items: center;
+        background: #FFFFFF;
+        border: 1px solid #DBDBDB;
+        width: 70%;
+        margin: 10px auto 0px auto;
 
         &__title {
+            margin-top: 20px;
             margin-bottom: 20px;
 
             &__text {
@@ -436,23 +495,39 @@ header {
             width: 70%;
 
             &__item {
-                box-shadow: 0px 1px 3px 0px rgb(0 0 0 / 20%), 0px 1px 1px 0px rgb(0 0 0 / 14%), 0px 2px 1px -1px rgb(0 0 0 / 12%);
+
                 margin: 10px auto;
                 padding: 15px;
-                width: 15%;
-                border-radius: 20px;
+                width: 90px;
+                border-radius: 5px;
                 display: flex;
                 flex-direction: column;
                 align-items: center;
+                background: linear-gradient(180deg, #FFD7D7, transparent);
+                border: 1px solid #DBDBDB;
 
                 &__button {
                     display: flex;
                     justify-content: center;
 
-                    .button {
-                        @include button-primary;
+                    button {
+                        font-size: 1rem;
+                        padding: 5px 10px;
+                        border-radius: 5px;
+                        border-width: 1px;
+                        border-style: solid;
+                        cursor: pointer;
+                        transition: all 0.3s ease-in-out;
+                        margin: 0 10px;
+
                     }
 
+                }
+
+                &__avatar {
+                    img {
+                        width: 50px;
+                    }
                 }
 
                 &__name {
@@ -460,6 +535,67 @@ header {
                     margin-bottom: 10px;
                 }
 
+
+            }
+        }
+
+        &__empty-friends {
+            margin-bottom: 20px;
+        }
+    }
+
+}
+
+.calc {
+    position: absolute;
+    top: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-container {
+    background-color: #FFF;
+    color: #4E5166;
+    padding: 20px;
+    border-radius: 20px;
+    width: 300px;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: flex-start;
+    backdrop-filter: blur(2px);
+    transition: all 0.3s ease-in-out;
+    transform: translateY(-100px);
+    transform-origin: center;
+
+    &__content {
+        width: 100%;
+
+        &__header {
+
+            &__title {
+                margin-top: 0;
+            }
+        }
+
+        &__footer {
+            display: flex;
+            justify-content: flex-end;
+
+            .btn.btn-primary {
+                @include button-primary;
+            }
+
+            .btn.btn-secondary {
+                @include button-primary;
+                background-color: #4E5166;
+                border: #4E5166;
             }
         }
     }

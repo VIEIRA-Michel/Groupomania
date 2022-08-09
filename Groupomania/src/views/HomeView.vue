@@ -54,7 +54,7 @@ function logout() {
 }
 
 function checkIsConnected() {
-    if(localStorage.getItem('token') !== null) {
+    if (localStorage.getItem('token') !== null) {
         authStore.getMyInformations();
     }
 }
@@ -82,12 +82,15 @@ function checkIsConnected() {
                         <form v-if="hasAccount" @submit.prevent="login(loginInput)">
                             <div class="container__content__form__login">
                                 <label for="email">Email</label>
-                                <input type="email" id="email" :class="[invalidEmail ? 'invalidInput' : 'default']" v-model="loginInput.email" />
+                                <input type="email" id="email" :class="[invalidEmail ? 'invalidInput' : 'default']"
+                                    v-model="loginInput.email" />
                                 <p v-if="invalidEmail" class="invalidText">Adresse email incorrecte</p>
                             </div>
                             <div class="container__content__form__login">
                                 <label for="password">Mot de passe</label>
-                                <input type="password" id="password" v-bind:class="[invalidPassword ? 'invalidInput' : 'default']" v-model="loginInput.password" />
+                                <input type="password" id="password"
+                                    v-bind:class="[invalidPassword ? 'invalidInput' : 'default']"
+                                    v-model="loginInput.password" />
                                 <p v-if="invalidPassword" class="invalidText">Mot de passe incorrect</p>
                             </div>
                             <div class="container__content__form__login">
@@ -122,12 +125,13 @@ function checkIsConnected() {
                     </div>
                     <div class="welcome">
                         <div class="welcome__content">
-                            <p>Apprenez en plus sur les gens qui vous entourent au quotidien en échangeant avec eux</p>
                             <div class="welcome__content__container">
-                                <button v-if="hasAccount" @click="hasAccount = false" class="welcome__content__container__button">
+                                <button v-if="hasAccount" @click="hasAccount = false"
+                                    class="welcome__content__container__button">
                                     S'inscrire
                                 </button>
-                                <button v-if="!hasAccount" @click="hasAccount = true" class="welcome__content__container__button">
+                                <button v-if="!hasAccount" @click="hasAccount = true"
+                                    class="welcome__content__container__button">
                                     Se connecter
                                 </button>
                             </div>
@@ -148,6 +152,7 @@ function checkIsConnected() {
 * {
     font-family: 'Lato', sans-serif;
 }
+
 .register {
     display: flex;
     align-items: center;
@@ -156,17 +161,20 @@ function checkIsConnected() {
     padding: 10px;
     cursor: pointer;
 }
+
 .home {
     display: flex;
     flex-direction: row;
-    background: linear-gradient(to right, transparent, mistyrose),url('https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&cs=tinysrgb&w=1600');
+    margin: 0;
+
 
     .container {
         display: flex;
         flex-direction: column;
         align-items: center;
         width: 100%;
-        background-color: white;
+        height: 100%;
+        background: #FAFAFA;
 
         span {
             color: #FD2D01;
@@ -188,11 +196,10 @@ function checkIsConnected() {
             padding: 0 3%;
 
             &__form {
-                background: white;
-                border: 1px solid white;
-                border-radius: 25px;
+                border-radius: 5px;
+                background: #FFFFFF;
+                border: 1px solid #DBDBDB;
                 padding: 20px;
-                box-shadow: 0px 0px 44px #4e5166;
 
                 form {
                     display: flex;
@@ -230,17 +237,19 @@ function checkIsConnected() {
                     }
 
                     button {
-                        background-color: #FD2D01;
+                        background-color: #FFFFFF;
                         border-color: #FD2D01;
-                        color: #fff;
-                        font-size: 1.5rem;
-                        padding: 10px 20px;
+                        color: #FD2D01;
+                        padding: 10px;
+                        border: 1px solid #FD2D01;
                         border-radius: 5px;
-                        border-width: 1px;
-                        border-style: solid;
                         cursor: pointer;
                         transition: all 0.3s ease-in-out;
-                        margin: 0 10px;
+
+                        &:hover {
+                            background-color: #FD2D01;
+                            color: #FFFFFF;
+                        }
                     }
                 }
 

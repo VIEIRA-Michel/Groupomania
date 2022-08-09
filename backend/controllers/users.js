@@ -1,27 +1,22 @@
-// const mysql = require('../database/mysql_connexion');
 const bcrypt = require('bcrypt');
 const connection = require('../database/mysql_connexion');
 const jwt = require('jsonwebtoken');
-const date = require('date-and-time');
 const fs = require('fs');
 require('dotenv').config();
 
 exports.signup = (req, res, next) => {
     bcrypt.hash(req.body.password, 10)
         .then(hash => {
-            const now = new Date();
-            let today = date.format(now, 'YYYY-MM-DD');
             let user = {
-                picture_url: 'http://localhost:3000/images/photo-par-defaut.jpeg1659962478410.jpeg',
+                picture_url: `https://media.istockphoto.com/vectors/default-profile-picture-avatar-photo-placeholder-vector-illustration-vector-id1223671392?k=20&m=1223671392&s=170667a&w=0&h=kEAA35Eaz8k8A3qAGkuY8OZxpfvn9653gDjQwDHZGPE=`,
                 lastname: req.body.lastname,
                 firstname: req.body.firstname,
                 email: req.body.email,
                 password: hash,
-                created_at: today
             };
-            let sql = `INSERT INTO users (picture_url, lastname, firstname, email, password, created_at) VALUES (?, ?, ?, ?, ?, ?);`;
+            let sql = `INSERT INTO users (picture_url, lastname, firstname, email, password, created_at) VALUES (?, ?, ?, ?, ?, NOW());`;
             connection.query(
-                sql, [user.picture_url, user.lastname, user.firstname, user.email, user.password, user.created_at], function (err, results) {
+                sql, [user.picture_url, user.lastname, user.firstname, user.email, user.password], function (err, results) {
                     if (err) {
                         res.status(500).json({ message: 'Adresse email déjà utilisée' });
                     }
@@ -116,7 +111,10 @@ exports.updateProfil = (req, res, next) => {
                         {
                             ...req.body,
                             picture: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`,
-                        } : { ...req.body };
+                        } : { 
+                            ...req.body, 
+                            picture: `https://media.istockphoto.com/vectors/default-profile-picture-avatar-photo-placeholder-vector-illustration-vector-id1223671392?k=20&m=1223671392&s=170667a&w=0&h=kEAA35Eaz8k8A3qAGkuY8OZxpfvn9653gDjQwDHZGPE=`,
+                         };
                     if (profile.email && profile.picture) {
                         sql = 'UPDATE users SET picture_url = ?, email = ? WHERE id = ?;';
                         connection.query(

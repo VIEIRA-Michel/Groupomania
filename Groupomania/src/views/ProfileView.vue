@@ -115,51 +115,6 @@ function updateProfile(update?: any) {
     font-family: 'Lato', sans-serif;
 }
 
-header {
-    display: flex;
-    justify-content: start;
-    background-color: #FFF;
-    width: 100%;
-    height: 100%;
-    filter: drop-shadow(0 0 0.75rem #4E5166);
-
-    .menu {
-        font-family: 'Lato', sans-serif;
-        display: flex;
-        font-size: 20px;
-        height: 80px;
-        width: 100%;
-        align-items: center;
-
-        div {
-
-            margin-left: 30px;
-        }
-
-        a {
-            text-decoration: none;
-            margin-left: 10%;
-            color: #4E5166;
-        }
-    }
-}
-
-
-.logout {
-    background: #FD2D01;
-    padding: 10px;
-    border-radius: 5px;
-    color: #FFF !important;
-    cursor: pointer;
-}
-
-.logo {
-    display: flex;
-    align-items: center;
-    padding-left: 3%;
-    width: 40%;
-}
-
 .container {
     display: flex;
     flex-direction: column;
@@ -174,7 +129,7 @@ header {
         padding: 20px;
         border-radius: 20px;
         margin: 40px auto auto auto;
-        box-shadow: 0px 0px 0.75rem #4E5166;
+        border: 1px solid #DBDBDB;
         transition: all 0.3s ease-in-out;
 
         &__title {

@@ -1,5 +1,4 @@
 const connection = require('../database/mysql_connexion');
-const date = require('date-and-time');
 
 
 exports.getRequests = (req, res, next) => {
@@ -38,11 +37,9 @@ exports.sendRequest = (req, res, next) => {
         sqlSearch, [req.user.userId, req.params.id, req.params.id, req.user.userId], function (err, results) {
             if (err) throw err;
             if (results === undefined || results.length === 0) {
-                let now = new Date();
-                let today = date.format(now, 'YYYY-MM-DD HH:mm:ss');
-                let sql = `INSERT INTO requests_friendship (user_id_sender, user_id_recipient, request_date) VALUES (?, ?, ?);`;
+                let sql = `INSERT INTO requests_friendship (user_id_sender, user_id_recipient, request_date) VALUES (?, ?, NOW());`;
                 connection.query(
-                    sql, [req.user.userId, req.params.id, today], function (err, results) {
+                    sql, [req.user.userId, req.params.id], function (err, results) {
                         if (err) throw err;
                         res.status(200).json({ message: 'Votre demande d\'amitié a été envoyée !' });
                     }
@@ -65,25 +62,18 @@ exports.replyToRequest = (req, res, next) => {
             }
             else {
                 if (req.body.response == 'accepted') {
-                    console.log("accepted");
-                    let now = new Date();
-                    let today = date.format(now, 'YYYY-MM-DD HH:mm:ss');
-                    // results[i].id
-                    let sql = `UPDATE requests_friendship SET approve_date = ? WHERE user_id_sender = ?;`;
+                    let sql = `UPDATE requests_friendship SET approve_date = NOW() WHERE user_id_sender = ?;`;
                     connection.query(
-                        sql, [today, req.params.id], function (err, results) {
+                        sql, [req.params.id], function (err, results) {
                             if (err) throw err;
                             console.log(results)
                             res.status(200).json({ message: 'Demande d\'amitié approuvée !' });
                         }
                     )
                 } else if (req.body.response == 'refused') {
-                    console.log('refused');
-                    let now = new Date();
-                    let today = date.format(now, 'YYYY-MM-DD HH:mm:ss');
-                    let sql = `UPDATE requests_friendship SET denied_date = ? WHERE user_id_sender = ?;`;
+                    let sql = `UPDATE requests_friendship SET denied_date = NOW() WHERE user_id_sender = ?;`;
                     connection.query(
-                        sql, [today, req.params.id], function (err, results) {
+                        sql, [req.params.id], function (err, results) {
                             if (err) throw err;
                             console.log(results)
                             res.status(200).json({ message: 'Demande d\'amitié refusée !' });

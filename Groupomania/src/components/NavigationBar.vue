@@ -7,17 +7,17 @@
         </div>
         <div v-if="props.isConnected" class="menu">
             <router-link to="/">
-                <div>Accueil</div>
+                <div class="menu__navigate"><fa icon="home" /></div>
             </router-link>
             <router-link to="/friends">
-                <div>Amis</div>
+                <div class="menu__navigate"><fa icon="user-group" /></div>
             </router-link>
             <router-link to="/profil">
-                <div>Profil</div>
+                <div class="menu__navigate"><fa icon="circle-user" /></div>
             </router-link>
-            <a v-if="props.isConnected" @click="emit('logout')" class="logout">
-                Déconnexion
-            </a>
+            <router-link to="/">
+                <div class="menu__navigate"><fa v-if="props.isConnected" @click="emit('logout')" icon="fa-right-from-bracket" /></div>
+            </router-link>
         </div>
     </header>
 </template>
@@ -54,7 +54,8 @@ header {
     background-color: #FFF;
     width: 100%;
     height: 30px;
-    filter: drop-shadow(0 0 0.75rem #4E5166);
+    padding: 10px;
+    border: 1px solid #DBDBDB;
 
     .menu {
         font-family: 'Lato', sans-serif;
@@ -91,7 +92,7 @@ header {
 }
 
 img {
-    width: 60%;
+    width: 80%;
     height: 30px;
 }
 

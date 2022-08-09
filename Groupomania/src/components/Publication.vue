@@ -6,9 +6,10 @@ import { reactive, ref, watchEffect, computed } from 'vue';
 import { useAuthStore } from '../shared/stores/authStore';
 import { usePublicationsStore } from '../shared/stores/publicationsStore';
 import { useCommentsStore } from '../shared/stores/commentsStore';
-import moment from 'moment';
-moment().format();
+import { DateTime } from 'luxon';
 
+
+const now = DateTime.now();
 const authStore = useAuthStore();
 const publicationsStore = usePublicationsStore();
 const commentsStore = useCommentsStore();
@@ -36,7 +37,7 @@ let loading = ref(publicationsStore.$state.isLoading);
 
 
 function createPublication(ref?: any) {
-    if(picture.name == pictureName.value) {
+    if (picture.name == pictureName.value) {
         publicationsStore.createPublication(content.value)
     } else {
         publicationsStore.createPublication(content.value, picture)
@@ -46,7 +47,7 @@ function createPublication(ref?: any) {
         console.log('on a ecrit quelque choses')
         content.value = '';
     };
-    if (picture.name.length > 0) {
+    if (picture && picture.name.length > 0) {
         pictureName.value = picture.name;
         document.querySelector('#file').value = '';
     }
@@ -123,27 +124,21 @@ console.log(user)
             <Loading />
         </div>
         <div v-else-if="!isLoading">
-            <div v-if="user" class="post">
-                <div class="post__top">
-                    <div class="post__top__details">
-                        <div class="post__top__details__avatar">
+            <div v-if="user" class="create_post">
+                <div class="create_post__top">
+                    <div class="create_post__top__details">
+                        <div class="create_post__top__details__avatar">
                             <img :src="user.picture_url" alt="avatar" />
                         </div>
-                        <div class="post__top__details__info">
-                            <div class="post__top__details__info__name">
-                                <span>{{ user.firstname + ' ' + user.lastname }}</span>
-                            </div>
-                        </div>
-
                     </div>
                 </div>
-                <div class="post__content">
-                    <div class="post__content__details">
+                <div class="create_post__content">
+                    <div class="create_post__content__details">
                         <form @submit.prevent="createPublication($refs)">
-                            <input type="text" v-model="content" class="post__content__details__input">
+                            <input type="text" v-model="content" placeholder="Quoi de neuf ?"
+                                class="create_post__content__details__input">
                             <input type="file" ref="fileInput" accept="image/*" @change="onPickFile"
-                                @submit="picture = ''" class="post__content__details__file" id="file">
-                            <button class="post__content__details__button">Publier</button>
+                                @submit="picture = ''" class="create_post__content__details__file" id="file">
                         </form>
                     </div>
                 </div>
@@ -156,8 +151,7 @@ console.log(user)
                                 <div class="post__top">
                                     <div class="post__top__details">
                                         <div class="post__top__details__avatar">
-                                            <img :src="publication.picture_url"
-                                                alt="avatar" />
+                                            <img :src="publication.picture_url" alt="avatar" />
                                         </div>
                                         <div class="post__top__details__info">
                                             <div class="post__top__details__info__name">
@@ -165,21 +159,21 @@ console.log(user)
                                                 }}</span>
                                             </div>
                                             <div class="post__top__details__info__date">
-                                                <span>{{ 'Publiée le ' + publication.created_at }}</span>
+                                                <span>{{ 'Publiée ' + publication.created_at }}</span>
                                             </div>
                                         </div>
                                     </div>
                                     <div v-if="user.user_id == publication.user_id" class="post__top__button">
-                                        <button @click.stop="publication.editMode = true">
-                                            Modifier
-                                        </button>
-                                        <button @click="deletePublication(publication.publication_id)">
-                                            Supprimer
-                                        </button>
+                                        <fa @click.stop="publication.editMode = true"
+                                            icon="fa-solid fa-pen-to-square" />
+                                        <fa @click="deletePublication(publication.publication_id)"
+                                            icon="fa-solid fa-trash-can" />
                                     </div>
                                 </div>
                                 <div class="post__content">
-                                    <p v-if="publication.content">{{ publication.content }}</p>
+                                    <div class="post__content__text">
+                                        <p v-if="publication.content">{{ publication.content }}</p>
+                                    </div>
                                     <img v-if="publication.picture" :src="publication.picture" alt="">
                                 </div>
                             </div>
@@ -190,15 +184,16 @@ console.log(user)
                                         <!-- <span>{{ publication.likes }}</span> -->
                                         <button @click.stop="likePublication(publication)"
                                             v-bind:class="[publication.iLike ? 'liked' : '']">
-                                            <span>{{
-                                                    publication.likes.length
-                                            }}</span> J'aime</button>
+                                            <span>{{ publication.likes.length }}</span>
+                                            <fa icon="fa-solid fa-thumbs-up" />
+                                        </button>
                                         <!-- <button @click="like" type="button">J'aime</button> -->
                                     </div>
                                     <div class="post__interaction__comment">
                                         <!-- <span>{{ publication.comments.length }}</span> -->
-                                        <button @click.stop="getComments(publication)"
-                                            type="button">Commentaires</button>
+                                        <button @click.stop="getComments(publication)" type="button">
+                                            <fa icon="fa-solid fa-comment-dots" />
+                                        </button>
                                     </div>
                                 </div>
                                 <div class="post__interaction__comment__list">
@@ -233,35 +228,96 @@ console.log(user)
 <style scoped lang="scss">
 @import '../styles/Components/buttons';
 
-.post {
-    width: 50rem;
-    border-radius: 15px;
-    margin: 3rem auto auto auto;
-    padding: 20px;
+.create_post {
+    max-height: 860px;
+    display: flex;
+    width: 470px;
+    border-radius: 5px;
+    margin: 10px auto auto auto;
     backdrop-filter: blur(5px);
-    background-color: rgb(227, 226, 226);
-    filter: drop-shadow(0 0 0.75rem #4E5166);
-
-    &__information {
-        padding: 20px;
-    }
+    background-color: #FFFFFF;
+    border: 1px solid #DBDBDB;
 
     &__top {
         display: flex;
-        width: 100%;
+        padding: 10px 0 0 10px;
 
         &__details {
             display: flex;
             flex-direction: row;
-            width: 50%;
 
             &__avatar {
                 border-radius: 50%;
                 margin-right: 0.5rem;
 
                 img {
-                    width: 4rem;
-                    border-radius: 32px;
+                    width: 30px;
+                    border-radius: 30px;
+                    height: 30px;
+                    object-fit: cover;
+                }
+            }
+        }
+    }
+
+    &__content {
+        display: flex;
+        flex-direction: column-reverse;
+        align-items: flex-start;
+        padding: 10px 0 0 0;
+
+        &__details {
+            &__input {
+                width: 94%;
+                height: 30px;
+                border: none;
+                border-radius: 15px;
+                padding: 0px 7px 0px 7px;
+                background-color: rgb(255, 255, 255);
+                color: rgb(0, 0, 0);
+            }
+
+            &__file {
+                margin: 10px 0px;
+            }
+        }
+    }
+}
+
+.post {
+    max-height: 860px;
+    display: flex;
+    flex-direction: column;
+    width: 470px;
+    border-radius: 5px;
+    margin: 10px auto auto auto;
+    backdrop-filter: blur(5px);
+    background-color: #FFFFFF;
+    border: 1px solid #DBDBDB;
+
+    &__top {
+        display: flex;
+        padding: 10px 0 0 10px;
+
+        &__details {
+            display: flex;
+            flex-direction: row;
+
+            &__avatar {
+                border-radius: 50%;
+                margin-right: 0.5rem;
+
+                img {
+                    width: 30px;
+                    border-radius: 30px;
+                    height: 30px;
+                    object-fit: cover;
+                }
+            }
+
+            &__info {
+                &__name {
+                    font-weight: bold;
                 }
             }
 
@@ -282,33 +338,45 @@ console.log(user)
 
     &__content {
         display: flex;
-        flex-direction: column;
+        flex-direction: column-reverse;
         align-items: flex-start;
-        margin-top: 1rem;
+        padding: 10px 0 0 0;
+
+        &__text {
+            margin: 0 20px;
+            display: flex;
+            flex-direction: row;
+
+            span {
+                font-weight: bold;
+            }
+        }
 
         img {
-            width: 100%;
-            height: 100%;
-            border-radius: 15px 15px 0px 0px;
+            width: 470px;
+            height: 580px;
+            object-fit: contain;
+            background: black;
         }
 
         &__details {
 
             &__input {
-                width: 49rem;
+                width: 94%;
+                height: 30px;
                 border: none;
                 border-radius: 15px;
-                padding: 0.5rem;
-                font-size: 1rem;
+                padding: 0px 7px 0px 7px;
                 background-color: rgb(255, 255, 255);
                 color: rgb(0, 0, 0);
-                margin-bottom: 1rem;
-                height: 3rem;
-                margin-top: 5px;
             }
 
             &__button {
                 @include button-primary;
+            }
+
+            &__file {
+                margin: 10px 0px;
             }
         }
     }
@@ -327,16 +395,22 @@ console.log(user)
         &__like {
             width: 50%;
 
+            :hover {
+                background-color: #DBDBDB;
+            }
+
             button {
                 width: 100%;
                 height: 100%;
-                background-color: #e3e2e2;
+                background-color: #FFFFFF;
                 border: none;
                 cursor: pointer;
+
+
             }
 
             .liked {
-                background-color: #FFD7D7;
+                background-color: #FFFFFF;
             }
         }
 
@@ -346,7 +420,7 @@ console.log(user)
             button {
                 width: 100%;
                 height: 100%;
-                background-color: #e3e2e2;
+                background-color: #FFFFFF;
                 border: none;
                 cursor: pointer;
             }
