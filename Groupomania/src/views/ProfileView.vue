@@ -2,16 +2,19 @@
 import { computed, ref, reactive } from 'vue';
 import { useAuthStore } from '../shared/stores/authStore';
 import NavigationBar from '../components/NavigationBar.vue';
-
 const authStore = useAuthStore();
 
 checkIsConnected();
 
-const isConnected = computed(() => {
-    return authStore.$state.isConnected;
-});
-const user = computed(() => {
-    return authStore.$state.user;
+const isConnected = computed(() => authStore.$state.isConnected);
+const user = computed(() => authStore.$state.user);
+
+let userEdit = reactive({
+    picture_url: user.value.picture_url,
+    email: '',
+    confirmEmail: '',
+    password: '',
+    confirmPassword: ''
 });
 
 function checkIsConnected() {
@@ -26,13 +29,6 @@ function logout() {
     window.location.href = '/';
 };
 
-let userEdit = reactive({
-    picture_url: user.value.picture_url,
-    email: '',
-    confirmEmail: '',
-    password: '',
-    confirmPassword: ''
-});
 
 function previewPicture(e: any) {
     const image = document.getElementById('picture');
@@ -72,7 +68,8 @@ function updateProfile(update?: any) {
                             <form @submit.prevent="updateProfile(userEdit)">
                                 <div class="edit-profil__body__content__form__input">
                                     <label for="picture">Photo de profil</label>
-                                    <input type="file" accept="image/*" @change="previewPicture($event)" />
+                                    <input type="file" class="input-file" accept="image/*"
+                                        @change="previewPicture($event)" />
                                 </div>
                                 <!-- <div class="edit-profil__body__content__form__input">
                                     <label for="lastname">Date de naissance</label>
@@ -127,9 +124,9 @@ function updateProfile(update?: any) {
         height: 100%;
         background-color: #FFF;
         padding: 20px;
-        border-radius: 20px;
+        border-radius: 5px;
         margin: 40px auto auto auto;
-        border: 1px solid #DBDBDB;
+        border: 1px solid #FD2D01;
         transition: all 0.3s ease-in-out;
 
         &__title {
@@ -168,15 +165,13 @@ function updateProfile(update?: any) {
 
                 &__picture {
                     display: flex;
-                    width: 70px;
-                    height: 70px;
                     border-radius: 35px;
 
                     img {
-                        border: #FFD7D7 3px solid;
-                        width: 70px;
-                        height: 70px;
-                        border-radius: 35px;
+                        border: transparent 3px solid;
+                        width: 80px;
+                        height: 80px;
+                        border-radius: 45px;
                         object-fit: cover;
                     }
                 }
@@ -197,12 +192,22 @@ function updateProfile(update?: any) {
                         flex-direction: column;
                         align-items: center;
 
+                        input {
+                            border: 1px solid #FD2D01;
+                            border-radius: 5px;
+                        }
+
+                        .input-file {
+                            border: none;
+                        }
+
                         label {
                             font-size: 20px;
                             color: #4E5166;
                             margin-top: 15px;
                             margin-bottom: 5px;
                         }
+
                     }
 
                     &__button {
@@ -218,6 +223,19 @@ function updateProfile(update?: any) {
 
                         button {
                             margin-left: 5px;
+                            background-color: #FFFFFF;
+                            border-color: #FD2D01;
+                            color: #FD2D01;
+                            padding: 10px;
+                            border: 1px solid #FD2D01;
+                            border-radius: 5px;
+                            cursor: pointer;
+                            transition: all 0.3s ease-in-out;
+                        }
+
+                        button:nth-child(2) {
+                            background-color: #FD2D01;
+                            color: #FFFFFF;
                         }
                     }
                 }

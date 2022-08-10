@@ -2,21 +2,29 @@
     <header>
         <div class="logo">
             <router-link to="/">
-                <img src="../assets/icon-left-font-monochrome-black.svg" alt="logo-groupomania">
+                <img src="../assets/logo-header-svg.svg" alt="logo-groupomania">
             </router-link>
         </div>
         <div v-if="props.isConnected" class="menu">
             <router-link to="/">
-                <div class="menu__navigate"><fa icon="home" /></div>
+                <div class="menu__navigate">
+                    <fa icon="home" />
+                </div>
             </router-link>
             <router-link to="/friends">
-                <div class="menu__navigate"><fa icon="user-group" /></div>
+                <div class="menu__navigate">
+                    <fa icon="user-group" />
+                </div>
             </router-link>
             <router-link to="/profil">
-                <div class="menu__navigate"><fa icon="circle-user" /></div>
+                <div class="menu__navigate">
+                    <fa icon="circle-user" />
+                </div>
             </router-link>
             <router-link to="/">
-                <div class="menu__navigate"><fa v-if="props.isConnected" @click="emit('logout')" icon="fa-right-from-bracket" /></div>
+                <div class="menu__navigate">
+                    <fa v-if="props.isConnected" @click="emit('logout')" icon="fa-right-from-bracket" />
+                </div>
             </router-link>
         </div>
     </header>
@@ -55,7 +63,7 @@ header {
     width: 100%;
     height: 30px;
     padding: 10px;
-    border: 1px solid #DBDBDB;
+    border-bottom: 1px solid #FD2D01;
 
     .menu {
         font-family: 'Lato', sans-serif;
@@ -71,7 +79,7 @@ header {
         a {
             text-decoration: none;
             margin-left: 10%;
-            color: #4E5166;
+            color: #FD2D01;
         }
     }
 }
@@ -92,8 +100,9 @@ header {
 }
 
 img {
-    width: 80%;
-    height: 30px;
+    width: 90%;
+    height: 200px;
+    object-fit: cover;
 }
 
 .login {

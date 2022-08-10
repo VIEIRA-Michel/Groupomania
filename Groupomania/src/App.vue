@@ -16,6 +16,6 @@ const route = useRoute()
 <style>
 body {
   margin: auto;
-  background-color: #FAFAFA;
+  background-color: #FFD7D7;
 }
 </style>

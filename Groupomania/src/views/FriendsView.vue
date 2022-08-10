@@ -4,24 +4,22 @@ import { useAuthStore } from '../shared/stores/authStore';
 import { useFriendshipStore } from '../shared/stores/friendsStore';
 import NavigationBar from '../components/NavigationBar.vue';
 import Loading from '../components/Loading.vue';
-
 const authStore = useAuthStore();
 const friendshipStore = useFriendshipStore();
+
+checkIsConnected();
+friendshipStore.$reset();
+
+const isConnected = computed(() => authStore.$state.isConnected);
+const user = computed(() => authStore.$state.user);
+const requests = computed(() => friendshipStore.$state.requests);
+const friends = computed(() => friendshipStore.$state.friends);
+const isLoading = computed(() => friendshipStore.$state.isLoading);
+const usersFound = computed(() => friendshipStore.$state.searchResults);
+
 const search = ref('');
 let open = ref(false);
 let modalRequest = ref(false);
-
-checkIsConnected();
-
-friendshipStore.$reset();
-
-const isConnected = computed(() => {
-    return authStore.$state.isConnected;
-});
-
-const user = computed(() => {
-    return authStore.$state.user;
-});
 
 
 function getRequestsAndFriendlist() {
@@ -30,22 +28,6 @@ function getRequestsAndFriendlist() {
 }
 getRequestsAndFriendlist();
 
-
-const requests = computed(() => {
-    return friendshipStore.$state.requests;
-});
-
-const friends = computed(() => {
-    return friendshipStore.$state.friends;
-});
-
-const isLoading = computed(() => {
-    return friendshipStore.$state.isLoading;
-})
-
-const usersFound = computed(() => {
-    return friendshipStore.$state.searchResults;
-});
 
 function checkIsConnected() {
     authStore.getMyInformations();
@@ -64,7 +46,6 @@ function replyToRequest(req: any, answer: string) {
 }
 
 function removeFriend(user_id: number) {
-    // console.log(friend);
     open.value = false;
     friendshipStore.removeFriend(user_id);
 }
@@ -74,12 +55,6 @@ function searchUser(search: string) {
         isLoading: true,
     });
     friendshipStore.checkRequestsSended();
-    // setTimeout(() => {
-    //     friendshipStore.$patch({
-    //         isLoading: false,
-    //     });
-    //     friendshipStore.searchUser(search);
-    // }, 1500);
     friendshipStore.searchUser(search);
 }
 
@@ -92,7 +67,6 @@ function cancelRequest(user_id: number) {
     friendshipStore.cancelRequest(user_id);
 }
 
-// console.log(friends);
 function confirmRemoveFriend() {
     open.value = true;
 }
@@ -127,7 +101,6 @@ function confirmCancelRequest() {
                                         <span>{{ user.lastname }}</span>
                                     </div>
                                 </div>
-                                <div class="search-user__results__list__item__name__button">
                                     <button v-if="!user.isFriend && !user.pending"
                                         @click="sendFriendRequest(user.user_id)">
                                         <fa icon="fa-solid fa-user-plus" />
@@ -138,7 +111,6 @@ function confirmCancelRequest() {
                                     <button v-if="user.isFriend" @click="confirmRemoveFriend()" class="friend">
                                         <fa icon="fa-solid fa-user-check" />
                                     </button>
-                                </div>
                                 <Teleport to="body">
                                     <div v-if="modalRequest" @click="modalRequest = false"
                                         class="calc d-flex flex-row justify-content-center align-items-center">
@@ -192,7 +164,7 @@ function confirmCancelRequest() {
                                 <button @click="replyToRequest(req, 'refused')" class="refused">
                                     <fa icon="fa-solid fa-xmark" />
                                 </button>
-                                <button @click="replyToRequest(req, 'accepted')" class="accepted" >
+                                <button @click="replyToRequest(req, 'accepted')" class="accepted">
                                     <fa icon="fa-solid fa-check" />
                                 </button>
                             </div>
@@ -289,7 +261,7 @@ function confirmCancelRequest() {
 
     .search-user {
         background: #FFFFFF;
-        border: 1px solid #DBDBDB;
+        border: 1px solid #FD2D01;
         width: 70%;
         margin: 10px auto 0px auto;
 
@@ -303,6 +275,11 @@ function confirmCancelRequest() {
             display: flex;
             justify-content: center;
             margin: 20px;
+
+            input {
+                border: 1px solid #FD2D01;
+                border-radius: 5px;
+            }
         }
 
         &__results {
@@ -319,7 +296,7 @@ function confirmCancelRequest() {
                     width: 90px;
                     padding: 15px;
                     background: linear-gradient(180deg, #FFD7D7, transparent);
-                    border: 1px solid #DBDBDB;
+                    border: 1px solid #FD2D01;
                     border-radius: 5px;
 
                     &__avatar {
@@ -329,6 +306,7 @@ function confirmCancelRequest() {
                         img {
                             width: 50px;
                             height: 50px;
+                            object-fit: cover;
                         }
                     }
 
@@ -358,17 +336,14 @@ function confirmCancelRequest() {
                             }
                         }
 
-                        &__button {
                             button {
                                 height: 30px;
                                 width: 100%;
                                 border-radius: 5px;
-                                border: none;
-                                background: #FD2D01;
-                                color: #FFF !important;
-                                font-size: 20px;
+                                background: #bcffcb;
                                 font-weight: bold;
                                 cursor: pointer;
+                                border: 1px solid #DBDBDB;
                             }
 
                             .pending {
@@ -378,7 +353,7 @@ function confirmCancelRequest() {
                             .friend {
                                 background: #FFD7D7;
                             }
-                        }
+                        
                     }
                 }
             }
@@ -390,7 +365,7 @@ function confirmCancelRequest() {
         flex-direction: column;
         align-items: center;
         background: #FFFFFF;
-        border: 1px solid #DBDBDB;
+        border: 1px solid #FD2D01;
         width: 70%;
         margin: 10px auto 0px auto;
 
@@ -413,7 +388,7 @@ function confirmCancelRequest() {
                 margin-bottom: 20px;
                 border-radius: 5px;
                 background: linear-gradient(180deg, #FFD7D7, transparent);
-                border: 1px solid #DBDBDB;
+                border: 1px solid #FD2D01;
 
                 &__name {
                     display: flex;
@@ -436,11 +411,10 @@ function confirmCancelRequest() {
 
                     button {
                         font-size: 1rem;
-                        width:40px;
+                        width: 40px;
                         padding: 5px 10px;
                         border-radius: 5px;
-                        border-width: 1px;
-                        border-style: solid;
+                        border: 1px solid #DBDBDB;
                         cursor: pointer;
                         transition: all 0.3s ease-in-out;
                         margin: 0 10px;
@@ -449,6 +423,7 @@ function confirmCancelRequest() {
                     .refused {
                         background: #ff7a7a;
                     }
+
                     .accepted {
                         background: #bcffcb;
                     }
@@ -457,6 +432,8 @@ function confirmCancelRequest() {
                 &__avatar {
                     img {
                         width: 50px;
+                        height: 50px;
+                        object-fit: cover;
                     }
                 }
             }
@@ -474,7 +451,7 @@ function confirmCancelRequest() {
         flex-direction: column;
         align-items: center;
         background: #FFFFFF;
-        border: 1px solid #DBDBDB;
+        border: 1px solid #FD2D01;
         width: 70%;
         margin: 10px auto 0px auto;
 
@@ -504,7 +481,7 @@ function confirmCancelRequest() {
                 flex-direction: column;
                 align-items: center;
                 background: linear-gradient(180deg, #FFD7D7, transparent);
-                border: 1px solid #DBDBDB;
+                border: 1px solid #FD2D01;
 
                 &__button {
                     display: flex;
@@ -519,6 +496,8 @@ function confirmCancelRequest() {
                         cursor: pointer;
                         transition: all 0.3s ease-in-out;
                         margin: 0 10px;
+                        background-color: #ff7a7a;
+                        border: 1px solid #DBDBDB;
 
                     }
 
@@ -527,6 +506,8 @@ function confirmCancelRequest() {
                 &__avatar {
                     img {
                         width: 50px;
+                        height: 50px;
+                        object-fit: cover;
                     }
                 }
 
@@ -594,8 +575,8 @@ function confirmCancelRequest() {
 
             .btn.btn-secondary {
                 @include button-primary;
-                background-color: #4E5166;
-                border: #4E5166;
+                color: #FD2D01;
+                background-color: #FFFFFF;
             }
         }
     }

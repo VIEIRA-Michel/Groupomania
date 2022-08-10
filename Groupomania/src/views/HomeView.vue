@@ -1,32 +1,18 @@
 <script setup lang="ts">
-import { useRoute } from 'vue-router';
 import Publication from '../components/Publication.vue';
 import { computed, reactive, ref } from 'vue';
 import { useAuthStore } from '../shared/stores/authStore';
 import NavigationBar from '../components/NavigationBar.vue';
-
 const authStore = useAuthStore();
-const open = ref(false);
 
 checkIsConnected();
 
-const isConnected = computed(() => {
-    return authStore.$state.isConnected;
-});
+const isConnected = computed(() => authStore.$state.isConnected);
+const user = computed(() => authStore.$state.user);
+const invalidEmail = computed(() => authStore.$state.invalidEmail);
+const invalidPassword = computed(() => authStore.$state.invalidPassword);
 
-const user = computed(() => {
-    return authStore.$state.user;
-});
-
-const invalidEmail = computed(() => {
-    return authStore.$state.invalidEmail;
-});
-
-const invalidPassword = computed(() => {
-    return authStore.$state.invalidPassword;
-});
-
-console.log('invalidEmail', invalidEmail.value, 'invalidPassword', invalidPassword.value);
+const open = ref(false);
 let hasAccount = ref(true);
 let userInput = reactive({
     lastname: '',
@@ -35,7 +21,6 @@ let userInput = reactive({
     password: '',
     confirmPassword: ''
 });
-
 let loginInput = reactive({
     email: '',
     password: ''
@@ -58,7 +43,6 @@ function checkIsConnected() {
         authStore.getMyInformations();
     }
 }
-
 
 </script>
 
@@ -229,7 +213,7 @@ function checkIsConnected() {
             &__form {
                 border-radius: 5px;
                 background: #FFFFFF;
-                border: 1px solid #DBDBDB;
+                border: 1px solid #FD2D01;
                 padding: 20px;
                 -webkit-animation: focus-in-expand 1s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
                 animation: focus-in-expand 1s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
@@ -269,8 +253,8 @@ function checkIsConnected() {
                     }
 
                     input {
-                        border-radius: 20px;
-                        height: 2em;
+                        border-radius: 5px;
+                        height: 20px;
                         text-align: center;
                     }
 
@@ -309,23 +293,29 @@ function checkIsConnected() {
                     }
 
                     input {
-                        border-radius: 20px;
-                        height: 2em;
+                        border-radius: 5px;
+                        height: 20px;
                         text-align: center;
+
+                        &:focus {
+                            outline: none;
+                        }
                     }
 
                     button {
-                        background-color: #FD2D01;
+                        background-color: #FFFFFF;
                         border-color: #FD2D01;
-                        color: #fff;
-                        font-size: 1.5rem;
-                        padding: 10px 20px;
+                        color: #FD2D01;
+                        padding: 10px;
+                        border: 1px solid #FD2D01;
                         border-radius: 5px;
-                        border-width: 1px;
-                        border-style: solid;
                         cursor: pointer;
                         transition: all 0.3s ease-in-out;
-                        margin: 0 10px;
+
+                        &:hover {
+                            background-color: #FD2D01;
+                            color: #FFFFFF;
+                        }
                     }
                 }
             }

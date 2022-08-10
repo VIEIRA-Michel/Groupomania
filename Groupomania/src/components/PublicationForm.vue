@@ -12,7 +12,7 @@ const props = defineProps<{
         email: string,
         firstname: string,
         lastname: string,
-        picture: string,
+        picture_url: string,
     },
 }>();
 
@@ -42,27 +42,23 @@ const emit = defineEmits<{
 
 <template>
 
-    <div v-if="props.user" class="post">
-        <div class="post__top">
-            <div class="post__top__details">
-                <div class="post__top__details__avatar">
-                    <img src="https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50?s=200" alt="avatar" />
+    <div v-if="props.user" class="create_post">
+        <div class="create_post__top">
+            <div class="create_post__top__details">
+                <div class="create_post__top__details__avatar">
+                    <img :src="props.user.picture_url" alt="avatar" />
                 </div>
-                <div class="post__top__details__info">
-                    <div class="post__top__details__info__name">
-                        <span>{{ props.user.firstname + ' ' + props.user.lastname }}</span>
-                    </div>
-                </div>
-
             </div>
         </div>
-        <div class="post__content">
-            <div class="post__content__details">
-                <input type="text" v-model="post.content" class="post__content__details__input">
+        <div class="create_post__content">
+            <div class="create_post__content__details">
+                <input type="text" v-model="post.content" class="create_post__content__details__input">
                 <input type="file" ref="fileInput" accept="image/*" @change="onPickFile"
-                    class="post__content__details__file">
-                <button @click="emit('cancel')">Annuler</button>
-                <button @click="emit('update', post)">Sauvegarder</button>
+                    class="create_post__content__details__file">
+                <div class="create_post__content__details__button">
+                    <button @click="emit('cancel')" class="cancel">Annuler</button>
+                    <button @click="emit('update', post)" class="submit">Sauvegarder</button>
+                </div>
             </div>
         </div>
     </div>
@@ -71,71 +67,99 @@ const emit = defineEmits<{
 <style scoped lang="scss">
 @import '../styles/Components/buttons';
 
-.post {
-    width: 50rem;
-    padding: 20px;
-    border-radius: 15px;
-    margin: 3rem auto auto auto;
-    backdrop-filter: blur(5px);
-    background-color: rgb(227, 226, 226);
-    filter: drop-shadow(0 0 0.75rem #4E5166);
+.create_post {
+    max-height: 860px;
+    display: flex;
+    width: 470px;
+    border-radius: 5px;
+    margin: 10px auto auto auto;
+    background-color: #FFFFFF;
+    border: 1px solid #DBDBDB;
 
     &__top {
         display: flex;
-        width: 100%;
+        padding: 10px 0 0 10px;
 
         &__details {
             display: flex;
             flex-direction: row;
-            width: 50%;
 
             &__avatar {
                 border-radius: 50%;
                 margin-right: 0.5rem;
 
                 img {
-                    width: 4rem;
-                    border-radius: 32px;
+                    width: 30px;
+                    border-radius: 30px;
+                    height: 30px;
+                    object-fit: cover;
                 }
-            }
-
-
-        }
-
-        &__button {
-            display: flex;
-            justify-content: end;
-            width: 50%;
-
-            button {
-                @include button-primary;
             }
         }
     }
 
     &__content {
         display: flex;
-        flex-direction: column;
+        width: 100%;
+        flex-direction: column-reverse;
         align-items: flex-start;
-        margin-top: 1rem;
+        padding: 10px 0 0 0;
 
         &__details {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            justify-content: space-between;
+
+            form {
+                width: 100%;
+            }
 
             &__input {
-                width: 49rem;
+                width: 94%;
+                height: 30px;
                 border: none;
                 border-radius: 15px;
-                padding: 0.5rem;
-                font-size: 1rem;
+                padding: 0px 7px 0px 7px;
                 background-color: rgb(255, 255, 255);
                 color: rgb(0, 0, 0);
-                margin-bottom: 1rem;
-                height: 3rem;
-                margin-top: 5px;
+
+            }
+
+            &__file {
+                margin: 10px 0px;
+                width: 94%;
+
             }
 
             &__button {
-                @include button-primary;
+                width: 100%;
+                display: flex;
+                justify-content: end;
+                margin-right: 30px;
+                margin-bottom: 15px;
+
+                button {
+                    margin-left: 10px;
+                    background-color: #FFFFFF;
+                    border-color: #FD2D01;
+                    color: #FD2D01;
+                    padding: 5px;
+                    border: 1px solid #FD2D01;
+                    border-radius: 5px;
+                    cursor: pointer;
+                    transition: all 0.3s ease-in-out;
+
+                    &:hover {
+                        background-color: #FD2D01;
+                        color: #FFFFFF;
+                    }
+
+                    .cancel {}
+
+                    .submit {}
+                }
             }
         }
     }

@@ -2,21 +2,20 @@
 import Loading from './Loading.vue';
 import PublicationForm from './PublicationForm.vue';
 import Comment from './Comment.vue';
-import { reactive, ref, watchEffect, computed } from 'vue';
+import { ref, watchEffect, computed } from 'vue';
 import { useAuthStore } from '../shared/stores/authStore';
 import { usePublicationsStore } from '../shared/stores/publicationsStore';
 import { useCommentsStore } from '../shared/stores/commentsStore';
-import { DateTime } from 'luxon';
-
-
-const now = DateTime.now();
 const authStore = useAuthStore();
 const publicationsStore = usePublicationsStore();
 const commentsStore = useCommentsStore();
 
+checkIsConnected();
+
 let publications = computed(() => publicationsStore.$state.publications);
 let user = computed(() => authStore.$state.user);
 let isLoading = computed(() => publicationsStore.$state.isLoading);
+
 let page = ref(1);
 let count = ref(1);
 let numberOfPages = ref();
@@ -27,14 +26,13 @@ let limitValue = ref(5);
 let from = ref(0);
 let more = ref(false);
 let colorButton = ref('');
+let postIdOnState = ref();
+let loading = ref(publicationsStore.$state.isLoading);
+
+
 function onPickFile(event: any) {
     picture = event.target.files[0];
 }
-
-let postIdOnState = ref();
-
-let loading = ref(publicationsStore.$state.isLoading);
-
 
 function createPublication(ref?: any) {
     if (picture.name == pictureName.value) {
@@ -68,11 +66,11 @@ function deletePublication(id: number) {
     publicationsStore.deletePublication(id);
 }
 
-async function checkIsConnected() {
+function checkIsConnected() {
     authStore.getMyInformations();
 }
 getAllPublications(page.value);
-checkIsConnected();
+
 
 watchEffect(() => {
     loading.value = true;
@@ -114,8 +112,6 @@ function getComments(publication: any, more?: boolean) {
 function likePublication(publication: any) {
     publicationsStore.likePublication(publication.publication_id);
 };
-
-console.log(user)
 </script>
 
 <template>
@@ -187,7 +183,7 @@ console.log(user)
                                     <div class="post__interaction__like">
                                         <button @click.stop="likePublication(publication)"
                                             v-bind:class="[publication.iLike ? 'liked' : '']">
-                                            <span>{{ publication.likes.length + '  ' }}</span>
+                                            <span>{{ publication.likes.length + ' ' }}</span>
                                             <fa icon="fa-solid fa-thumbs-up" />
                                         </button>
                                         <!-- <button @click="like" type="button">J'aime</button> -->
@@ -239,7 +235,7 @@ console.log(user)
     margin: 10px auto auto auto;
     backdrop-filter: blur(5px);
     background-color: #FFFFFF;
-    border: 1px solid #DBDBDB;
+    border: 1px solid #FD2D01;
 
     &__top {
         display: flex;
@@ -299,7 +295,14 @@ console.log(user)
 
             &__button {
                 margin-right: 15px;
-                border: 1px solid #DBDBDB;
+                background-color: #FD2D01;
+                border-color: #FD2D01;
+                color: #FFFFFF;
+                padding: 5px 10px;
+                border: 1px solid #FD2D01;
+                border-radius: 5px;
+                cursor: pointer;
+                transition: all 0.3s ease-in-out;
             }
         }
     }
@@ -313,7 +316,7 @@ console.log(user)
     margin: 10px auto auto auto;
     backdrop-filter: blur(5px);
     background-color: #FFFFFF;
-    border: 1px solid #DBDBDB;
+    border: 1px solid #FD2D01;
 
     &__top {
         display: flex;
