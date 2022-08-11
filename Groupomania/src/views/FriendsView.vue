@@ -20,6 +20,7 @@ const usersFound = computed(() => friendshipStore.$state.searchResults);
 const search = ref('');
 let open = ref(false);
 let modalRequest = ref(false);
+const chatting = ref(false);
 
 
 function getRequestsAndFriendlist() {
@@ -73,6 +74,14 @@ function confirmRemoveFriend() {
 
 function confirmCancelRequest() {
     modalRequest.value = true;
+}
+
+function openTheConversation() {
+    chatting.value = true;
+}
+
+function closeConversation() {
+    chatting.value = false;
 }
 </script>
 
@@ -204,11 +213,12 @@ function confirmCancelRequest() {
                             <button class="friend" @click="confirmRemoveFriend()">
                                 <fa icon="fa-solid fa-user-minus" />
                             </button>
+                            <button class="message" @click="openTheConversation()">
+                                <fa icon="fa-solid fa-envelope" />
+                            </button>
                             <!-- <button @click="removeFriend(friend.user_id)"
                                 class="friend-list__list__item__button">Retirer</button> -->
                         </div>
-                        <!--  -->
-                        <!-- Modal test -->
                         <Teleport to="body">
                             <div v-if="open" @click="open = false"
                                 class="calc d-flex flex-row justify-content-center align-items-center">
@@ -230,8 +240,6 @@ function confirmCancelRequest() {
                                 </div>
                             </div>
                         </Teleport>
-                        <!-- END -->
-                        <!--  -->
                     </div>
                 </div>
                 <div v-else>
@@ -401,15 +409,7 @@ function confirmCancelRequest() {
                 border-radius: 5px;
 
                 &__name {
-                    // display: flex;
-                    // flex-direction: column;
-                    // align-items: center;
-                    // width: 100%;
-                    // justify-content: space-between;
-
                     &__text {
-                        // display: flex;
-                        // flex-direction: row;
                         margin-bottom: 5px;
 
                         &__firstname {
@@ -483,9 +483,6 @@ function confirmCancelRequest() {
     }
 
     .friends-list {
-        // display: flex;
-        // flex-direction: column;
-        // align-items: center;
         background: #FFFFFF;
         border: 1px solid #FD2D01;
         width: 70%;
@@ -521,17 +518,25 @@ function confirmCancelRequest() {
 
                 &__button {
                     display: flex;
-                    justify-content: center;
+                    flex-direction: row;
+                    justify-content: space-between;
 
                     button {
                         background-color: #ff7a7a;
-                        width: 100%;
+                        font-size: 1rem;
+                        width: 40px;
                         height: 30px;
-                        border-radius: 5px;
                         font-weight: bold;
                         cursor: pointer;
                         border: 1px solid #DBDBDB;
+                        padding: 5px 10px;
+                        border-radius: 5px;
+                        transition: all 0.3s ease-in-out;
 
+                    }
+
+                    .message {
+                        background-color: #fffa7a;
                     }
 
                 }

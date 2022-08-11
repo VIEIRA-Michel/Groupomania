@@ -16,6 +16,11 @@
                     <fa icon="user-group" />
                 </div>
             </router-link>
+            <router-link to="/chat">
+                <div class="menu__navigate">
+                    <fa icon="fa-solid fa-comments" />
+                </div>
+            </router-link>
             <router-link to="/profil">
                 <div class="menu__navigate">
                     <fa icon="circle-user" />
@@ -32,7 +37,7 @@
                 <fa icon="fa-solid fa-bars" />
             </button>
         </div>
-        
+
     </header>
 </template>
 
