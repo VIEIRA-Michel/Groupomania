@@ -101,16 +101,15 @@ function confirmCancelRequest() {
                                         <span>{{ user.lastname }}</span>
                                     </div>
                                 </div>
-                                    <button v-if="!user.isFriend && !user.pending"
-                                        @click="sendFriendRequest(user.user_id)">
-                                        <fa icon="fa-solid fa-user-plus" />
-                                    </button>
-                                    <button v-if="user.pending" @click="confirmCancelRequest()" class="pending">
-                                        <fa icon="fa-solid fa-user-clock" />
-                                    </button>
-                                    <button v-if="user.isFriend" @click="confirmRemoveFriend()" class="friend">
-                                        <fa icon="fa-solid fa-user-check" />
-                                    </button>
+                                <button v-if="!user.isFriend && !user.pending" @click="sendFriendRequest(user.user_id)">
+                                    <fa icon="fa-solid fa-user-plus" />
+                                </button>
+                                <button v-if="user.pending" @click="confirmCancelRequest()" class="pending">
+                                    <fa icon="fa-solid fa-user-clock" />
+                                </button>
+                                <button v-if="user.isFriend" @click="confirmRemoveFriend()" class="friend">
+                                    <fa icon="fa-solid fa-user-check" />
+                                </button>
                                 <Teleport to="body">
                                     <div v-if="modalRequest" @click="modalRequest = false"
                                         class="calc d-flex flex-row justify-content-center align-items-center">
@@ -153,14 +152,14 @@ function confirmCancelRequest() {
                         </div>
                         <div class="friends-request__list__item__name">
                             <div class="friends-request__list__item__name__text">
-                                <div class="friends-request-list__item__name__text__firstname">
+                                <div class="friends-request__list__item__name__text__firstname">
                                     <span>{{ req.firstname }}</span>
                                 </div>
-                                <div class="friends-request-list__item__name__text__lastname">
+                                <div class="friends-request__list__item__name__text__lastname">
                                     <span>{{ req.lastname }}</span>
                                 </div>
                             </div>
-                            <div class="friends-request-list__item__name__button">
+                            <div class="friends-request__list__item__name__button">
                                 <button @click="replyToRequest(req, 'refused')" class="refused">
                                     <fa icon="fa-solid fa-xmark" />
                                 </button>
@@ -291,6 +290,10 @@ function confirmCancelRequest() {
                 width: 70%;
                 justify-content: space-between;
 
+                @media (max-width: 768px) {
+                    width: 100%;
+                }
+
                 &__item {
                     margin: 10px auto;
                     width: 90px;
@@ -336,24 +339,24 @@ function confirmCancelRequest() {
                             }
                         }
 
-                            button {
-                                height: 30px;
-                                width: 100%;
-                                border-radius: 5px;
-                                background: #bcffcb;
-                                font-weight: bold;
-                                cursor: pointer;
-                                border: 1px solid #DBDBDB;
-                            }
+                        button {
+                            background: #bcffcb;
+                            width: 100%;
+                            height: 30px;
+                            border-radius: 5px;
+                            font-weight: bold;
+                            cursor: pointer;
+                            border: 1px solid #DBDBDB;
+                        }
 
-                            .pending {
-                                background: #4E5166;
-                            }
+                        .pending {
+                            background: #4E5166;
+                        }
 
-                            .friend {
-                                background: #FFD7D7;
-                            }
-                        
+                        .friend {
+                            background: #FFD7D7;
+                        }
+
                     }
                 }
             }
@@ -378,33 +381,62 @@ function confirmCancelRequest() {
         }
 
         &__list {
-            margin-top: 30px;
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            margin: auto;
             width: 70%;
+            justify-content: space-between;
+
+            @media (max-width: 768px) {
+                width: 100%;
+            }
 
             &__item {
-                display: flex;
-                flex-direction: row;
-                padding: 10px;
-                margin-bottom: 20px;
-                border-radius: 5px;
+                margin: 10px auto;
+                width: 90px;
+                padding: 15px;
                 background: linear-gradient(180deg, #FFD7D7, transparent);
                 border: 1px solid #FD2D01;
+                border-radius: 5px;
 
                 &__name {
-                    display: flex;
-                    flex-direction: row;
-                    align-items: center;
-                    width: 100%;
-                    justify-content: space-between;
+                    // display: flex;
+                    // flex-direction: column;
+                    // align-items: center;
+                    // width: 100%;
+                    // justify-content: space-between;
 
                     &__text {
-                        display: flex;
-                        flex-direction: row;
+                        // display: flex;
+                        // flex-direction: row;
+                        margin-bottom: 5px;
+
+                        &__firstname {
+                            display: flex;
+                            justify-content: center;
+
+                            span {
+                                font-size: 20px;
+                                font-weight: bold;
+                            }
+                        }
+
+                        &__lastname {
+                            display: flex;
+                            justify-content: center;
+
+                            span {
+
+                                font-size: 20px;
+                                font-weight: bold;
+                            }
+                        }
                     }
 
                     &__button {
-                        width: 25%;
                         display: flex;
+                        flex-direction: row;
                         justify-content: space-between;
 
                     }
@@ -412,12 +444,13 @@ function confirmCancelRequest() {
                     button {
                         font-size: 1rem;
                         width: 40px;
+                        height: 30px;
+                        font-weight: bold;
+                        cursor: pointer;
+                        border: 1px solid #DBDBDB;
                         padding: 5px 10px;
                         border-radius: 5px;
-                        border: 1px solid #DBDBDB;
-                        cursor: pointer;
                         transition: all 0.3s ease-in-out;
-                        margin: 0 10px;
                     }
 
                     .refused {
@@ -430,6 +463,9 @@ function confirmCancelRequest() {
                 }
 
                 &__avatar {
+                    display: flex;
+                    justify-content: center;
+
                     img {
                         width: 50px;
                         height: 50px;
@@ -447,56 +483,53 @@ function confirmCancelRequest() {
     }
 
     .friends-list {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
+        // display: flex;
+        // flex-direction: column;
+        // align-items: center;
         background: #FFFFFF;
         border: 1px solid #FD2D01;
         width: 70%;
         margin: 10px auto 0px auto;
 
         &__title {
+            text-align: center;
             margin-top: 20px;
-            margin-bottom: 20px;
-
-            &__text {
-                font-weight: 700;
-            }
+            font-weight: 700;
         }
 
         &__list {
             display: flex;
             flex-direction: row;
             flex-wrap: wrap;
-            justify-content: center;
+            margin: auto;
             width: 70%;
+            justify-content: space-between;
+
+            @media (max-width: 768px) {
+                width: 100%;
+            }
 
             &__item {
 
                 margin: 10px auto;
-                padding: 15px;
                 width: 90px;
-                border-radius: 5px;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
+                padding: 15px;
                 background: linear-gradient(180deg, #FFD7D7, transparent);
                 border: 1px solid #FD2D01;
+                border-radius: 5px;
+
 
                 &__button {
                     display: flex;
                     justify-content: center;
 
                     button {
-                        font-size: 1rem;
-                        padding: 5px 10px;
-                        border-radius: 5px;
-                        border-width: 1px;
-                        border-style: solid;
-                        cursor: pointer;
-                        transition: all 0.3s ease-in-out;
-                        margin: 0 10px;
                         background-color: #ff7a7a;
+                        width: 100%;
+                        height: 30px;
+                        border-radius: 5px;
+                        font-weight: bold;
+                        cursor: pointer;
                         border: 1px solid #DBDBDB;
 
                     }
@@ -504,6 +537,9 @@ function confirmCancelRequest() {
                 }
 
                 &__avatar {
+                    display: flex;
+                    justify-content: center;
+
                     img {
                         width: 50px;
                         height: 50px;
@@ -512,8 +548,30 @@ function confirmCancelRequest() {
                 }
 
                 &__name {
-                    text-align: center;
-                    margin-bottom: 10px;
+                    &__text {
+                        margin-bottom: 5px;
+
+                        &__firstname {
+                            display: flex;
+                            justify-content: center;
+
+                            span {
+                                font-size: 20px;
+                                font-weight: bold;
+                            }
+                        }
+
+                        &__lastname {
+                            display: flex;
+                            justify-content: center;
+
+                            span {
+
+                                font-size: 20px;
+                                font-weight: bold;
+                            }
+                        }
+                    }
                 }
 
 

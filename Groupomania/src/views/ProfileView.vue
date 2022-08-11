@@ -211,6 +211,7 @@ function updateProfile(update?: any) {
                     }
 
                     &__button {
+                        margin-top: 15px;
                         display: flex;
                         flex-direction: row;
                         align-items: center;

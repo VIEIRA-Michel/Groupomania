@@ -27,6 +27,12 @@
                 </div>
             </router-link>
         </div>
+        <div class="burger">
+            <button type="button" @click="open = !open" className="burger__button">
+                <fa icon="fa-solid fa-bars" />
+            </button>
+        </div>
+        
     </header>
 </template>
 
@@ -35,8 +41,14 @@ import { ref } from 'vue';
 import { useAuthStore } from '../shared/stores/authStore';
 const authStore = useAuthStore();
 
+const open = ref(false);
+
 function isLogged() {
     return localStorage.getItem('token') !== null;
+}
+
+function handleShowLinks() {
+
 }
 
 const props = defineProps<{
@@ -53,23 +65,34 @@ const props = defineProps<{
 const emit = defineEmits<{
     (e: 'logout'): any;
 }>();
+
 </script>
 
 <style scoped lang="scss">
 header {
     display: flex;
-    justify-content: start;
     background-color: #FFF;
     width: 100%;
     height: 30px;
-    padding: 10px;
+    padding: 10px 0px;
+    justify-content: start;
     border-bottom: 1px solid #FD2D01;
+
+    @media only screen and (max-width: 768px) {
+        justify-content: space-between;
+    }
 
     .menu {
         font-family: 'Lato', sans-serif;
         display: flex;
         font-size: 15px;
         align-items: center;
+        width: 100%;
+        justify-content: space-around;
+
+        @media only screen and (max-width: 768px) {
+            display: none;
+        }
 
         div {
 
@@ -82,7 +105,28 @@ header {
             color: #FD2D01;
         }
     }
+
+    .burger {
+        @media only screen and (min-width: 769px) {
+            display: none;
+        }
+
+        &__button {
+            margin-right: 20px;
+            border: none;
+            background-color: #FFF;
+            color: #FD2D01;
+        }
+
+        @media only screen and (max-width: 768px) {
+            display: block;
+            border: none;
+            background-color: #FFF;
+            color: #FD2D01;
+        }
+    }
 }
+
 
 
 .logout {
@@ -95,12 +139,9 @@ header {
 .logo {
     display: flex;
     align-items: center;
-    padding-left: 3%;
-    width: 40%;
 }
 
 img {
-    width: 90%;
     height: 200px;
     object-fit: cover;
 }
@@ -124,7 +165,8 @@ img {
 .logo {
     display: flex;
     align-items: center;
-    padding-left: 3%;
-    width: 40%;
 }
+
+
+@media only screen and (max-width: 768px) {}
 </style>

@@ -204,9 +204,7 @@ function checkIsConnected() {
             display: flex;
             flex-direction: column;
             align-items: center;
-            height: 100%;
-            width: 100%;
-            padding: 0 3%;
+            padding: 20px;
             -webkit-animation: slide-out-blurred-bottom 2.5s cubic-bezier(0.755, 0.050, 0.855, 0.060) 2.5s reverse both;
             animation: slide-out-blurred-bottom 2.5s cubic-bezier(0.755, 0.050, 0.855, 0.060) 2.5s reverse both;
 

@@ -237,6 +237,10 @@ function likePublication(publication: any) {
     background-color: #FFFFFF;
     border: 1px solid #FD2D01;
 
+    @media (max-width: 768px) {
+        width: 90%;
+    }
+
     &__top {
         display: flex;
         padding: 10px 0 0 10px;
@@ -286,6 +290,10 @@ function likePublication(publication: any) {
                 background-color: rgb(255, 255, 255);
                 color: rgb(0, 0, 0);
 
+                @media (max-width: 768px) {
+                    width: 90%;
+                }
+
             }
 
             &__file {
@@ -317,6 +325,10 @@ function likePublication(publication: any) {
     backdrop-filter: blur(5px);
     background-color: #FFFFFF;
     border: 1px solid #FD2D01;
+
+    @media (max-width: 768px) {
+        width: 90%;
+    }
 
     &__top {
         display: flex;
@@ -382,8 +394,8 @@ function likePublication(publication: any) {
         }
 
         img {
-            width: 470px;
-            height: 580px;
+            width: 100%;
+            height: 100%;
             object-fit: contain;
             background: black;
         }
