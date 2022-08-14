@@ -71,10 +71,6 @@ function updateProfile(update?: any) {
                                     <input type="file" class="input-file" accept="image/*"
                                         @change="previewPicture($event)" />
                                 </div>
-                                <!-- <div class="edit-profil__body__content__form__input">
-                                    <label for="lastname">Date de naissance</label>
-                                    <input type="date" id="birthday" v-model="userEdit.birthday" />
-                                </div> -->
                                 <div class="edit-profil__body__content__form__input">
                                     <label for="email">Email</label>
                                     <input type="text" id="email" v-model="userEdit.email" />

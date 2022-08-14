@@ -110,11 +110,11 @@ export const useAuthStore = defineStore({
                 console.log('on a une image!');
                 formData.append('picture', update.picture_url);
             }
-            if (update.email !== undefined) {
+            if (update.email !== '' && update.email !== undefined) {
                 formData.append('email', update.email);
                 console.log('on a un email!');
             }
-            if (update.password !== undefined) {
+            if (update.password !== '' && update.password !== undefined) {
                 formData.append('password', update.password);
                 console.log('on a un password!');
             }
