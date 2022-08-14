@@ -39,7 +39,7 @@
                         <div class="container-center__top__details__right__status">
                             <div class="container-center__top__details__right__status__online">
                                 <!-- <div v-if="isOnline" class="status-online"> -->
-                                    <!-- <div class="online"></div>
+                                <!-- <div class="online"></div>
                                     <span class="online-message">En Ligne</span>
                                 </div>
                                 <div v-else class="status-offline">
@@ -81,8 +81,7 @@
             <div class="container-right__profil">
                 <div class="container-right__profil__details">
                     <div class="container-right__profil__details__avatar">
-                        <img src="https://media.lesechos.com/api/v1/images/view/5f3f5be68fe56f0be8160fab/1280x720/0603734518167-web-tete.jpg"
-                            alt="avatar" />
+                        <img src="https://media.lesechos.com/api/v1/images/view/5f3f5be68fe56f0be8160fab/1280x720/0603734518167-web-tete.jpg" alt="avatar" />
                     </div>
                     <div class="container-right__profil__details__name">
                         <!-- <span>{{ user.firstname + ' ' + user.lastname }}</span> -->
@@ -126,18 +125,10 @@
 </template>
 
 <script setup lang="ts">
-import { io } from 'socket.io-client';
 import { computed, reactive, ref } from 'vue';
 import NavigationBar from '../components/NavigationBar.vue';
 import { useAuthStore } from '../shared/stores/authStore';
 import { useFriendshipStore } from '../shared/stores/friendsStore';
-const socket = io('/');
-
-socket.on('connect', () => {
-    socket.emit('message', 'salut');
-})
-
-
 const authStore = useAuthStore();
 const friendshipStore = useFriendshipStore();
 checkIsConnected();
@@ -147,7 +138,7 @@ const isConnected = computed(() => authStore.$state.isConnected);
 const user = computed(() => authStore.$state.user);
 const friends = computed(() => friendshipStore.$state.friends);
 
-// console.log(friends);
+console.log(friends);
 
 function checkIsConnected() {
     authStore.getMyInformations();
