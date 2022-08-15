@@ -48,7 +48,6 @@ exports.login = (req, res, next) => {
                             if (!valid) {
                                 return res.status(401).json({ error: 'Mot de passe incorrect !' });
                             }
-                            console.log(results[0]);
                             res.status(200).json({
                                 accessToken: jwt.sign(
                                     {

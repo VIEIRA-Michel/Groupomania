@@ -53,35 +53,41 @@
             </div>
             <div class="container-center__body">
                 <div class="container-center__body__chat">
-                    <!-- <div v-for="message in messages" class="container-center__body__chat__item">
+                    <div v-for="message in messages" class="container-center__body__chat__item">
                         <div class="container-center__body__chat__item__left">
                             <img :src="message.picture_url" alt="avatar" />
                         </div>
                         <div class="container-center__body__chat__item__right">
                             <div class="container-center__body__chat__item__right__name">
-                                {{ message.firstname }} {{ message.lastname }}
+                                {{ message.firstname + ' ' + message.lastname }}
                             </div>
                             <div class="container-center__body__chat__item__right__message">
                                 {{ message.message }}
                             </div>
                         </div>
-                    </div> -->
+                    </div>
+                </div>
+                <div class="container-center__body__bottom">
+                    <div v-if="typing" class="container-center__body__bottom__typing">
+                        <small> <span>{{ typing.user }}</span> est entrain d'écrire</small>
+                    </div>
                 </div>
             </div>
             <div class="container-center__bottom">
-                <div class="container-center__bottom__input">
-                    <input type="text" placeholder="Ecrivez votre message..." />
-                    <button>
+                <form class="container-center__bottom__input" @submit.prevent="send()">
+                    <input type="text" placeholder="Ecrivez votre message..." v-model="newMessage" />
+                    <button type="submit">
                         <fa icon="fa-solid fa-paper-plane" />
                     </button>
-                </div>
+                </form>
             </div>
         </div>
         <div class="container-right">
             <div class="container-right__profil">
                 <div class="container-right__profil__details">
                     <div class="container-right__profil__details__avatar">
-                        <img src="https://media.lesechos.com/api/v1/images/view/5f3f5be68fe56f0be8160fab/1280x720/0603734518167-web-tete.jpg" alt="avatar" />
+                        <img src="https://media.lesechos.com/api/v1/images/view/5f3f5be68fe56f0be8160fab/1280x720/0603734518167-web-tete.jpg"
+                            alt="avatar" />
                     </div>
                     <div class="container-right__profil__details__name">
                         <!-- <span>{{ user.firstname + ' ' + user.lastname }}</span> -->
@@ -125,21 +131,28 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue';
+import { computed, reactive, ref, onBeforeMount, watchEffect, onMounted } from 'vue';
 import NavigationBar from '../components/NavigationBar.vue';
 import { useAuthStore } from '../shared/stores/authStore';
 import { useFriendshipStore } from '../shared/stores/friendsStore';
+import { useChatStore } from '../shared/stores/chatStore';
+import { io } from "socket.io-client";
+const socket = io("http://localhost:3000");
 const authStore = useAuthStore();
 const friendshipStore = useFriendshipStore();
+const chatStore = useChatStore();
 checkIsConnected();
 getAllFriends();
 
 const isConnected = computed(() => authStore.$state.isConnected);
 const user = computed(() => authStore.$state.user);
 const friends = computed(() => friendshipStore.$state.friends);
-
-console.log(friends);
-
+const whoIsOnline = computed(() => chatStore.$state.online);
+const messages = computed(() => chatStore.$state.messages);
+const typing = computed(() => chatStore.$state.typing);
+const firstname = user.value.firstname;
+const newMessage = ref('');
+setName();
 function checkIsConnected() {
     authStore.getMyInformations();
     if (authStore.$state.isConnected == false) {
@@ -150,6 +163,91 @@ function checkIsConnected() {
 function getAllFriends() {
     friendshipStore.getAllFriends();
 }
+
+function send() {
+    socket.emit('chat-message', { message: newMessage, firstname: user.value.firstname, lastname: user.value.lastname, picture_url: user.value.picture_url, type: 0 });
+    chatStore.$patch((state) => {
+        state.messages.push({
+            message: newMessage.value,
+            type: 0,
+            picture_url: user.value.picture_url,
+            firstname: user.value.firstname,
+            lastname: user.value.lastname,
+        })
+    });
+    newMessage.value = '';
+}
+
+function isTyping() {
+    socket.emit('typing', { user: user.value.firstname });
+}
+
+function setName() {
+    socket.emit('joined', { user: user.value.firstname });
+}
+
+onMounted(() => {
+    window.onbeforeunload = () => {
+        socket.emit('leaved', { user: user.value.firstname });
+    }
+    socket.on('noOfConnections', (count) => {
+        chatStore.$patch((state) => {
+            state.connectionCount = count;
+        })
+    })
+})
+
+watchEffect(() => {
+    newMessage.value ? socket.emit('typing', { user: user.value.firstname }) : socket.emit('stop-typing');
+})
+
+
+onBeforeMount(() => {
+    socket.on('chat-message', (message: string) => {
+        chatStore.addMessage(message, user.value);
+    });
+    socket.on('typing', (data) => {
+        chatStore.$patch((state) => {
+            state.typing = data;
+        });
+    });
+    socket.on('stoptyping', (data) => {
+        console.log(data);
+        chatStore.$patch((state) => {
+            state.typing = false;
+        });
+    });
+    socket.on('leaved', (firstname) => {
+        chatStore.$patch(state => {
+            state.online = state.online.filter(user => user !== firstname);
+            state.info.push({ name: firstname, type: 'Leaved' });
+        });
+        console.log(user + ' a quitté la conversation');
+        console.log(user);
+        setTimeout(() => {
+            chatStore.$patch(state => {
+                state.info = [];
+            });
+        }, 5000);
+    });
+
+    socket.on('joined', (user) => {
+        console.log(user.user)
+        chatStore.$patch(state => {
+            state.name = firstname;
+            state.online.push(firstname);
+            state.info.push({ name: firstname, type: 'Joined' });
+        });
+        setTimeout(() => {
+            chatStore.$patch(state => {
+                state.info = [];
+            });
+            console.log(user);
+        }, 5000);
+    })
+});
+
+console.log(messages);
 </script>
 
 <style scoped lang="scss">
@@ -230,6 +328,13 @@ function getAllFriends() {
         flex-direction: column;
         justify-content: space-between;
 
+        small {
+            span {
+                font-weight: bold;
+                color: #FD2D01;
+            }
+        }
+
         &__top {
             &__details {
                 display: flex;
@@ -296,7 +401,39 @@ function getAllFriends() {
             }
         }
 
-        &__body {}
+        &__body {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: end;
+
+            &__chat {
+                &__item {
+                    display: flex;
+                    align-items: center;
+
+                    &__left {
+                        img {
+                            width: 30px;
+                            height: 30px;
+                            border-radius: 50px;
+                            object-fit: cover;
+                            background-color: black;
+                        }
+                    }
+
+                    &__right {
+                        margin-left: 10px;
+
+                        &__name {
+                            font-weight: bold;
+                        }
+
+                        &__message {}
+                    }
+                }
+            }
+        }
 
         &__bottom {
             &__input {

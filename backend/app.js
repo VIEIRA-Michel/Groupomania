@@ -19,9 +19,10 @@ app.use((req, res, next) => {
 });
 app.use(cors());
 
+
 const corsOptions ={
-    origin:'http://localhost:8080', 
-    credentials:true,            //access-control-allow-credentials:true
+    origin:'http://localhost:8080',
+    credentials:true,
     optionSuccessStatus:200
 }
 app.use(cors(corsOptions));
@@ -29,7 +30,6 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(helmet({ crossOriginResourcePolicy: { policy: "same-site" } }));
-
 app.use('/images', express.static(path.join(__dirname, 'images')));
 app.use('/api/auth', authRoutes);
 app.use('/api/publications', auth.accesToken, publicationsRoutes);
