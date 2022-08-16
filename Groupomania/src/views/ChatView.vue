@@ -99,15 +99,16 @@ function getAllFriends() {
 }
 
 function onSelectUser(utilisateur: any) {
+    console.log(utilisateur);
     selectedUser.value = utilisateur;
     utilisateur.hasNewMessages = false;
 }
 
 function onMessage(content: any) {
-    console.log(content);
     console.log('selected user', selectedUser);
     console.log('selected user value', selectedUser.value)
     if (selectedUser.value) {
+        console.log('on passe ici ?');
         socket.emit("private message", {
             content,
             to: selectedUser.value.userID,

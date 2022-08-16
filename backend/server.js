@@ -84,6 +84,14 @@ io.on('connection', (socket) => {
   // socket.on('chat-message', (msg) => {
   //   socket.broadcast.emit('chat-message', msg)
   // })
+
+  socket.on("private message", ({ content, to }) => {
+    socket.to(to).emit("private message", {
+      content,
+      from: socket.id,
+    });
+  });
+  
   socket.on('typing', (data) => {
     socket.broadcast.emit('typing', data)
   })

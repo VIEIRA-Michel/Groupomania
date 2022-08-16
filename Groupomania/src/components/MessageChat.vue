@@ -29,7 +29,8 @@
                 <li v-for="(message, index) in props.user.messages" :key="index"
                     class="container-center__body__chat__item">
                     <div v-if="displaySender(message, index)" class="container-center__body__chat__item__left">
-                        <img :src="props.user.picture" alt="avatar" />
+                        <img v-if="message.fromSelf" :src="myProfile.picture_url" alt="avatar" />
+                        <img v-else-if="!message.fromSelf" :src="props.user.picture" alt="avatar" />
                     </div>
                     <div class="container-center__body__chat__item__right">
                         <div class="container-center__body__chat__item__right__message">
@@ -60,7 +61,7 @@ import { computed, ref, watchEffect } from 'vue';
 import socket from "../socket";
 import { useAuthStore } from '@/shared/stores/authStore';
 import { useChatStore } from '@/shared/stores/chatStore';
-const me = useAuthStore().$state.user;
+const myProfile = useAuthStore().$state.user;
 const chatStore = useChatStore();
 const newMessage = ref('');
 const props = defineProps<{
@@ -76,6 +77,8 @@ function displaySender(message: any, index: number) {
     );
 };
 function send() {
+    console.log(myProfile);
+    console.log(props.user.messages);
     emit('input', newMessage.value);
     newMessage.value = '';
 }
