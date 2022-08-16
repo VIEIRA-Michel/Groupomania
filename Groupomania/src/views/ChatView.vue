@@ -6,81 +6,15 @@
         <div class="container-left">
             <div class="container-left__settings"></div>
             <div class="container-left__list">
-                <div v-for="friend in friends" class="container-left__list__item">
-                    <div class="container-left__list__item__left">
-                        <img :src="friend.picture_url" alt="avatar" />
-                    </div>
-                    <div class="container-left__list__item__right">
-                        <div class="container-left__list__item__right__name">
-                            {{ friend.firstname }} {{ friend.lastname }}
-                        </div>
-                        <div class="container-left__list__item__right__status">
-                            <div class="container-left__list__item__right__status__online">
-                                <!-- <div v-if="isOnline" class="online"></div>
-                                <div v-else class="offline"></div> -->
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <userChat v-if="users" v-for="utilisateur in users" :key="utilisateur.userID" :user="utilisateur"
+                    :selected="selectedUser === utilisateur" @select="onSelectUser(utilisateur)" />
             </div>
         </div>
         <div class="container-center">
-            <div class="container-center__top">
-                <div class="container-center__top__details">
-                    <div class="container-center__top__details__left">
-                        <img src="https://media.lesechos.com/api/v1/images/view/5f3f5be68fe56f0be8160fab/1280x720/0603734518167-web-tete.jpg"
-                            alt="avatar" />
-                    </div>
-                    <div class="container-center__top__details__right">
-                        <div class="container-center__top__details__right__name">
-                            <!-- {{ friend.firstname }} {{ user.lastname }} -->
-                            Elon Musk
-                        </div>
-                        <div class="container-center__top__details__right__status">
-                            <div class="container-center__top__details__right__status__online">
-                                <!-- <div v-if="isOnline" class="status-online"> -->
-                                <!-- <div class="online"></div>
-                                    <span class="online-message">En Ligne</span>
-                                </div>
-                                <div v-else class="status-offline">
-                                    <div class="offline"></div>
-                                    <span class="offline-message">Hors Ligne</span>
-                                </div> -->
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="container-center__body">
-                <div class="container-center__body__chat">
-                    <div v-for="message in messages" class="container-center__body__chat__item">
-                        <div class="container-center__body__chat__item__left">
-                            <img :src="message.picture_url" alt="avatar" />
-                        </div>
-                        <div class="container-center__body__chat__item__right">
-                            <div class="container-center__body__chat__item__right__name">
-                                {{ message.firstname + ' ' + message.lastname }}
-                            </div>
-                            <div class="container-center__body__chat__item__right__message">
-                                {{ message.message }}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="container-center__body__bottom">
-                    <div v-if="typing" class="container-center__body__bottom__typing">
-                        <small> <span>{{ typing.user }}</span> est entrain d'écrire</small>
-                    </div>
-                </div>
-            </div>
-            <div class="container-center__bottom">
-                <form class="container-center__bottom__input" @submit.prevent="send()">
-                    <input type="text" placeholder="Ecrivez votre message..." v-model="newMessage" />
-                    <button type="submit">
-                        <fa icon="fa-solid fa-paper-plane" />
-                    </button>
-                </form>
-            </div>
+            <MessageChat v-if="selectedUser != null" :user="selectedUser" :typing="typing" @input="onMessage"
+                @typing="isTyping" />
+            <!-- <MessageChat v-if="selectedUser != null" :user="selectedUser" @input="onMessage"
+                @typing="isTyping" /> -->
         </div>
         <div class="container-right">
             <div class="container-right__profil">
@@ -131,13 +65,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref, onBeforeMount, watchEffect, onMounted } from 'vue';
+import { computed, reactive, ref, onBeforeMount, watchEffect, onMounted, onUnmounted } from 'vue';
 import NavigationBar from '../components/NavigationBar.vue';
+import userChat from '../components/userChat.vue';
 import { useAuthStore } from '../shared/stores/authStore';
 import { useFriendshipStore } from '../shared/stores/friendsStore';
 import { useChatStore } from '../shared/stores/chatStore';
-import { io } from "socket.io-client";
-const socket = io("http://localhost:3000");
+import socket from "../socket";
+import MessageChat from "../components/MessageChat.vue";
 const authStore = useAuthStore();
 const friendshipStore = useFriendshipStore();
 const chatStore = useChatStore();
@@ -146,13 +81,12 @@ getAllFriends();
 
 const isConnected = computed(() => authStore.$state.isConnected);
 const user = computed(() => authStore.$state.user);
-const friends = computed(() => friendshipStore.$state.friends);
-const whoIsOnline = computed(() => chatStore.$state.online);
-const messages = computed(() => chatStore.$state.messages);
 const typing = computed(() => chatStore.$state.typing);
-const firstname = user.value.firstname;
-const newMessage = ref('');
-setName();
+const users = computed(() => chatStore.$state.users);
+const selectedUser = ref(null);
+const mySocketId = ref('');
+
+
 function checkIsConnected() {
     authStore.getMyInformations();
     if (authStore.$state.isConnected == false) {
@@ -164,90 +98,136 @@ function getAllFriends() {
     friendshipStore.getAllFriends();
 }
 
-function send() {
-    socket.emit('chat-message', { message: newMessage, firstname: user.value.firstname, lastname: user.value.lastname, picture_url: user.value.picture_url, type: 0 });
-    chatStore.$patch((state) => {
-        state.messages.push({
-            message: newMessage.value,
-            type: 0,
-            picture_url: user.value.picture_url,
-            firstname: user.value.firstname,
-            lastname: user.value.lastname,
-        })
-    });
-    newMessage.value = '';
+function onSelectUser(utilisateur: any) {
+    selectedUser.value = utilisateur;
+    utilisateur.hasNewMessages = false;
 }
 
-function isTyping() {
-    socket.emit('typing', { user: user.value.firstname });
-}
+function onMessage(content: any) {
+    console.log(content);
+    console.log('selected user', selectedUser);
+    console.log('selected user value', selectedUser.value)
+    if (selectedUser.value) {
+        socket.emit("private message", {
+            content,
+            to: selectedUser.value.userID,
+        });
+        selectedUser.value.messages.push({
+            content,
+            fromSelf: true,
+        });
+    }
+};
 
-function setName() {
-    socket.emit('joined', { user: user.value.firstname });
-}
+function isTyping(param: any) {
+    if (param) {
+        socket.emit('typing', user.value.firstname + ' ' + user.value.lastname);
+    } else {
+        socket.emit('stoptyping', user.value.firstname + ' ' + user.value.lastname);
+    }
+};
 
 onMounted(() => {
     window.onbeforeunload = () => {
         socket.emit('leaved', { user: user.value.firstname });
     }
-    socket.on('noOfConnections', (count) => {
-        chatStore.$patch((state) => {
-            state.connectionCount = count;
-        })
-    })
-})
-
-watchEffect(() => {
-    newMessage.value ? socket.emit('typing', { user: user.value.firstname }) : socket.emit('stop-typing');
-})
-
+});
 
 onBeforeMount(() => {
-    socket.on('chat-message', (message: string) => {
-        chatStore.addMessage(message, user.value);
-    });
+
     socket.on('typing', (data) => {
         chatStore.$patch((state) => {
             state.typing = data;
         });
     });
     socket.on('stoptyping', (data) => {
-        console.log(data);
         chatStore.$patch((state) => {
             state.typing = false;
         });
     });
-    socket.on('leaved', (firstname) => {
-        chatStore.$patch(state => {
-            state.online = state.online.filter(user => user !== firstname);
-            state.info.push({ name: firstname, type: 'Leaved' });
+    socket.on("connect", () => {
+        mySocketId.value = socket.id;
+        users.value.forEach((utilisateur: any) => {
+            if (utilisateur.self) {
+                utilisateur.connected = true;
+            }
         });
-        console.log(user + ' a quitté la conversation');
-        console.log(user);
-        setTimeout(() => {
-            chatStore.$patch(state => {
-                state.info = [];
-            });
-        }, 5000);
     });
 
-    socket.on('joined', (user) => {
-        console.log(user.user)
-        chatStore.$patch(state => {
-            state.name = firstname;
-            state.online.push(firstname);
-            state.info.push({ name: firstname, type: 'Joined' });
+    socket.on("disconnect", () => {
+        users.value.forEach((utilisateur: any) => {
+            if (utilisateur.self) {
+                utilisateur.connected = false;
+            }
         });
-        setTimeout(() => {
-            chatStore.$patch(state => {
-                state.info = [];
-            });
-            console.log(user);
-        }, 5000);
-    })
+    });
+
+    const initReactiveProperties = (utilisateur: any) => {
+        utilisateur.connected = true;
+        utilisateur.messages = [];
+        utilisateur.hasNewMessages = false;
+    };
+    socket.on("users", (users2) => {
+        users2.forEach((utilisateur: any) => {
+            utilisateur.self = utilisateur.userID === socket.id;
+            console.log('utilisateur self', utilisateur.self)
+            initReactiveProperties(utilisateur);
+        });
+
+        // put the current user first, and sort by username
+        users2 = users2.sort((a: any, b: any) => {
+            if (a.self) return -1;
+            if (b.self) return 1;
+            if (a.username < b.username) return -1;
+            return a.username > b.username ? 1 : 0;
+        });
+        let currentUserConnected = users2.filter((user: any) => user.userID !== socket.id);
+        chatStore.getUsersConnected(currentUserConnected);
+    });
+
+    socket.on("user connected", (utilisateur: any) => {
+        console.log('user connected', utilisateur);
+        initReactiveProperties(utilisateur);
+        chatStore.userConnected(utilisateur);
+    });
+
+    socket.on("user disconnected", (id) => {
+        for (let i = 0; i < users.value.length; i++) {
+            const utilisateur = users.value[i];
+            console.log(utilisateur);
+            if (utilisateur.userID === id) {
+                utilisateur.connected = false;
+                break;
+            }
+        }
+    });
+
+    socket.on("private message", ({ content, from }) => {
+        for (let i = 0; i < users.value.length; i++) {
+            const utilisateur = users.value[i];
+            if (utilisateur.userID === from) {
+                utilisateur.messages.push({
+                    content,
+                    fromSelf: false,
+                });
+                if (utilisateur !== selectedUser) {
+                    utilisateur.hasNewMessages = true;
+                }
+                break;
+            }
+        }
+    });
 });
 
-console.log(messages);
+onUnmounted(() => {
+    socket.off("connect");
+    socket.off("disconnect");
+    socket.off("users");
+    socket.off("user connected");
+    socket.off("user disconnected");
+    socket.off("private message");
+})
+
 </script>
 
 <style scoped lang="scss">
@@ -261,64 +241,6 @@ console.log(messages);
         width: 30%;
         // background: blue;
         border-right: 1px solid #DBDBDB;
-
-        &__settings {}
-
-        &__list {
-            &__item {
-                display: flex;
-                margin: 5px;
-                flex-direction: row;
-                align-items: center;
-                justify-content: start;
-                border-bottom: 1px solid #DBDBDB;
-                background-color: #FFFFFF;
-                transition: all 0.4s;
-
-                &:hover {
-                    background-color: #DBDBDB;
-                }
-
-                &__left {
-                    img {
-                        width: 45px;
-                        height: 45px;
-                        border-radius: 50px;
-                        object-fit: cover;
-                        background-color: black;
-                    }
-
-                    margin-right: 10px;
-                }
-
-                &__right {
-                    &__name {
-                        font-weight: bold;
-                    }
-
-                    &__status {
-                        &__online {
-                            .offline {
-                                border: 1px solid #DBDBDB;
-                                position: absolute;
-                                left: 30px;
-                                width: 10px;
-                                height: 10px;
-                                border-radius: 50px;
-                                background-color: #FD2D01;
-                            }
-
-                            .online {
-                                width: 10px;
-                                height: 10px;
-                                border-radius: 50px;
-                                background-color: #00FF00;
-                            }
-                        }
-                    }
-                }
-            }
-        }
     }
 
     .container-center {
@@ -327,148 +249,6 @@ console.log(messages);
         display: flex;
         flex-direction: column;
         justify-content: space-between;
-
-        small {
-            span {
-                font-weight: bold;
-                color: #FD2D01;
-            }
-        }
-
-        &__top {
-            &__details {
-                display: flex;
-                flex-direction: row;
-                width: 100%;
-                margin: auto;
-                padding: 5px;
-
-                &__left {
-                    img {
-                        width: 45px;
-                        height: 45px;
-                        border-radius: 50px;
-                        object-fit: cover;
-                        background-color: black;
-                    }
-                }
-
-                &__right {
-                    &__name {
-                        font-weight: bold;
-                    }
-
-                    &__status {
-                        &__online {
-                            .status-online {
-                                .online {
-                                    border: 1px solid #DBDBDB;
-                                    width: 10px;
-                                    height: 10px;
-                                    border-radius: 50px;
-                                    background-color: #00FF00;
-
-                                    &-message {
-                                        margin-left: 5px;
-                                    }
-                                }
-
-                            }
-
-                            .status-offline {
-                                display: flex;
-                                flex-direction: row;
-                                align-items: center;
-
-                                .offline {
-                                    border: 1px solid #DBDBDB;
-                                    width: 10px;
-                                    height: 10px;
-                                    border-radius: 50px;
-                                    background-color: #FD2D01;
-
-                                    &-message {
-                                        margin-left: 5px;
-                                    }
-                                }
-
-                            }
-
-
-                        }
-                    }
-                }
-            }
-        }
-
-        &__body {
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: end;
-
-            &__chat {
-                &__item {
-                    display: flex;
-                    align-items: center;
-
-                    &__left {
-                        img {
-                            width: 30px;
-                            height: 30px;
-                            border-radius: 50px;
-                            object-fit: cover;
-                            background-color: black;
-                        }
-                    }
-
-                    &__right {
-                        margin-left: 10px;
-
-                        &__name {
-                            font-weight: bold;
-                        }
-
-                        &__message {}
-                    }
-                }
-            }
-        }
-
-        &__bottom {
-            &__input {
-                display: flex;
-                flex-direction: row;
-                align-items: center;
-                justify-content: space-between;
-                padding: 5px;
-                border-top: 1px solid #DBDBDB;
-                background-color: #FFFFFF;
-
-                input {
-                    width: 90%;
-                    border: none;
-                    padding: 5px;
-                    border-radius: 5px;
-                    background-color: #FFFFFF;
-
-                    &::placeholder {
-                        color: #DBDBDB;
-                    }
-                }
-
-                button {
-                    border: none;
-                    background-color: #FFFFFF;
-                    cursor: pointer;
-                    transition: all 0.4s;
-
-                    &:hover {
-                        color: #FD2D01;
-                    }
-                }
-            }
-        }
     }
 
     .container-right {

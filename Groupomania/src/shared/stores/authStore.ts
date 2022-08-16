@@ -18,7 +18,9 @@ export const useAuthStore = defineStore({
         invalidEmail: false,
         invalidPassword: false
     }),
-    getters: {},
+    getters: {
+        getUser: (state) => state.user,
+    },
     actions: {
         register(lastname: string, firstname: string, email: string, password: string, confirmPassword: string) {
             if (lastname && firstname && email && password && confirmPassword) {

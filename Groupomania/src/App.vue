@@ -1,11 +1,18 @@
 <script setup lang="ts">
-import NavigationBar from './components/NavigationBar.vue';
-import HomeView from '@/views/HomeView.vue';
-
-import { watch, defineProps } from 'vue';
+import { useAuthStore } from './shared/stores/authStore';
 import { useRoute } from 'vue-router';
+import socket from "./socket";
+const route = useRoute();
+const authStore = useAuthStore();
 
-const route = useRoute()
+setTimeout(() => {
+  onUsernameSelection(authStore.$state.user)
+}, 2000);
+
+function onUsernameSelection(user: any) {
+    socket.auth = { username: user.firstname + ' ' + user.lastname, picture: user.picture_url };
+    socket.connect();
+}
 </script>
 
 <template>
@@ -14,7 +21,6 @@ const route = useRoute()
 </template>
 
 <style>
-
 * {
   font-family: 'Lato', sans-serif;
 }

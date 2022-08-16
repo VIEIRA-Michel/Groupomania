@@ -2,7 +2,11 @@ const http = require('http');
 const app = require('./app');
 const server = http.createServer(app);
 const { Server } = require("socket.io");
-const io = new Server(server);
+const io = new Server(server, {
+  cors: {
+    origin: '*',
+  }
+});
 
 const normalizePort = val => {
   const port = parseInt(val, 10);
@@ -46,30 +50,45 @@ server.on('listening', () => {
   console.log('Listening on ' + bind);
 });
 
-io.on('connection', (socket) => {
-  console.log('un utilisateur est connecté');
-  io.emit('noOfConnections', io.engine.clientsCount);
+io.use((socket, next) => {
+  const username = socket.handshake.auth.username;
+  const picture = socket.handshake.auth.picture;
+  if (!username) {
+    return next(new Error('authentication error'));
+  }
+  socket.username = username;
+  socket.picture = picture;
+  next();
+})
 
-  socket.on('disconnect', () => {
-    console.log('un utilisateur est déconnecté');
-    io.emit('noOfConnections', io.engine.clientsCount);
+io.on('connection', (socket) => {
+  const users = [];
+  for (let [id, socket] of io.of("/").sockets) {
+    users.push({
+      userID: id,
+      username: socket.username,
+      picture: socket.picture,
+    });
+  }
+  socket.emit("users", users);
+  console.log(users);
+  socket.broadcast.emit("user connected", {
+    userID: socket.id,
+    username: socket.username,
+    picture: socket.picture,
   });
 
-  socket.on('chat-message', (msg) => {
-    socket.broadcast.emit('chat-message', msg)
-  })
-  socket.on('joined', (name) => {
-    socket.broadcast.emit('joined', name)
-  })
-  socket.on('leaved', (name) => {
-    socket.broadcast.emit('leaved', name)
-  })
-
+  socket.on("disconnect", () => {
+    socket.broadcast.emit("user disconnected", socket.id);
+  });
+  // socket.on('chat-message', (msg) => {
+  //   socket.broadcast.emit('chat-message', msg)
+  // })
   socket.on('typing', (data) => {
     socket.broadcast.emit('typing', data)
   })
-  socket.on('stoptyping', () => {
-    socket.broadcast.emit('stoptyping')
+  socket.on('stoptyping', (data) => {
+    socket.broadcast.emit('stoptyping', data)
   })
 
 });

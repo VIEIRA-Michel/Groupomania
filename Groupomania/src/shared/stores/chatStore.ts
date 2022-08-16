@@ -10,11 +10,7 @@ export interface chatState {
     newmessage: null;
     messages: Message[];
     typing: boolean;
-    online: Online[];
-    name: null;
-    ready: boolean;
-    info: Information[];
-    connectionCount: number;
+    users: [];
 }
 
 export const useChatStore = defineStore({
@@ -23,25 +19,19 @@ export const useChatStore = defineStore({
         newmessage: null,
         messages: [] as Message[],
         typing: false,
-        online: [] as Online[],
-        name: null,
-        ready: false,
-        info: [] as Information[],
-        connectionCount: 0,
+        users: [],
     }),
     getters: {
-        onlineList: (state: chatState) => state.online,
+        onlineList: (state: chatState) => state.users,
     },
     actions: {
-        addMessage: (message: any, user: any) => {
+        userConnected: (user: any) => {
             const store = useChatStore();
-            store.$patch((state) => {
-                state.messages.push({
-                    message: message.message._value, type: 1, picture_url: message.picture_url,
-                    firstname: message.firstname, lastname: message.lastname,
-                });
-                state.typing = false;
-            });
+            store.$patch((state) => state.users.push(user));
         },
+        getUsersConnected: (users: any) => {
+            const store = useChatStore();
+            store.$patch((state) => state.users = users);
+        }
     },
 });
