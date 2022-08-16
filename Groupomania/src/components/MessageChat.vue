@@ -27,13 +27,13 @@
         <div class="container-center__body__chat">
             <ul>
                 <li v-for="(message, index) in props.user.messages" :key="index"
-                    class="container-center__body__chat__item">
+                    class="container-center__body__chat__item" v-bind:class="[message.fromSelf ? 'fromSelf' : 'fromUser']">
                     <div v-if="displaySender(message, index)" class="container-center__body__chat__item__left">
                         <img v-if="message.fromSelf" :src="myProfile.picture_url" alt="avatar" />
                         <img v-else-if="!message.fromSelf" :src="props.user.picture" alt="avatar" />
                     </div>
                     <div class="container-center__body__chat__item__right">
-                        <div class="container-center__body__chat__item__right__message">
+                        <div class="container-center__body__chat__item__right__message" v-bind:class="[message.fromSelf ? 'fromSelf' : 'fromUser']">
                             {{ message.content }}
                         </div>
                     </div>
@@ -181,6 +181,9 @@ const emit = defineEmits<{
         justify-content: end;
 
         &__chat {
+            ul {
+                padding: 10px;
+            }
             &__item {
                 display: flex;
                 align-items: center;
@@ -196,14 +199,30 @@ const emit = defineEmits<{
                 }
 
                 &__right {
-                    margin-left: 10px;
+                    margin: 10px;
 
                     &__name {
                         font-weight: bold;
                     }
 
-                    &__message {}
+                    &__message.fromSelf {
+                        background-color: #FD2D01;
+                        color: white;
+                        padding: 5px;
+                        border-radius: 10px;
+                    }
+                    &__message.fromUser {
+                        background-color: #DBDBDB;
+                        color: black;
+                        padding: 5px;
+                        border-radius: 10px;
+                    }
                 }
+            }
+            &__item.fromSelf {
+                display: flex;
+                flex-direction: row-reverse;
+                justify-content: end;
             }
         }
     }

@@ -14,6 +14,7 @@
                 </div>
             </div>
         </div>
+        <div v-if="props.user.hasNewMessages" class="container-left__list__item__new-messages">!</div>
     </div>
 </template>
 
@@ -93,6 +94,17 @@ const emit = defineEmits<{
                         }
                     }
                 }
+            }
+
+            &__new-messages {
+                width: 20px;
+                height: 20px;
+                border-radius: 5px;
+                background-color: #FD2D01;
+                text-align: center;
+                padding: 2px;
+                color: white;
+                margin-left: 10px;
             }
         }
     }
