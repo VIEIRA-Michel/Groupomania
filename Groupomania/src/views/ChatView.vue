@@ -83,7 +83,7 @@ const isConnected = computed(() => authStore.$state.isConnected);
 const user = computed(() => authStore.$state.user);
 const typing = computed(() => chatStore.$state.typing);
 const users = computed(() => chatStore.$state.users);
-const selectedUser = ref(null);
+const selectedUser = ref<any>(null);
 const mySocketId = ref('');
 
 
@@ -105,10 +105,8 @@ function onSelectUser(utilisateur: any) {
 }
 
 function onMessage(content: any) {
-    console.log('selected user', selectedUser);
-    console.log('selected user value', selectedUser.value)
     if (selectedUser.value) {
-        console.log('on passe ici ?');
+        console.log(selectedUser.value);
         socket.emit("private message", {
             content,
             to: selectedUser.value.userID,
@@ -170,32 +168,44 @@ onBeforeMount(() => {
     };
     socket.on("users", (users2) => {
         users2.forEach((utilisateur: any) => {
-            utilisateur.self = utilisateur.userID === socket.id;
-            console.log('utilisateur self', utilisateur.self)
+            for (let i = 0; i < users2.length; i++) {
+                const existingUser = users2[i];
+                if (existingUser.userID === utilisateur.userID) {
+                    initReactiveProperties(existingUser);
+                    return;
+                }
+            }
+            utilisateur.self = utilisateur.userID === socket.userID;
             initReactiveProperties(utilisateur);
         });
 
-        // put the current user first, and sort by username
         users2 = users2.sort((a: any, b: any) => {
             if (a.self) return -1;
             if (b.self) return 1;
             if (a.username < b.username) return -1;
             return a.username > b.username ? 1 : 0;
         });
-        let currentUserConnected = users2.filter((user: any) => user.userID !== socket.id);
+        let currentUserConnected = users2.filter((user: any) => user.userID !== socket.userID);
         chatStore.getUsersConnected(currentUserConnected);
     });
 
     socket.on("user connected", (utilisateur: any) => {
-        console.log('user connected', utilisateur);
+        console.log(users);
+        for (let i = 0; i < users.value.length; i++) {
+            const existingUser: any = chatStore.$state.users[i];
+            console.log(existingUser);
+            if (existingUser.userID === utilisateur.userID) {
+                existingUser.connected = true;
+                return;
+            }
+        }
         initReactiveProperties(utilisateur);
         chatStore.userConnected(utilisateur);
     });
 
     socket.on("user disconnected", (id) => {
         for (let i = 0; i < users.value.length; i++) {
-            const utilisateur = users.value[i];
-            console.log(utilisateur);
+            const utilisateur: any = users.value[i];
             if (utilisateur.userID === id) {
                 utilisateur.connected = false;
                 break;
@@ -205,7 +215,8 @@ onBeforeMount(() => {
 
     socket.on("private message", ({ content, from }) => {
         for (let i = 0; i < users.value.length; i++) {
-            const utilisateur = users.value[i];
+            const utilisateur: any = users.value[i];
+            console.log(utilisateur);
             if (utilisateur.userID === from) {
                 utilisateur.messages.push({
                     content,

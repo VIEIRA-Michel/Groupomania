@@ -29,9 +29,6 @@ const props = defineProps<{
     selected: any,
 }>();
 
-console.log(props.user)
-
-console.log(users);
 const emit = defineEmits<{
     (e: 'select'): any;
 }>();
