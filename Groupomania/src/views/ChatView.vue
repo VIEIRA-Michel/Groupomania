@@ -65,7 +65,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref, onBeforeMount, watchEffect, onMounted, onUnmounted } from 'vue';
+import { computed, ref, onBeforeMount, onUnmounted } from 'vue';
 import NavigationBar from '../components/NavigationBar.vue';
 import userChat from '../components/userChat.vue';
 import { useAuthStore } from '../shared/stores/authStore';
@@ -86,11 +86,15 @@ const users = computed(() => chatStore.$state.users);
 const selectedUser = ref<any>(null);
 const mySocketId = ref('');
 
+function logout() {
+    authStore.logout();
+    window.location.href = '/';
+}
 
 function checkIsConnected() {
     authStore.getMyInformations();
     if (authStore.$state.isConnected == false) {
-        window.location.href = '/';
+        logout();
     }
 }
 
@@ -126,109 +130,125 @@ function isTyping(param: any) {
     }
 };
 
-onMounted(() => {
-    window.onbeforeunload = () => {
-        socket.emit('leaved', { user: user.value.firstname });
-    }
-});
-
 onBeforeMount(() => {
+    if (isConnected.value) {
+        const sessionID = localStorage.getItem("sessionID");
 
-    socket.on('typing', (data) => {
-        chatStore.$patch((state) => {
-            state.typing = data;
-        });
-    });
-    socket.on('stoptyping', (data) => {
-        chatStore.$patch((state) => {
-            state.typing = false;
-        });
-    });
-    socket.on("connect", () => {
-        mySocketId.value = socket.id;
-        users.value.forEach((utilisateur: any) => {
-            if (utilisateur.self) {
-                utilisateur.connected = true;
-            }
-        });
-    });
+        if (sessionID) {
+            socket.auth = { sessionID };
+            socket.connect();
+        } else {
+            socket.auth = { username: user.value.firstname + ' ' + user.value.lastname, picture: user.value.picture_url };
+            socket.connect();
+        }
 
-    socket.on("disconnect", () => {
-        users.value.forEach((utilisateur: any) => {
-            if (utilisateur.self) {
-                utilisateur.connected = false;
-            }
+        socket.on("session", ({ sessionID, userID }) => {
+            console.log('on session');
+            // attach the session ID to the next reconnection attempts
+            socket.auth = { sessionID };
+            // store it in the localStorage
+            localStorage.setItem("sessionID", sessionID);
+            // save the ID of the user
+            socket.userID = userID;
         });
-    });
 
-    const initReactiveProperties = (utilisateur: any) => {
-        utilisateur.connected = true;
-        utilisateur.messages = [];
-        utilisateur.hasNewMessages = false;
-    };
-    socket.on("users", (users2) => {
-        users2.forEach((utilisateur: any) => {
-            for (let i = 0; i < users2.length; i++) {
-                const existingUser = users2[i];
+        socket.on('typing', (data) => {
+            chatStore.$patch((state) => {
+                state.typing = data;
+            });
+        });
+        socket.on('stoptyping', (data) => {
+            chatStore.$patch((state) => {
+                state.typing = false;
+            });
+        });
+        socket.on("connect", () => {
+            mySocketId.value = socket.id;
+            users.value.forEach((utilisateur: any) => {
+                if (utilisateur.self) {
+                    utilisateur.connected = true;
+                }
+            });
+        });
+
+        socket.on("disconnect", () => {
+            users.value.forEach((utilisateur: any) => {
+                if (utilisateur.self) {
+                    utilisateur.connected = false;
+                }
+            });
+        });
+
+        const initReactiveProperties = (utilisateur: any) => {
+            utilisateur.connected = true;
+            utilisateur.messages = [];
+            utilisateur.hasNewMessages = false;
+        };
+        socket.on("users", (users2) => {
+            users2.forEach((utilisateur: any) => {
+                for (let i = 0; i < users2.length; i++) {
+                    const existingUser = users2[i];
+                    if (existingUser.userID === utilisateur.userID) {
+                        initReactiveProperties(existingUser);
+                        return;
+                    }
+                }
+                utilisateur.self = utilisateur.userID === socket.userID;
+                initReactiveProperties(utilisateur);
+            });
+
+            users2 = users2.sort((a: any, b: any) => {
+                if (a.self) return -1;
+                if (b.self) return 1;
+                if (a.username < b.username) return -1;
+                return a.username > b.username ? 1 : 0;
+            });
+            let currentUserConnected = users2.filter((user: any) => user.userID !== socket.userID);
+            chatStore.getUsersConnected(currentUserConnected);
+        });
+
+        socket.on("user connected", (utilisateur: any) => {
+            console.log(users);
+            for (let i = 0; i < users.value.length; i++) {
+                const existingUser: any = chatStore.$state.users[i];
+                console.log(existingUser);
                 if (existingUser.userID === utilisateur.userID) {
-                    initReactiveProperties(existingUser);
+                    existingUser.connected = true;
                     return;
                 }
             }
-            utilisateur.self = utilisateur.userID === socket.userID;
             initReactiveProperties(utilisateur);
+            chatStore.userConnected(utilisateur);
         });
 
-        users2 = users2.sort((a: any, b: any) => {
-            if (a.self) return -1;
-            if (b.self) return 1;
-            if (a.username < b.username) return -1;
-            return a.username > b.username ? 1 : 0;
-        });
-        let currentUserConnected = users2.filter((user: any) => user.userID !== socket.userID);
-        chatStore.getUsersConnected(currentUserConnected);
-    });
-
-    socket.on("user connected", (utilisateur: any) => {
-        console.log(users);
-        for (let i = 0; i < users.value.length; i++) {
-            const existingUser: any = chatStore.$state.users[i];
-            console.log(existingUser);
-            if (existingUser.userID === utilisateur.userID) {
-                existingUser.connected = true;
-                return;
-            }
-        }
-        initReactiveProperties(utilisateur);
-        chatStore.userConnected(utilisateur);
-    });
-
-    socket.on("user disconnected", (id) => {
-        for (let i = 0; i < users.value.length; i++) {
-            const utilisateur: any = users.value[i];
-            if (utilisateur.userID === id) {
-                utilisateur.connected = false;
-                break;
-            }
-        }
-    });
-
-    socket.on("private message", ({ content, from }) => {
-        for (let i = 0; i < users.value.length; i++) {
-            const utilisateur: any = users.value[i];
-            console.log(utilisateur);
-            if (utilisateur.userID === from) {
-                utilisateur.messages.push({
-                    content,
-                    fromSelf: false,
-                });
-                if (utilisateur !== selectedUser) {
-                    utilisateur.hasNewMessages = true;
+        socket.on("user disconnected", (id) => {
+            for (let i = 0; i < users.value.length; i++) {
+                const utilisateur: any = users.value[i];
+                if (utilisateur.userID === id) {
+                    utilisateur.connected = false;
+                    break;
                 }
-                break;
             }
-        }
-    });
+        });
+
+        socket.on("private message", ({ content, from }) => {
+            for (let i = 0; i < users.value.length; i++) {
+                const utilisateur: any = users.value[i];
+                console.log(utilisateur);
+                if (utilisateur.userID === from) {
+                    utilisateur.messages.push({
+                        content,
+                        fromSelf: false,
+                    });
+                    if (utilisateur !== selectedUser) {
+                        utilisateur.hasNewMessages = true;
+                    }
+                    break;
+                }
+            }
+        });
+    }
+
 });
 
 onUnmounted(() => {

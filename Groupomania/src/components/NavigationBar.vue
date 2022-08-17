@@ -26,11 +26,11 @@
                     <fa icon="circle-user" />
                 </div>
             </router-link>
-            <router-link to="/">
-                <div class="menu__navigate">
-                    <fa v-if="props.isConnected" @click="emit('logout')" icon="fa-right-from-bracket" />
-                </div>
-            </router-link>
+                <a>
+                    <div class="menu__navigate">
+                        <fa v-if="props.isConnected" @click="emit('logout')" icon="fa-right-from-bracket" />
+                    </div>
+                </a>
         </div>
         <div class="burger">
             <button type="button" @click="open = !open" className="burger__button">
@@ -108,6 +108,10 @@ header {
             text-decoration: none;
             margin-left: 10%;
             color: #FD2D01;
+        }
+
+        &__navigate {
+            cursor: pointer;
         }
     }
 

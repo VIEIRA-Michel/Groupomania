@@ -128,9 +128,7 @@ io.on('connection', (socket) => {
     const matchingSockets = await io.in(socket.userID).allSockets();
     const isDisconnected = matchingSockets.size === 0;
     if (isDisconnected) {
-      // notify other users
       socket.broadcast.emit("user disconnected", socket.userID);
-      // update the connection status of the session
       sessionStore.saveSession(socket.sessionID, {
         userID: socket.userID,
         username: socket.username,
@@ -139,7 +137,6 @@ io.on('connection', (socket) => {
       });
     }
   });
-
 
   socket.on('typing', (data) => {
     socket.broadcast.emit('typing', data)

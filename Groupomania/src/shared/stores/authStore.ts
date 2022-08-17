@@ -76,7 +76,7 @@ export const useAuthStore = defineStore({
         },
         logout: () => {
             const store = useAuthStore();
-            localStorage.clear();
+            localStorage.removeItem('token');
             store.$reset();
         },
         getMyInformations: () => {

@@ -1,10 +1,5 @@
 import { defineStore } from 'pinia';
-import axios from 'axios';
-import { ref } from 'vue';
-import type { Information } from '../interfaces/information.interface';
-import type { Online } from '../interfaces/online.interface';
 import type { Message } from '../interfaces/message.interface';
-import { useAuthStore } from '../stores/authStore';
 
 export interface chatState {
     newmessage: null;
