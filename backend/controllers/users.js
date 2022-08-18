@@ -36,7 +36,7 @@ exports.login = (req, res, next) => {
     let user = {
         email: req.body.email
     };
-    let sql = `SELECT id, picture_url, firstname, lastname, email, password FROM users WHERE email = ?;`;
+    let sql = `SELECT id, picture_url, firstname, lastname, email, password, session_id FROM users WHERE email = ?;`;
     connection.query(
         sql, [user.email], function (err, results) {
             if (err) {
@@ -76,7 +76,8 @@ exports.login = (req, res, next) => {
                                     picture_url: results[0].picture_url,
                                     firstname: results[0].firstname,
                                     lastname: results[0].lastname,
-                                    email: results[0].email
+                                    email: results[0].email,
+                                    session_id: results[0].session_id
                                 }
                             })
                         }).catch(error => res.status(500).json({ message: error }))
@@ -281,4 +282,40 @@ exports.me = (req, res, next) => {
                 email: results[0].email,
             })
         })
+}
+
+exports.checkSession = (req, res, next) => {
+    let sql = `SELECT session_id FROM users WHERE id = ?;`;
+    connection.query(
+        sql, [req.user.userId], function (err, results) {
+            if (err) {
+                console.log(err)
+                res.status(500).json({ message: 'Erreur lors de la récupération de la session' });
+            }
+            res.status(200).json({ data: results[0] })
+        }
+    )
+}
+
+exports.initializeSession = (req, res, next) => {
+    console.log(req.body);
+    let sql = `UPDATE users SET session_id = ? WHERE id = ?;`;
+    connection.query(
+        sql, [req.body.session_id, req.user.userId], function (err, results) {
+            if (err) {
+                console.log(err)
+                res.status(500).json({ message: 'Erreur lors de la récupération de la session' });
+            }
+            sql = `SELECT id, session_id FROM users WHERE id = ?;`;
+            connection.query(
+                sql, [req.user.userId], function (err, results) {
+                    if (err) {
+                        console.log(err)
+                        res.status(500).json({ message: 'Erreur lors de la récupération de la session' });
+                    }
+                    res.status(200).json({ data: results[0] })
+                }
+            )
+        }
+    )
 }

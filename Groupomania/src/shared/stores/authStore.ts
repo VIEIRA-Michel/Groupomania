@@ -54,6 +54,9 @@ export const useAuthStore = defineStore({
             }).then((response => {
                 console.log(response)
                 localStorage.setItem('token', response.data.accessToken);
+                if (response.data.user.session_id) {
+                    localStorage.setItem('sessionID', response.data.user.session_id);
+                }
                 store.$patch({
                     user: response.data.user,
                     token: response.data.accessToken,
@@ -76,6 +79,7 @@ export const useAuthStore = defineStore({
         },
         logout: () => {
             const store = useAuthStore();
+            localStorage.removeItem('sessionID');
             localStorage.removeItem('token');
             store.$reset();
         },
