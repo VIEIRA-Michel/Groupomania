@@ -1,5 +1,6 @@
 const http = require('http');
 const app = require('./app');
+const crypto = require("crypto");
 const server = http.createServer(app);
 const { Server } = require("socket.io");
 const io = new Server(server, {
@@ -50,7 +51,7 @@ server.on('listening', () => {
   console.log('Listening on ' + bind);
 });
 
-const crypto = require("crypto");
+
 const randomId = () => crypto.randomBytes(8).toString("hex");
 
 const { InMemorySessionStore } = require("./sessionStore");
@@ -63,11 +64,13 @@ io.use((socket, next) => {
     if (session) {
       socket.sessionID = sessionID;
       socket.userID = session.userID;
+      socket.user = session.user;
       socket.username = session.username;
       socket.picture = session.picture;
       return next();
     }
   }
+  const user = socket.handshake.auth.user;
   const username = socket.handshake.auth.username;
   const picture = socket.handshake.auth.picture;
   if (!username) {
@@ -76,6 +79,7 @@ io.use((socket, next) => {
 
   socket.sessionID = randomId();
   socket.userID = randomId();
+  socket.user = user;
   socket.username = username;
   socket.picture = picture;
   next();
@@ -85,6 +89,7 @@ io.on('connection', (socket) => {
 
   sessionStore.saveSession(socket.sessionID, {
     userID: socket.userID,
+    user: socket.user,
     username: socket.username,
     picture: socket.picture,
     connected: true,
@@ -101,6 +106,7 @@ io.on('connection', (socket) => {
   sessionStore.findAllSessions().forEach((session) => {
     users.push({
       userID: session.userID,
+      user: session.user,
       username: session.username,
       picture: session.picture,
       connected: session.connected,
@@ -111,6 +117,7 @@ io.on('connection', (socket) => {
 
   socket.broadcast.emit("user connected", {
     userID: socket.userID,
+    user: socket.user,
     username: socket.username,
     picture: socket.picture,
     connected: true,
@@ -131,6 +138,7 @@ io.on('connection', (socket) => {
       socket.broadcast.emit("user disconnected", socket.userID);
       sessionStore.saveSession(socket.sessionID, {
         userID: socket.userID,
+        user: socket.user,
         username: socket.username,
         picture: socket.picture,
         connected: false,

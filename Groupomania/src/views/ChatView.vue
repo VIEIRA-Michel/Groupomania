@@ -65,7 +65,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onBeforeMount, onUnmounted } from 'vue';
+import { computed, ref, onUnmounted, onBeforeMount } from 'vue';
+import CryptoJS from 'crypto-js';
 import NavigationBar from '../components/NavigationBar.vue';
 import userChat from '../components/userChat.vue';
 import { useAuthStore } from '../shared/stores/authStore';
@@ -130,25 +131,42 @@ function isTyping(param: any) {
     }
 };
 
+
+function encrypted(value: any) {
+    let obj = { user: value };
+    let string = JSON.stringify(obj);
+    const secret = "XfhfwVCXYHkZepy";
+    return CryptoJS.AES.encrypt(string, secret).toString();
+}
+
+function decrypted(value: any) {
+    const secret = "XfhfwVCXYHkZepy";
+    const bytes = CryptoJS.AES.decrypt(value, secret);
+    const decryptedData = JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
+    return decryptedData;
+}
 onBeforeMount(() => {
     if (isConnected.value) {
         const sessionID = localStorage.getItem("sessionID");
+        const key = localStorage.getItem("user");
 
-        if (sessionID) {
-            socket.auth = { sessionID };
-            socket.connect();
+        if (sessionID && key) {
+            const decryptedKey = decrypted(key);
+            if (decryptedKey == user.value.user_id) {
+                socket.auth = { sessionID };
+                socket.connect();
+            }
         } else {
-            socket.auth = { username: user.value.firstname + ' ' + user.value.lastname, picture: user.value.picture_url };
+            socket.auth = { username: user.value.firstname + ' ' + user.value.lastname, picture: user.value.picture_url, user: user.value.user_id };
             socket.connect();
         }
 
         socket.on("session", ({ sessionID, userID }) => {
             console.log('on session');
-            // attach the session ID to the next reconnection attempts
             socket.auth = { sessionID };
-            // store it in the localStorage
             localStorage.setItem("sessionID", sessionID);
-            // save the ID of the user
+            const key = encrypted(user.value.user_id);
+            localStorage.setItem("key", key);
             socket.userID = userID;
         });
 
