@@ -82,40 +82,40 @@ io.use((socket, next) => {
 })
 
 io.on('connection', (socket) => {
-
   sessionStore.saveSession(socket.sessionID, {
     userID: socket.userID,
     username: socket.username,
     picture: socket.picture,
-    connected: true,
+    connected: socket.connected,
   });
 
   socket.emit("session", {
     sessionID: socket.sessionID,
     userID: socket.userID,
   });
-  
+
   socket.join(socket.userID);
 
-  const users = [];
+  let users = [];
   sessionStore.findAllSessions().forEach((session) => {
-    users.push({
-      userID: session.userID,
-      username: session.username,
-      picture: session.picture,
-      connected: session.connected,
-    });
+    if(session.connected) {
+      users.push({
+        userID: session.userID,
+        username: session.username,
+        picture: session.picture,
+        connected: session.connected,
+      });
+    }
   });
-  
-  socket.emit("users", users);
 
+  
   socket.broadcast.emit("user connected", {
     userID: socket.userID,
     username: socket.username,
     picture: socket.picture,
     connected: true,
   });
-  
+
   socket.on("private message", ({ content, to }) => {
     socket.to(to).to(socket.userID).emit("private message", {
       content,
@@ -137,6 +137,8 @@ io.on('connection', (socket) => {
       });
     }
   });
+  
+  socket.emit("users", users);
 
   socket.on('typing', (data) => {
     socket.broadcast.emit('typing', data)

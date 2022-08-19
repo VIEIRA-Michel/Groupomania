@@ -43,7 +43,8 @@ CREATE TABLE users (
     role_id INTEGER DEFAULT 1,
     FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE RESTRICT ON UPDATE CASCADE,
     created_at DATE,
-    account_disabled BOOLEAN
+    account_disabled BOOLEAN,
+    session_id VARCHAR(255)
 );
 
 insert into users (picture_url, lastname, firstname, email, password, created_at) values ('https://robohash.org/recusandaevoluptatumitaque.png?size=50x50&set=set1', 'Tumasian', 'Christos', 'ctumasian0@census.gov', '$2b$10$bR8K6oxe8C26gP.r1EhzJOudHL6LKxfrZnNPjC/qgYXdcV59.0GmO', '2021-10-07');

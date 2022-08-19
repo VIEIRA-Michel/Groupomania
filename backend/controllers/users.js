@@ -298,7 +298,6 @@ exports.checkSession = (req, res, next) => {
 }
 
 exports.initializeSession = (req, res, next) => {
-    console.log(req.body);
     let sql = `UPDATE users SET session_id = ? WHERE id = ?;`;
     connection.query(
         sql, [req.body.session_id, req.user.userId], function (err, results) {

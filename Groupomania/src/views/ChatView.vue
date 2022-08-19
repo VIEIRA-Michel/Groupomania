@@ -133,29 +133,19 @@ function isTyping(param: any) {
 onBeforeMount(() => {
     if (isConnected.value) {
         const sessionID = localStorage.getItem("sessionID");
-        // ici je fais le get de la session id via le chat store
+
         if (sessionID) {
-            // on a deja une sessionId
-            console.log("on a deja une sessionId");
             socket.auth = { sessionID };
             socket.connect();
         } else {
-            // on n'a pas de sessionId
-            console.log("on n'a pas de sessionId");
             socket.auth = { username: user.value.firstname + ' ' + user.value.lastname, picture: user.value.picture_url };
             socket.connect();
         }
-        //  a chaque fois que je rafraichis la page je rentre dedans
+
         socket.on("session", ({ sessionID, userID }) => {
-            console.log('on session');
-            // attach the session ID to the next reconnection attempts
             socket.auth = { sessionID };
-            // store it in the localStorage
-            //  ici chatStore requête et on stock le session id dans la bdd et dans le store
-            console.log('on stock le sessio Id dans localstorage');
             chatStore.saveSession(sessionID);
             localStorage.setItem("sessionID", sessionID);
-            // save the ID of the user
             socket.userID = userID;
         });
 
@@ -215,10 +205,8 @@ onBeforeMount(() => {
         });
 
         socket.on("user connected", (utilisateur: any) => {
-            console.log(users);
             for (let i = 0; i < users.value.length; i++) {
                 const existingUser: any = chatStore.$state.users[i];
-                console.log(existingUser);
                 if (existingUser.userID === utilisateur.userID) {
                     existingUser.connected = true;
                     return;
@@ -241,7 +229,6 @@ onBeforeMount(() => {
         socket.on("private message", ({ content, from }) => {
             for (let i = 0; i < users.value.length; i++) {
                 const utilisateur: any = users.value[i];
-                console.log(utilisateur);
                 if (utilisateur.userID === from) {
                     utilisateur.messages.push({
                         content,
