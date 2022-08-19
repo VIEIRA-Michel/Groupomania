@@ -1,7 +1,10 @@
 const http = require('http');
 const app = require('./app');
 const server = http.createServer(app);
+const redis = require('./database/redis_connexion');
 const { Server } = require("socket.io");
+require('dotenv').config();
+
 const io = new Server(server, {
   cors: {
     origin: '*',
@@ -42,6 +45,12 @@ const errorHandler = error => {
   }
 };
 
+(async () => {
+  await redis.connect(); // if using node-redis client.
+
+  const pingCommandResult = await redis.ping();
+  console.log("Ping command result: ", pingCommandResult);
+})();
 
 server.on('error', errorHandler);
 server.on('listening', () => {
