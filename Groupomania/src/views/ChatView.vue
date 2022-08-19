@@ -6,8 +6,11 @@
         <div class="container-left">
             <div class="container-left__settings"></div>
             <div class="container-left__list">
-                <userChat v-if="users" v-for="utilisateur in users" :key="utilisateur.userID" :user="utilisateur"
-                    :selected="selectedUser === utilisateur" @select="onSelectUser(utilisateur)" />
+                <userChat v-if="users.length > 0" v-for="utilisateur in users" :key="utilisateur.userID"
+                    :user="utilisateur" :selected="selectedUser === utilisateur" @select="onSelectUser(utilisateur)" />
+                <div v-else class="container-left__list__message">
+                    <p>Il n'y a aucun utilisateur en ligne pour le moment</p>
+                </div>
             </div>
         </div>
         <div class="container-center">
@@ -86,6 +89,7 @@ const users = computed(() => chatStore.$state.users);
 const selectedUser = ref<any>(null);
 const mySocketId = ref('');
 
+console.log(users);
 function logout() {
     authStore.logout();
     window.location.href = '/';
@@ -217,13 +221,10 @@ onBeforeMount(() => {
         });
 
         socket.on("user disconnected", (id) => {
-            for (let i = 0; i < users.value.length; i++) {
-                const utilisateur: any = users.value[i];
-                if (utilisateur.userID === id) {
-                    utilisateur.connected = false;
-                    break;
-                }
-            }
+            let newArray = ref(users.value.filter((utilisateur: any) => utilisateur.userID !== id));
+            chatStore.$patch((state: any) => {
+                state.users = newArray.value;
+            } );
         });
 
         socket.on("private message", ({ content, from }) => {
@@ -267,6 +268,12 @@ onUnmounted(() => {
         width: 30%;
         // background: blue;
         border-right: 1px solid #DBDBDB;
+
+        &__list {
+            &__message {
+                text-align: center;
+            }
+        }
     }
 
     .container-center {
