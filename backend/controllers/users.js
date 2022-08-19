@@ -1,5 +1,6 @@
 const bcrypt = require('bcrypt');
 const connection = require('../database/mysql_connexion');
+const redis = require('../database/redis_connexion');
 const jwt = require('jsonwebtoken');
 const fs = require('fs');
 require('dotenv').config();
@@ -21,14 +22,27 @@ exports.signup = (req, res, next) => {
                         res.status(500).json({ message: 'Adresse email déjà utilisée' });
                     }
                     if (!err) {
-                        res.status(201).json({ message: 'Utilisateur enregistré ! ' })
+                        (async () => {
+                            await redis.set(
+                                `user:${results.insertId}`,
+                                JSON.stringify({
+                                    firstname: req.body.firstname,
+                                    lastname: req.body.lastname,
+                                    messages: []
+                                })
+                            );
+
+                            const getStringResult = await redis.get(`user:${results.insertId}`);
+                            console.log("Get string result: ", JSON.parse(getStringResult));
+                            res.status(201).json({ message: 'Utilisateur enregistré ! ' })
+                        })();
                     }
                 }
             )
 
 
         })
-        .catch(error => res.status(500).json({ message: error }))
+        .catch(error => res.status(500).json({ message: error }));
 };
 
 exports.login = (req, res, next) => {
@@ -36,7 +50,7 @@ exports.login = (req, res, next) => {
     let user = {
         email: req.body.email
     };
-    let sql = `SELECT id, picture_url, firstname, lastname, email, password FROM users WHERE email = ?;`;
+    let sql = `SELECT id, picture_url, firstname, lastname, email, password, session_id FROM users WHERE email = ?;`;
     connection.query(
         sql, [user.email], function (err, results) {
             if (err) {
@@ -48,37 +62,43 @@ exports.login = (req, res, next) => {
                             if (!valid) {
                                 return res.status(401).json({ error: 'Mot de passe incorrect !' });
                             }
-                            res.status(200).json({
-                                accessToken: jwt.sign(
-                                    {
-                                        userId: results[0].id,
+                            (async () => {
+                                const getStringResult = await redis.get(`user:${results[0].id}`);
+                                console.log("Get string result: ", JSON.parse(getStringResult));
+                                res.status(200).json({
+                                    accessToken: jwt.sign(
+                                        {
+                                            userId: results[0].id,
+                                            picture_url: results[0].picture_url,
+                                            firstname: results[0].firstname,
+                                            lastname: results[0].lastname,
+                                            role_id: results[0].role_id,
+                                            email: results[0].email
+                                        },
+                                        process.env.ACCESS_TOKEN_SECRET,
+                                        { expiresIn: '120m' }),
+                                    refreshToken: jwt.sign(
+                                        {
+                                            userId: results[0].id,
+                                            picture_url: results[0].picture_url,
+                                            firstname: results[0].firstname,
+                                            lastname: results[0].lastname,
+                                            role_id: results[0].role_id,
+                                            email: results[0].email
+                                        },
+                                        process.env.REFRESH_TOKEN_SECRET,
+                                        { expiresIn: '120m' }),
+                                    user: {
+                                        user_id: results[0].id,
                                         picture_url: results[0].picture_url,
                                         firstname: results[0].firstname,
                                         lastname: results[0].lastname,
-                                        role_id: results[0].role_id,
-                                        email: results[0].email
+                                        email: results[0].email,
+                                        session_id: results[0].session_id
                                     },
-                                    process.env.ACCESS_TOKEN_SECRET,
-                                    { expiresIn: '120m' }),
-                                refreshToken: jwt.sign(
-                                    {
-                                        userId: results[0].id,
-                                        picture_url: results[0].picture_url,
-                                        firstname: results[0].firstname,
-                                        lastname: results[0].lastname,
-                                        role_id: results[0].role_id,
-                                        email: results[0].email
-                                    },
-                                    process.env.REFRESH_TOKEN_SECRET,
-                                    { expiresIn: '120m' }),
-                                user: {
-                                    user_id: results[0].id,
-                                    picture_url: results[0].picture_url,
-                                    firstname: results[0].firstname,
-                                    lastname: results[0].lastname,
-                                    email: results[0].email
-                                }
-                            })
+                                    redis: JSON.parse(getStringResult)
+                                })
+                            })();
                         }).catch(error => res.status(500).json({ message: error }))
                 } else {
                     res.status(401).json({ message: `L'adresse email n'existe pas !` });
@@ -281,4 +301,39 @@ exports.me = (req, res, next) => {
                 email: results[0].email,
             })
         })
+}
+
+exports.checkSession = (req, res, next) => {
+    let sql = `SELECT session_id FROM users WHERE id = ?;`;
+    connection.query(
+        sql, [req.user.userId], function (err, results) {
+            if (err) {
+                console.log(err)
+                res.status(500).json({ message: 'Erreur lors de la récupération de la session' });
+            }
+            res.status(200).json({ data: results[0] })
+        }
+    )
+}
+
+exports.initializeSession = (req, res, next) => {
+    let sql = `UPDATE users SET session_id = ? WHERE id = ?;`;
+    connection.query(
+        sql, [req.body.session_id, req.user.userId], function (err, results) {
+            if (err) {
+                console.log(err)
+                res.status(500).json({ message: 'Erreur lors de la récupération de la session' });
+            }
+            sql = `SELECT id, session_id FROM users WHERE id = ?;`;
+            connection.query(
+                sql, [req.user.userId], function (err, results) {
+                    if (err) {
+                        console.log(err)
+                        res.status(500).json({ message: 'Erreur lors de la récupération de la session' });
+                    }
+                    res.status(200).json({ data: results[0] })
+                }
+            )
+        }
+    )
 }

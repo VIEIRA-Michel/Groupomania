@@ -154,8 +154,8 @@ function closeConversation() {
                         Demandes d'amis
                     </div>
                 </div>
-                <div class="friends-request__list">
-                    <div v-if="requests.length >= 1" v-for="req in requests" class="friends-request__list__item">
+                <div v-if="requests.length >= 1" class="friends-request__list">
+                    <div v-for="req in requests" class="friends-request__list__item">
                         <div class="friends-request__list__item__avatar">
                             <img :src="req.picture_url" alt="avatar-1">
                         </div>
@@ -178,11 +178,11 @@ function closeConversation() {
                             </div>
                         </div>
                     </div>
-                    <div v-else>
-                        <div class="friends-request__empty-requests">
-                            <div class="friends-request__empty-requests__text">
-                                <span>Vous n'avez aucune demande</span>
-                            </div>
+                </div>
+                <div v-else>
+                    <div class="friends-request__empty-requests">
+                        <div class="friends-request__empty-requests__text">
+                            <span>Vous n'avez aucune demande</span>
                         </div>
                     </div>
                 </div>
@@ -584,6 +584,8 @@ function closeConversation() {
         }
 
         &__empty-friends {
+            display: flex;
+            justify-content: center;
             margin-bottom: 20px;
         }
     }

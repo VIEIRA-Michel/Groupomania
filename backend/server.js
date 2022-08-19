@@ -1,8 +1,10 @@
 const http = require('http');
 const app = require('./app');
-const crypto = require("crypto");
 const server = http.createServer(app);
+const redis = require('./database/redis_connexion');
 const { Server } = require("socket.io");
+require('dotenv').config();
+
 const io = new Server(server, {
   cors: {
     origin: '*',
@@ -43,6 +45,12 @@ const errorHandler = error => {
   }
 };
 
+(async () => {
+  await redis.connect(); // if using node-redis client.
+
+  const pingCommandResult = await redis.ping();
+  console.log("Ping command result: ", pingCommandResult);
+})();
 
 server.on('error', errorHandler);
 server.on('listening', () => {
@@ -51,7 +59,7 @@ server.on('listening', () => {
   console.log('Listening on ' + bind);
 });
 
-
+const crypto = require("crypto");
 const randomId = () => crypto.randomBytes(8).toString("hex");
 
 const { InMemorySessionStore } = require("./sessionStore");
@@ -64,13 +72,11 @@ io.use((socket, next) => {
     if (session) {
       socket.sessionID = sessionID;
       socket.userID = session.userID;
-      socket.user = session.user;
       socket.username = session.username;
       socket.picture = session.picture;
       return next();
     }
   }
-  const user = socket.handshake.auth.user;
   const username = socket.handshake.auth.username;
   const picture = socket.handshake.auth.picture;
   if (!username) {
@@ -79,50 +85,46 @@ io.use((socket, next) => {
 
   socket.sessionID = randomId();
   socket.userID = randomId();
-  socket.user = user;
   socket.username = username;
   socket.picture = picture;
   next();
 })
 
 io.on('connection', (socket) => {
-
   sessionStore.saveSession(socket.sessionID, {
     userID: socket.userID,
-    user: socket.user,
     username: socket.username,
     picture: socket.picture,
-    connected: true,
+    connected: socket.connected,
   });
 
   socket.emit("session", {
     sessionID: socket.sessionID,
     userID: socket.userID,
   });
-  
+
   socket.join(socket.userID);
 
-  const users = [];
+  let users = [];
   sessionStore.findAllSessions().forEach((session) => {
-    users.push({
-      userID: session.userID,
-      user: session.user,
-      username: session.username,
-      picture: session.picture,
-      connected: session.connected,
-    });
+    if(session.connected) {
+      users.push({
+        userID: session.userID,
+        username: session.username,
+        picture: session.picture,
+        connected: session.connected,
+      });
+    }
   });
-  
-  socket.emit("users", users);
 
+  
   socket.broadcast.emit("user connected", {
     userID: socket.userID,
-    user: socket.user,
     username: socket.username,
     picture: socket.picture,
     connected: true,
   });
-  
+
   socket.on("private message", ({ content, to }) => {
     socket.to(to).to(socket.userID).emit("private message", {
       content,
@@ -138,13 +140,14 @@ io.on('connection', (socket) => {
       socket.broadcast.emit("user disconnected", socket.userID);
       sessionStore.saveSession(socket.sessionID, {
         userID: socket.userID,
-        user: socket.user,
         username: socket.username,
         picture: socket.picture,
         connected: false,
       });
     }
   });
+  
+  socket.emit("users", users);
 
   socket.on('typing', (data) => {
     socket.broadcast.emit('typing', data)

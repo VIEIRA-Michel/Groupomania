@@ -108,7 +108,6 @@ const emit = defineEmits<{
         &__details {
             display: flex;
             flex-direction: row;
-            width: 100%;
             margin: auto;
             padding: 5px;
 
