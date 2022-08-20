@@ -114,7 +114,8 @@ function onSelectUser(utilisateur: any) {
 
 function onMessage(content: any) {
     if (selectedUser.value) {
-        console.log(selectedUser.value);
+        console.log(selectedUser.value.user);
+        chatStore.sendMessage(selectedUser.value.user, content, user.value.user_id);
         socket.emit("private message", {
             content,
             to: selectedUser.value.userID,
@@ -142,7 +143,7 @@ onBeforeMount(() => {
             socket.auth = { sessionID };
             socket.connect();
         } else {
-            socket.auth = { username: user.value.firstname + ' ' + user.value.lastname, picture: user.value.picture_url };
+            socket.auth = { username: user.value.firstname + ' ' + user.value.lastname, picture: user.value.picture_url, user: user.value.user_id };
             socket.connect();
         }
 
@@ -184,6 +185,7 @@ onBeforeMount(() => {
             utilisateur.connected = true;
             utilisateur.messages = [];
             utilisateur.hasNewMessages = false;
+
         };
         socket.on("users", (users2) => {
             users2.forEach((utilisateur: any) => {

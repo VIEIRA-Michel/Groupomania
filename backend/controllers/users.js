@@ -28,7 +28,7 @@ exports.signup = (req, res, next) => {
                                 JSON.stringify({
                                     firstname: req.body.firstname,
                                     lastname: req.body.lastname,
-                                    messages: []
+                                    conversations: []
                                 })
                             );
 

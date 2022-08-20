@@ -4,6 +4,7 @@ const usersRoutes = require('./routes/users.routes');
 const publicationsRoutes = require('./routes/publications.routes');
 const commentsRoute = require('./routes/comments.routes');
 const friendsRoutes = require('./routes/friends.routes');
+const chatRoutes = require('./routes/chat.routes');
 const app = express();
 const auth = require('./middlewares/auth');
 const path = require('path');
@@ -35,6 +36,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/publications', auth.accesToken, publicationsRoutes);
 app.use('/api/publications', auth.accesToken, commentsRoute);
 app.use('/api/user', auth.accesToken, usersRoutes);
+app.use('/api/user', auth.accesToken, chatRoutes);
 app.use('/api/friends', auth.accesToken, friendsRoutes);
 
 module.exports = app;

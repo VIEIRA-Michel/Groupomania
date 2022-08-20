@@ -42,8 +42,6 @@ export const useChatStore = defineStore({
                 },
             }).then(response => {
                 console.log('on a mit la session ID dans la bdd');
-                console.log(response.data.data.session_id);
-
             }).catch(error => {
                 if (error.response.status === 403) {
                     useAuthStore().logout();
@@ -51,5 +49,43 @@ export const useChatStore = defineStore({
                 console.log(error);
             });
         },
+        sendMessage: (id: number, message: any, from: any) => {
+            axios({
+                method: 'post',
+                url: `http://localhost:3000/api/user/${id}/messages`,
+                headers: {
+                    authorization: `Bearer ${localStorage.getItem('token')}`
+                },
+                data: {
+                    message: message,
+                    from: from,
+                    to: id,
+                }
+            }).then(response => {
+                console.log(response);
+                console.log("message envoyé");
+            }).catch(error => {
+                if (error.response.status === 403) {
+                    useAuthStore().logout();
+                }
+                console.log(error);
+            })
+        },
+        getAllMessages: () => {
+            axios({
+                method: 'get',
+                url: 'http://localhost:3000/api/user/inbox',
+                headers: {
+                    authorization: `Bearer ${localStorage.getItem('token')}`
+                }
+            }).then(response => {
+                console.log(response);
+            }).catch(error => {
+                if (error.response.status === 403) {
+                    useAuthStore().logout();
+                }
+                console.log(error);
+            })
+        }
     },
 });

@@ -47,9 +47,6 @@ const errorHandler = error => {
 
 (async () => {
   await redis.connect(); // if using node-redis client.
-
-  const pingCommandResult = await redis.ping();
-  console.log("Ping command result: ", pingCommandResult);
 })();
 
 server.on('error', errorHandler);
@@ -72,11 +69,13 @@ io.use((socket, next) => {
     if (session) {
       socket.sessionID = sessionID;
       socket.userID = session.userID;
+      socket.user = session.user;
       socket.username = session.username;
       socket.picture = session.picture;
       return next();
     }
   }
+  const user = socket.handshake.auth.user;
   const username = socket.handshake.auth.username;
   const picture = socket.handshake.auth.picture;
   if (!username) {
@@ -85,6 +84,7 @@ io.use((socket, next) => {
 
   socket.sessionID = randomId();
   socket.userID = randomId();
+  socket.user = user;
   socket.username = username;
   socket.picture = picture;
   next();
@@ -93,6 +93,7 @@ io.use((socket, next) => {
 io.on('connection', (socket) => {
   sessionStore.saveSession(socket.sessionID, {
     userID: socket.userID,
+    user: socket.user,
     username: socket.username,
     picture: socket.picture,
     connected: socket.connected,
@@ -110,6 +111,7 @@ io.on('connection', (socket) => {
     if(session.connected) {
       users.push({
         userID: session.userID,
+        user: session.user,
         username: session.username,
         picture: session.picture,
         connected: session.connected,
@@ -120,6 +122,7 @@ io.on('connection', (socket) => {
   
   socket.broadcast.emit("user connected", {
     userID: socket.userID,
+    user: socket.user,
     username: socket.username,
     picture: socket.picture,
     connected: true,
@@ -140,6 +143,7 @@ io.on('connection', (socket) => {
       socket.broadcast.emit("user disconnected", socket.userID);
       sessionStore.saveSession(socket.sessionID, {
         userID: socket.userID,
+        user: socket.user,
         username: socket.username,
         picture: socket.picture,
         connected: false,
