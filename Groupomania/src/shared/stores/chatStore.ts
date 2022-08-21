@@ -22,7 +22,7 @@ export const useChatStore = defineStore({
         onlineList: (state: chatState) => state.users,
     },
     actions: {
-        userConnected: (user: any) => {
+        userConnected: (user: any ) => {
             const store = useChatStore();
             store.$patch((state) => state.users.push(user));
         },
@@ -79,7 +79,8 @@ export const useChatStore = defineStore({
                     authorization: `Bearer ${localStorage.getItem('token')}`
                 }
             }).then(response => {
-                console.log(response);
+                // console.log(response.data);
+                useChatStore().$patch((state) => state.messages = response.data);
             }).catch(error => {
                 if (error.response.status === 403) {
                     useAuthStore().logout();

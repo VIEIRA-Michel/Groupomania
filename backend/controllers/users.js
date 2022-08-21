@@ -46,7 +46,6 @@ exports.signup = (req, res, next) => {
 };
 
 exports.login = (req, res, next) => {
-    console.log(req.body);
     let user = {
         email: req.body.email
     };
@@ -64,7 +63,6 @@ exports.login = (req, res, next) => {
                             }
                             (async () => {
                                 const getStringResult = await redis.get(`user:${results[0].id}`);
-                                console.log("Get string result: ", JSON.parse(getStringResult));
                                 res.status(200).json({
                                     accessToken: jwt.sign(
                                         {

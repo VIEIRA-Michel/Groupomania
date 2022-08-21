@@ -81,18 +81,32 @@ const friendshipStore = useFriendshipStore();
 const chatStore = useChatStore();
 checkIsConnected();
 getAllFriends();
+chatStore.getAllMessages();
 
 const isConnected = computed(() => authStore.$state.isConnected);
 const user = computed(() => authStore.$state.user);
 const typing = computed(() => chatStore.$state.typing);
 const users = computed(() => chatStore.$state.users);
+const messages = computed(() => chatStore.$state.messages);
+const friends = computed(() => friendshipStore.$state.friends);
 const selectedUser = ref<any>(null);
 const mySocketId = ref('');
 
-console.log(users);
 function logout() {
     authStore.logout();
     window.location.href = '/';
+}
+
+function displayFriends(usersOnline: any) {
+    // console.log(users)
+    console.log('je rentre dans la fonction displayFriends');
+    console.log(users);
+    usersOnline.forEach((userOnline: any) => {
+        if (friends.value.length > 0 && friends.value.find(friend => friend.user_id === userOnline.user)) {
+            chatStore.userConnected(userOnline);
+            console.log(userOnline);
+        }
+    });
 }
 
 function checkIsConnected() {
@@ -148,6 +162,7 @@ onBeforeMount(() => {
         }
 
         socket.on("session", ({ sessionID, userID }) => {
+            console.log('session');
             socket.auth = { sessionID };
             chatStore.saveSession(sessionID);
             localStorage.setItem("sessionID", sessionID);
@@ -165,6 +180,7 @@ onBeforeMount(() => {
             });
         });
         socket.on("connect", () => {
+            console.log('connect');
             mySocketId.value = socket.id;
             users.value.forEach((utilisateur: any) => {
                 if (utilisateur.self) {
@@ -174,6 +190,7 @@ onBeforeMount(() => {
         });
 
         socket.on("disconnect", () => {
+            console.log('disconnect');
             users.value.forEach((utilisateur: any) => {
                 if (utilisateur.self) {
                     utilisateur.connected = false;
@@ -188,6 +205,7 @@ onBeforeMount(() => {
 
         };
         socket.on("users", (users2) => {
+            console.log('users');
             users2.forEach((utilisateur: any) => {
                 for (let i = 0; i < users2.length; i++) {
                     const existingUser = users2[i];
@@ -207,10 +225,11 @@ onBeforeMount(() => {
                 return a.username > b.username ? 1 : 0;
             });
             let currentUserConnected = users2.filter((user: any) => user.userID !== socket.userID);
-            chatStore.getUsersConnected(currentUserConnected);
+            displayFriends(currentUserConnected);
         });
 
         socket.on("user connected", (utilisateur: any) => {
+            console.log('user connected');
             for (let i = 0; i < users.value.length; i++) {
                 const existingUser: any = chatStore.$state.users[i];
                 if (existingUser.userID === utilisateur.userID) {
@@ -223,10 +242,11 @@ onBeforeMount(() => {
         });
 
         socket.on("user disconnected", (id) => {
+            console.log('user disconnected');
             let newArray = ref(users.value.filter((utilisateur: any) => utilisateur.userID !== id));
             chatStore.$patch((state: any) => {
                 state.users = newArray.value;
-            } );
+            });
         });
 
         socket.on("private message", ({ content, from }) => {

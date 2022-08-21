@@ -37,9 +37,11 @@ exports.sendMessage = async (req, res, next) => {
 
     } else {
         await redis.append(
+            `conversation:${numConversation}`, ',');
+        await redis.append(
             `conversation:${numConversation}`,
             JSON.stringify(
-                { 
+                {
                     message: req.body.message,
                     from: req.body.from,
                     to: req.body.to
@@ -51,5 +53,16 @@ exports.sendMessage = async (req, res, next) => {
 };
 
 exports.getAllMessages = async (req, res, next) => {
-
+    const msg = await redis.get(`user:${req.user.userId}`);
+    const messages = JSON.parse(msg).conversations;
+    let inbox = [];
+    for (let i = 0; i < messages.length; i++) {
+        let conversationMessages = await redis.get(`conversation:${messages[i]}`);
+        let arr = `[${conversationMessages}]`;
+        const conv = JSON.parse(arr);
+        for (let j = 0; j < conv.length; j++) {
+            inbox.push(conv[j]);
+        }
+    }
+    res.status(200).json(inbox);
 }
