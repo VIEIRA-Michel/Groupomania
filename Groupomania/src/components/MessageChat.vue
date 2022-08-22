@@ -27,14 +27,14 @@
         <div class="container-center__body__chat">
             <ul>
                 <li v-for="(message, index) in props.user.messages" :key="index"
-                    class="container-center__body__chat__item" v-bind:class="[message.fromSelf ? 'fromSelf' : 'fromUser']">
+                    class="container-center__body__chat__item" v-bind:class="[message.from == myProfile.user_id ? 'fromSelf' : 'fromUser']">
                     <div v-if="displaySender(message, index)" class="container-center__body__chat__item__left">
-                        <img v-if="message.fromSelf" :src="myProfile.picture_url" alt="avatar" />
-                        <img v-else-if="!message.fromSelf" :src="props.user.picture" alt="avatar" />
+                        <img v-if="message.from == myProfile.user_id" :src="myProfile.picture_url" alt="avatar" />
+                        <img v-else :src="props.user.picture" alt="avatar" />
                     </div>
                     <div class="container-center__body__chat__item__right">
-                        <div class="container-center__body__chat__item__right__message" v-bind:class="[message.fromSelf ? 'fromSelf' : 'fromUser']">
-                            {{ message.content }}
+                        <div class="container-center__body__chat__item__right__message" v-bind:class="[message.from == myProfile.user_id ? 'fromSelf' : 'fromUser']">
+                            {{ message.message }}
                         </div>
                     </div>
                 </li>
@@ -66,18 +66,18 @@ const chatStore = useChatStore();
 const newMessage = ref('');
 const props = defineProps<{
     user: any,
-    typing: any,
+    typing: any
 }>();
+
 
 function displaySender(message: any, index: number) {
     return (
         index === 0 ||
-        props.user.messages[index - 1].fromSelf !==
-        props.user.messages[index].fromSelf
+        props.user.messages[index - 1].from !==
+        props.user.messages[index].from
     );
 };
 function send() {
-    console.log(myProfile);
     console.log(props.user.messages);
     emit('input', newMessage.value);
     newMessage.value = '';

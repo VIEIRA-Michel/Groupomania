@@ -6,8 +6,9 @@
         <div class="container-left">
             <div class="container-left__settings"></div>
             <div class="container-left__list">
-                <userChat v-if="users.length > 0" v-for="utilisateur in users" :key="utilisateur.userID"
-                    :user="utilisateur" :selected="selectedUser === utilisateur" @select="onSelectUser(utilisateur)" />
+                <userChat v-if="friendsConnected.length > 0" v-for="utilisateur in friendsConnected"
+                    :key="utilisateur.userID" :user="utilisateur" :selected="selectedUser === utilisateur"
+                    @select="onSelectUser(utilisateur)" />
                 <div v-else class="container-left__list__message">
                     <p>Il n'y a aucun utilisateur en ligne pour le moment</p>
                 </div>
@@ -87,26 +88,14 @@ const isConnected = computed(() => authStore.$state.isConnected);
 const user = computed(() => authStore.$state.user);
 const typing = computed(() => chatStore.$state.typing);
 const users = computed(() => chatStore.$state.users);
+const friendsConnected = computed(() => chatStore.$state.friendsConnected);
 const messages = computed(() => chatStore.$state.messages);
 const friends = computed(() => friendshipStore.$state.friends);
 const selectedUser = ref<any>(null);
-const mySocketId = ref('');
 
 function logout() {
     authStore.logout();
     window.location.href = '/';
-}
-
-function displayFriends(usersOnline: any) {
-    // console.log(users)
-    console.log('je rentre dans la fonction displayFriends');
-    console.log(users);
-    usersOnline.forEach((userOnline: any) => {
-        if (friends.value.length > 0 && friends.value.find(friend => friend.user_id === userOnline.user)) {
-            chatStore.userConnected(userOnline);
-            console.log(userOnline);
-        }
-    });
 }
 
 function checkIsConnected() {
@@ -121,22 +110,28 @@ function getAllFriends() {
 }
 
 function onSelectUser(utilisateur: any) {
-    console.log(utilisateur);
+    if (!selectedUser.value || selectedUser.value.user !== utilisateur.user) {
+        messages.value.forEach((message: any) => {
+            if (message.from == utilisateur.user || message.to == utilisateur.user) {
+                utilisateur.messages.push(message);
+            }
+        });
+    }
     selectedUser.value = utilisateur;
     utilisateur.hasNewMessages = false;
 }
 
 function onMessage(content: any) {
     if (selectedUser.value) {
-        console.log(selectedUser.value.user);
         chatStore.sendMessage(selectedUser.value.user, content, user.value.user_id);
         socket.emit("private message", {
             content,
             to: selectedUser.value.userID,
         });
         selectedUser.value.messages.push({
-            content,
-            fromSelf: true,
+            message: content,
+            from: user.value.user_id,
+            to: selectedUser.value.user,
         });
     }
 };
@@ -148,6 +143,23 @@ function isTyping(param: any) {
         socket.emit('stoptyping', user.value.firstname + ' ' + user.value.lastname);
     }
 };
+
+function displayFriends(usersOnline: any) {
+    usersOnline.forEach((userOnline: any) => {
+        if (friends.value.length > 0 && friends.value.find(friend => friend.user_id === userOnline.user)) {
+            chatStore.friendsConnected(userOnline);
+        }
+    });
+}
+
+function checkIsFriend(utilisateur: any) {
+    if (friendsConnected.value.find(friend => friend.user == utilisateur.user)) {
+        return
+    }
+    else if (friends.value.length > 0 && friends.value.find(friend => friend.user_id === utilisateur.user)) {
+        chatStore.friendsConnected(utilisateur);
+    }
+}
 
 onBeforeMount(() => {
     if (isConnected.value) {
@@ -162,7 +174,6 @@ onBeforeMount(() => {
         }
 
         socket.on("session", ({ sessionID, userID }) => {
-            console.log('session');
             socket.auth = { sessionID };
             chatStore.saveSession(sessionID);
             localStorage.setItem("sessionID", sessionID);
@@ -180,8 +191,6 @@ onBeforeMount(() => {
             });
         });
         socket.on("connect", () => {
-            console.log('connect');
-            mySocketId.value = socket.id;
             users.value.forEach((utilisateur: any) => {
                 if (utilisateur.self) {
                     utilisateur.connected = true;
@@ -190,7 +199,6 @@ onBeforeMount(() => {
         });
 
         socket.on("disconnect", () => {
-            console.log('disconnect');
             users.value.forEach((utilisateur: any) => {
                 if (utilisateur.self) {
                     utilisateur.connected = false;
@@ -205,7 +213,6 @@ onBeforeMount(() => {
 
         };
         socket.on("users", (users2) => {
-            console.log('users');
             users2.forEach((utilisateur: any) => {
                 for (let i = 0; i < users2.length; i++) {
                     const existingUser = users2[i];
@@ -229,7 +236,6 @@ onBeforeMount(() => {
         });
 
         socket.on("user connected", (utilisateur: any) => {
-            console.log('user connected');
             for (let i = 0; i < users.value.length; i++) {
                 const existingUser: any = chatStore.$state.users[i];
                 if (existingUser.userID === utilisateur.userID) {
@@ -239,22 +245,26 @@ onBeforeMount(() => {
             }
             initReactiveProperties(utilisateur);
             chatStore.userConnected(utilisateur);
+            checkIsFriend(utilisateur);
         });
 
         socket.on("user disconnected", (id) => {
-            console.log('user disconnected');
             let newArray = ref(users.value.filter((utilisateur: any) => utilisateur.userID !== id));
+            let newArrayFriend = ref(friendsConnected.value.filter((utilisateur: any) => utilisateur.user !== id));
             chatStore.$patch((state: any) => {
                 state.users = newArray.value;
+                state.friendsConnected = newArrayFriend.value;
             });
         });
 
-        socket.on("private message", ({ content, from }) => {
-            for (let i = 0; i < users.value.length; i++) {
-                const utilisateur: any = users.value[i];
+        socket.on("private message", ({ content, from, to }) => {
+            console.log('content', content,'from', from,'to', to);
+            for (let i = 0; i < friendsConnected.value.length; i++) {
+                const utilisateur: any = friendsConnected.value[i];
+                console.log(utilisateur);
                 if (utilisateur.userID === from) {
                     utilisateur.messages.push({
-                        content,
+                        message: content,
                         fromSelf: false,
                     });
                     if (utilisateur !== selectedUser) {

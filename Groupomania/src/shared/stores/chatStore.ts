@@ -8,6 +8,7 @@ export interface chatState {
     messages: Message[];
     typing: boolean;
     users: [];
+    friendsConnected: []
 }
 
 export const useChatStore = defineStore({
@@ -17,18 +18,20 @@ export const useChatStore = defineStore({
         messages: [] as Message[],
         typing: false,
         users: [],
+        friendsConnected: []
     }),
     getters: {
         onlineList: (state: chatState) => state.users,
     },
     actions: {
-        userConnected: (user: any ) => {
+        userConnected: (user: any) => {
             const store = useChatStore();
             store.$patch((state) => state.users.push(user));
         },
-        getUsersConnected: (users: any) => {
+        friendsConnected: (friend: any) => {
+            // console.log('friends connected on store');
             const store = useChatStore();
-            store.$patch((state) => state.users = users);
+            store.$patch((state) => state.friendsConnected.push(friend));
         },
         saveSession: (session_id: any) => {
             axios({
@@ -41,7 +44,6 @@ export const useChatStore = defineStore({
                     session_id: session_id,
                 },
             }).then(response => {
-                console.log('on a mit la session ID dans la bdd');
             }).catch(error => {
                 if (error.response.status === 403) {
                     useAuthStore().logout();
@@ -62,8 +64,6 @@ export const useChatStore = defineStore({
                     to: id,
                 }
             }).then(response => {
-                console.log(response);
-                console.log("message envoyé");
             }).catch(error => {
                 if (error.response.status === 403) {
                     useAuthStore().logout();
@@ -79,7 +79,6 @@ export const useChatStore = defineStore({
                     authorization: `Bearer ${localStorage.getItem('token')}`
                 }
             }).then(response => {
-                // console.log(response.data);
                 useChatStore().$patch((state) => state.messages = response.data);
             }).catch(error => {
                 if (error.response.status === 403) {
