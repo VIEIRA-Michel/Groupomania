@@ -52,10 +52,8 @@ export const useAuthStore = defineStore({
                     password: password,
                 },
             }).then((response => {
+                localStorage.setItem('user', JSON.stringify(response.data.user));
                 localStorage.setItem('token', response.data.accessToken);
-                if (response.data.user.session_id) {
-                    localStorage.setItem('sessionID', response.data.user.session_id);
-                }
                 store.$patch({
                     user: response.data.user,
                     token: response.data.accessToken,

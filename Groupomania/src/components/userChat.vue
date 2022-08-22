@@ -29,7 +29,7 @@ const props = defineProps<{
     selected: any,
 }>();
 
-console.log(props.user)
+// console.log(props.user)
 
 const emit = defineEmits<{
     (e: 'select'): any;

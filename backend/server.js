@@ -56,48 +56,57 @@ server.on('listening', () => {
   console.log('Listening on ' + bind);
 });
 
-const crypto = require("crypto");
-const randomId = () => crypto.randomBytes(8).toString("hex");
-
-const { InMemorySessionStore } = require("./sessionStore");
-const sessionStore = new InMemorySessionStore();
-
 io.use((socket, next) => {
   const sessionID = socket.handshake.auth.sessionID;
+  const user_id = socket.handshake.auth.user;
   if (sessionID) {
-    const session = sessionStore.findSession(sessionID);
-    if (session) {
-      socket.sessionID = sessionID;
-      socket.userID = session.userID;
-      socket.user = session.user;
-      socket.username = session.username;
-      socket.picture = session.picture;
-      return next();
-    }
+    (async () => {
+      const session = await redis.get(`user:${user_id}`);
+      const sessionData = JSON.parse(session);
+      if (session) {
+        socket.sessionID = sessionData.session_id;
+        socket.userID = sessionData.userID;
+        socket.user = sessionData.user;
+        socket.username = sessionData.username;
+        socket.picture = sessionData.picture;
+        return next();
+      }
+    })();
   }
-  const user = socket.handshake.auth.user;
-  const username = socket.handshake.auth.username;
-  const picture = socket.handshake.auth.picture;
-  if (!username) {
-    return next(new Error('authentication error'));
-  }
-
-  socket.sessionID = randomId();
-  socket.userID = randomId();
-  socket.user = user;
-  socket.username = username;
-  socket.picture = picture;
-  next();
 })
 
 io.on('connection', (socket) => {
-  sessionStore.saveSession(socket.sessionID, {
-    userID: socket.userID,
-    user: socket.user,
-    username: socket.username,
-    picture: socket.picture,
-    connected: socket.connected,
-  });
+  (async () => {
+    const alreadyConnected = await redis.get(`connected`);
+    if (!alreadyConnected) {
+      await redis.set(`connected`,
+        JSON.stringify({
+          userID: socket.userID,
+          user: socket.user,
+          username: socket.username,
+          picture: socket.picture,
+          connected: true,
+        })
+      );
+    } else {
+      const userConnected = await redis.get(`connected`);
+      const arr = `[${userConnected}]`;
+      const userConnectedData = JSON.parse(arr);
+
+      if (userConnectedData.find(user => user.userID == socket.userID)) {
+        console.log('lutilisateur est deja présent');
+      } else {
+        await redis.append(`connected`, ',');
+        await redis.append(`connected`, JSON.stringify({
+          userID: socket.userID,
+          user: socket.user,
+          username: socket.username,
+          picture: socket.picture,
+          connected: true,
+        }));
+      }
+    }
+  })();
 
   socket.emit("session", {
     sessionID: socket.sessionID,
@@ -107,19 +116,18 @@ io.on('connection', (socket) => {
   socket.join(socket.userID);
 
   let users = [];
-  sessionStore.findAllSessions().forEach((session) => {
-    if(session.connected) {
-      users.push({
-        userID: session.userID,
-        user: session.user,
-        username: session.username,
-        picture: session.picture,
-        connected: session.connected,
-      });
+  (async () => {
+    const connected = await redis.get(`connected`);
+    const arr = `[${connected}]`;
+    const userConnectedData = JSON.parse(arr);
+    for (let i = 0; i < userConnectedData.length; i++) {
+      if (userConnectedData[i].connected) {
+        users.push(userConnectedData[i]);
+      }
     }
-  });
+    socket.emit("users", users);
+  })();
 
-  
   socket.broadcast.emit("user connected", {
     userID: socket.userID,
     user: socket.user,
@@ -141,17 +149,24 @@ io.on('connection', (socket) => {
     const isDisconnected = matchingSockets.size === 0;
     if (isDisconnected) {
       socket.broadcast.emit("user disconnected", socket.userID);
-      sessionStore.saveSession(socket.sessionID, {
-        userID: socket.userID,
-        user: socket.user,
-        username: socket.username,
-        picture: socket.picture,
-        connected: false,
-      });
+      (async () => {
+        const connected = await redis.get(`connected`);
+        const arr = `[${connected}]`;
+        const userConnectedData = JSON.parse(arr);
+        let userConnectedDataFiltered = "";
+        for (let i = 0; i < userConnectedData.length; i++) {
+          if (userConnectedData[i].userID != socket.userID) {
+            if (userConnectedDataFiltered != "") {
+              userConnectedDataFiltered += ",";
+            }
+            userConnectedDataFiltered += JSON.stringify(userConnectedData[i]);
+          }
+        }
+        await redis.set(`connected`, userConnectedDataFiltered);
+        const result = await redis.get(`connected`);
+      })();
     }
   });
-  
-  socket.emit("users", users);
 
   socket.on('typing', (data) => {
     socket.broadcast.emit('typing', data)

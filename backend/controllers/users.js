@@ -4,6 +4,8 @@ const redis = require('../database/redis_connexion');
 const jwt = require('jsonwebtoken');
 const fs = require('fs');
 require('dotenv').config();
+const crypto = require("crypto");
+const randomId = () => crypto.randomBytes(8).toString("hex");
 
 exports.signup = (req, res, next) => {
     bcrypt.hash(req.body.password, 10)
@@ -14,10 +16,12 @@ exports.signup = (req, res, next) => {
                 firstname: req.body.firstname,
                 email: req.body.email,
                 password: hash,
+                session: randomId(),
+                userID: randomId()
             };
-            let sql = `INSERT INTO users (picture_url, lastname, firstname, email, password, created_at) VALUES (?, ?, ?, ?, ?, NOW());`;
+            let sql = `INSERT INTO users (picture_url, lastname, firstname, email, password, created_at, session_id, userID) VALUES (?, ?, ?, ?, ?, NOW(), ?, ?);`;
             connection.query(
-                sql, [user.picture_url, user.lastname, user.firstname, user.email, user.password], function (err, results) {
+                sql, [user.picture_url, user.lastname, user.firstname, user.email, user.password, user.session, user.userID], function (err, results) {
                     if (err) {
                         res.status(500).json({ message: 'Adresse email déjà utilisée' });
                     }
@@ -26,9 +30,12 @@ exports.signup = (req, res, next) => {
                             await redis.set(
                                 `user:${results.insertId}`,
                                 JSON.stringify({
-                                    firstname: req.body.firstname,
-                                    lastname: req.body.lastname,
-                                    conversations: []
+                                    username: user.firstname + ' ' + user.lastname,
+                                    conversations: [],
+                                    session_id: user.session,
+                                    userID: user.userID,
+                                    user: results.insertId,
+                                    picture: user.picture_url
                                 })
                             );
 
@@ -287,16 +294,19 @@ exports.disabledProfil = (req, res, next) => {
 
 
 exports.me = (req, res, next) => {
-    let sql = `SELECT id, picture_url, lastname, firstname, email, birthday FROM users WHERE id = ?;`;
+    let sql = `SELECT id, picture_url, lastname, firstname, email, birthday, session_id, userID FROM users WHERE id = ?;`;
     connection.query(
         sql, [req.user.userId], function (err, results) {
             if (err) throw err;
+            // console.log(results);
             res.status(200).json({
                 user_id: results[0].id,
                 picture_url: results[0].picture_url,
                 lastname: results[0].lastname,
                 firstname: results[0].firstname,
                 email: results[0].email,
+                session_id: results[0].session_id,
+                userID: results[0].userID,
             })
         })
 }

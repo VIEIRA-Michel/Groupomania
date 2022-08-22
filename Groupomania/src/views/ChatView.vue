@@ -146,8 +146,13 @@ function isTyping(param: any) {
 
 function displayFriends(usersOnline: any) {
     usersOnline.forEach((userOnline: any) => {
-        if (friends.value.length > 0 && friends.value.find(friend => friend.user_id === userOnline.user)) {
-            chatStore.friendsConnected(userOnline);
+        if (friends.value.length > 1) {
+            friends.value.forEach((friend: any) => {
+                if (friend.user_id == userOnline.user) {
+                    console.log('il est dans mes amis', userOnline);
+                    chatStore.friendsConnected(userOnline);
+                }
+            });
         }
     });
 }
@@ -163,17 +168,14 @@ function checkIsFriend(utilisateur: any) {
 
 onBeforeMount(() => {
     if (isConnected.value) {
-        const sessionID = localStorage.getItem("sessionID");
-
-        if (sessionID) {
-            socket.auth = { sessionID };
-            socket.connect();
-        } else {
-            socket.auth = { username: user.value.firstname + ' ' + user.value.lastname, picture: user.value.picture_url, user: user.value.user_id };
+        const session = JSON.parse(localStorage.getItem("user"));
+        if (session) {
+            socket.auth = { username: session.firstname + ' ' + session.lastname, picture: session.picture_url, user: session.user_id, sessionID: session.session_id };
             socket.connect();
         }
 
         socket.on("session", ({ sessionID, userID }) => {
+            console.log('session');
             socket.auth = { sessionID };
             chatStore.saveSession(sessionID);
             localStorage.setItem("sessionID", sessionID);
@@ -191,6 +193,8 @@ onBeforeMount(() => {
             });
         });
         socket.on("connect", () => {
+            console.log('connected');
+            console.log(users);
             users.value.forEach((utilisateur: any) => {
                 if (utilisateur.self) {
                     utilisateur.connected = true;
@@ -213,6 +217,7 @@ onBeforeMount(() => {
 
         };
         socket.on("users", (users2) => {
+            console.log('users2', users2);
             users2.forEach((utilisateur: any) => {
                 for (let i = 0; i < users2.length; i++) {
                     const existingUser = users2[i];
@@ -232,10 +237,12 @@ onBeforeMount(() => {
                 return a.username > b.username ? 1 : 0;
             });
             let currentUserConnected = users2.filter((user: any) => user.userID !== socket.userID);
+            console.log(currentUserConnected);
             displayFriends(currentUserConnected);
         });
 
         socket.on("user connected", (utilisateur: any) => {
+            console.log('user connected');
             for (let i = 0; i < users.value.length; i++) {
                 const existingUser: any = chatStore.$state.users[i];
                 if (existingUser.userID === utilisateur.userID) {
@@ -249,6 +256,7 @@ onBeforeMount(() => {
         });
 
         socket.on("user disconnected", (id) => {
+            console.log('user disconnected');
             let newArray = ref(users.value.filter((utilisateur: any) => utilisateur.userID !== id));
             let newArrayFriend = ref(friendsConnected.value.filter((utilisateur: any) => utilisateur.user !== id));
             chatStore.$patch((state: any) => {
@@ -258,7 +266,7 @@ onBeforeMount(() => {
         });
 
         socket.on("private message", ({ content, from, to }) => {
-            console.log('content', content,'from', from,'to', to);
+            console.log('content', content, 'from', from, 'to', to);
             for (let i = 0; i < friendsConnected.value.length; i++) {
                 const utilisateur: any = friendsConnected.value[i];
                 console.log(utilisateur);
