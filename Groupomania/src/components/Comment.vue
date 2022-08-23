@@ -2,13 +2,9 @@
 import { useCommentsStore } from '../shared/stores/commentsStore';
 import { reactive, ref, watchEffect, computed, onMounted } from 'vue';
 const commentsStore = useCommentsStore();
-// const user: any | null = JSON.parse(localStorage.getItem('user'));
 let inputComment = ref("");
 
 const props = defineProps({
-    // comments: [],
-    limit: Number,
-    from: Number,
     publication_id: Number,
     displayComments: Boolean,
     user: Object,
@@ -30,6 +26,9 @@ const displayButton = computed(() => {
     return commentsStore.$state.comments.length;
 });
 
+// console.log('display button', displayButton.value);
+// console.log('num of results', numOfResults.value);
+// console.log('commentary', commentary.value);
 function createComment(event: any, inputComment: any) {
     event.preventDefault();
     console.log(inputComment);
@@ -72,7 +71,7 @@ function deleteComment(comment: any) {
             </div>
         </div>
         <div class="more-post">
-            <button v-if="displayButton < numOfResults.value" @click="emit('getMore')" class="more-post__button">
+            <button v-if="displayButton < numOfResults" @click="emit('getMore')" class="more-post__button">
                 Afficher plus de commentaires
             </button>
         </div>
@@ -122,8 +121,8 @@ function deleteComment(comment: any) {
                 align-items: start;
 
                 &__avatar {
-                    width: 50px;
-                    height: 50px;
+                    width: 40px;
+                    height: 40px;
                     border-radius: 50%;
                     overflow: hidden;
                     margin-right: 10px;
@@ -153,6 +152,7 @@ function deleteComment(comment: any) {
                     &__content {
                         p {
                             margin: 0;
+                            color: #4E5166;
                         }
                     }
                 }
@@ -167,6 +167,7 @@ function deleteComment(comment: any) {
 
 .create_post {
     display: flex;
+    align-items: center;
 
     &__top {
         &__details {
@@ -178,7 +179,8 @@ function deleteComment(comment: any) {
                 margin-right: 10px;
 
                 img {
-                    width: 100%;
+                    width: 40px;
+                    height: 40px;
                 }
             }
         }
@@ -195,13 +197,12 @@ function deleteComment(comment: any) {
             background: #FFFFFF;
             border-radius: 25px;
             padding: 10px 15px;
-            margin-bottom: 10px;
-            box-shadow: 0px 1px 3px 0px rgb(0 0 0 / 20%), 0px 1px 1px 0px rgb(0 0 0 / 14%), 0px 2px 1px -1px rgb(0 0 0 / 12%);
 
             form {
                 input {
                     border: none;
                     outline: none;
+                    color: #4E5166;
 
                     :focus {
                         border: none;

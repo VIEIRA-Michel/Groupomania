@@ -145,16 +145,16 @@ function isTyping(param: any) {
 };
 
 function displayFriends(usersOnline: any) {
-    usersOnline.forEach((userOnline: any) => {
-        if (friends.value.length > 1) {
+    setTimeout(() => {
+        usersOnline.forEach((userOnline: any) => {
             friends.value.forEach((friend: any) => {
                 if (friend.user_id == userOnline.user) {
                     console.log('il est dans mes amis', userOnline);
                     chatStore.friendsConnected(userOnline);
                 }
             });
-        }
-    });
+        });
+    }, 300);
 }
 
 function checkIsFriend(utilisateur: any) {

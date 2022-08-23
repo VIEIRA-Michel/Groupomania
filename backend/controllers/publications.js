@@ -1,4 +1,5 @@
 const connection = require('../database/mysql_connexion');
+const date = require('date-and-time');
 const fs = require('fs');
 
 exports.getAllPublications = (req, res, next) => {
@@ -67,16 +68,20 @@ exports.getPublicationsOfOnePerson = (req, res, next) => {
 
 
 exports.createPublication = (req, res, next) => {
+    let now = new Date();
+    let today = date.format(now, 'YYYY-MM-DD HH:mm:ss');
+
     let publication = {
         content: req.body.content,
         user_id: req.user.userId,
+        created_at: today,
     };
     if (req.file) {
         publication.picture = `${req.protocol}://${req.get('host')}/images/${req.file.filename}`;
     };
-    let sql = `INSERT INTO publications (content, picture, user_id, created_at) VALUES (?, ?, ?, NOW());`;
+    let sql = `INSERT INTO publications (content, picture, user_id, created_at) VALUES (?, ?, ?, ?);`;
     connection.query(
-        sql, [publication.content, publication.picture, publication.user_id], function (err, results) {
+        sql, [publication.content, publication.picture, publication.user_id, publication.created_at], function (err, results) {
             if (err) {
                 console.log(err)
                 res.status(500).json({ message: 'Erreur lors de la création de la publication' });
@@ -103,7 +108,7 @@ exports.updatePublication = (req, res, next) => {
         {
             ...req.body,
             picture: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`,
-        } : { ...req.body};
+        } : { ...req.body };
 
     let sql = `UPDATE publications SET content = ?, picture = ?, updated_at = NOW() WHERE id = ?;`;
     connection.query(

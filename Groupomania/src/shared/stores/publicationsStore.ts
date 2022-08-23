@@ -9,9 +9,7 @@ interface PublicationState {
     publications: Publication[];
     isLoading: boolean;
     numOfResults: number;
-    numberOfPages: number;
-    contentInput: string | null;
-    pictureInput: string | File | null;
+    numberOfPages: number
 }
 
 export const usePublicationsStore = defineStore({
@@ -20,29 +18,23 @@ export const usePublicationsStore = defineStore({
         publications: [] as Publication[],
         isLoading: true,
         numOfResults: 0,
-        numberOfPages: 1,
-        contentInput: null, 
-        pictureInput: null,
+        numberOfPages: 1
     }),
     getters: {
         publicationList: (state: PublicationState) => state.publications,
         likeList: (state: PublicationState) => state.publications.map(publication => publication.likes),
     },
     actions: {
-        createPublication: (content?: string, picture?: any) => {
+        createPublication: (content?: any, picture?: any) => {
             const store = usePublicationsStore();
             let formData = new FormData();
-            if (content) {
-                store.$patch({
-                    contentInput: content,
-                })
-                formData.append('content', store.$state.contentInput);
-            }
-            if (picture) {
-                store.$patch({
-                    pictureInput: picture,
-                })
-                formData.append('picture', store.$state.pictureInput);
+            if (content != null && picture != null) {
+                formData.append('content', content);
+                formData.append('picture', picture);
+            } else if (picture != null && content == null) {
+                formData.append('picture', picture);
+            } else if (content != null && picture == null) {
+                formData.append('content', content);
             }
             if (content || picture) {
                 axios({
@@ -220,21 +212,19 @@ export const usePublicationsStore = defineStore({
             }).then(response => {
                 const authStore = useAuthStore();
                 const user: any = authStore.$state.user;
-                let state = store.$state.publications.map((item: any) => {
+                store.$state.publications.map((item: any) => {
                     if (item.publication_id == id) {
-                        item.iLike = response.data.liked;
-                        if (response.data.liked == true) {
+                        if(response.data.liked) {
                             item.likes.push(user);
+                            item.iLike = true;
+                            console.log(item.likes);
                         } else {
                             item.likes = item.likes.filter((item: any) => {
                                 return item.user_id !== user.user_id;
                             });
+                            item.iLike = false;
                         }
                     }
-                    return item;
-                })
-                store.$patch({
-                    publications: state
                 });
             }).catch(error => {
                 console.log(error);

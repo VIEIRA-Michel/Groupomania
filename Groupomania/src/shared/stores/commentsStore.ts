@@ -9,6 +9,8 @@ interface CommentState {
     numberOfPages: number;
     comments: Comment[];
     numOfResults: number;
+    limit: number;
+    from: number
 }
 
 export const useCommentsStore = defineStore({
@@ -18,6 +20,8 @@ export const useCommentsStore = defineStore({
         isLoading: true,
         numberOfPages: 1,
         numOfResults: 0,
+        limit: 5,
+        from: 0
     }),
     getters: {
         commentsList: (state: CommentState) => state.comments,
@@ -33,29 +37,32 @@ export const useCommentsStore = defineStore({
                     authorization: `Bearer ${localStorage.getItem('token')}`
                 }
             }).then(response => {
-                // console.log(response);
                 let com = ref();
                 // console.log('response', response);
                 for (let comment of response.data.comments) {
-                    // console.log('comment', comment);
+                    // console.log(comment);
                     com.value = comment;
                     if (store.$state.comments) {
                         store.$patch({
                             comments: [...store.$state.comments, com.value],
-                            numOfResults : response.data.numOfResults,
+                            numOfResults: response.data.numOfResults,
                         });
                     } else {
+                        // store.$patch((state: CommentState) => {
+                        //     state.comments.push(com.value);
+                        //     state.numOfResults = response.data.numOfResults;
+                        // });
                         store.$patch({
                             comments: [com.value],
                             numOfResults : response.data.numOfResults,
                         });
                     }
-                    // console.log(store.$state.comments);
+                    console.log(store.$state.comments);
                 }
-                
+
             }).catch(error => {
                 console.log(error);
-                if(error.response.status === 403) {
+                if (error.response.status === 403) {
                     useAuthStore().logout();
                 }
             });
@@ -82,7 +89,7 @@ export const useCommentsStore = defineStore({
                 });
             }).catch(error => {
                 console.log(error);
-                if(error.response.status === 403) {
+                if (error.response.status === 403) {
                     useAuthStore().logout();
                 }
             })
@@ -131,12 +138,12 @@ export const useCommentsStore = defineStore({
                 }
             }).catch(error => {
                 console.log(error);
-                if(error.response.status === 403) {
+                if (error.response.status === 403) {
                     useAuthStore().logout();
                 }
             }
             );
 
-        },
+        }
     }
 });

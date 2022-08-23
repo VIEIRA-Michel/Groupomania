@@ -61,6 +61,8 @@ exports.getAllCommentsFromPublication = (req, res, next) => {
                 const numOfResults = results.length;
                 let limitValue = parseInt(req.query.limit);
                 let from = parseInt(req.query.from);
+
+                console.log(limitValue, from);
                 sql = `SELECT publications.id as publication_id, publications.content as publication_content, picture, publications.user_id, publications.created_at as publication_created, updated_at as publication_updated_at, users.picture_url, users.lastname, users.firstname, users.email, users.role_id, users.account_disabled, comments.id as comment_id, comments.user_id as comment_user_id, comments.publication_id as comment_publication_id, comments.content as comment_content, comments.created_at as comment_created_at FROM comments 
                 LEFT JOIN users ON users.id = comments.user_id AND users.account_disabled IS NULL LEFT JOIN publications ON publications.id = comments.publication_id WHERE comments.publication_id = ? LIMIT ? OFFSET ?;`;
                 connection.query(

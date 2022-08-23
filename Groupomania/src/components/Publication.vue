@@ -21,38 +21,30 @@ let count = ref(1);
 let numberOfPages = ref();
 let content = ref('');
 let picture = ref();
-let pictureName = ref<any>();
-let limitValue = ref(5);
-let from = ref(0);
-let more = ref(false);
-let colorButton = ref('');
 let postIdOnState = ref();
 let loading = ref(publicationsStore.$state.isLoading);
 
 
 function onPickFile(event: any) {
-    picture = event.target.files[0];
+    picture.value = event.target.files[0];
 }
 
-function createPublication(ref?: any) {
-    if (picture.name == pictureName.value) {
-        publicationsStore.createPublication(content.value)
-    } else {
-        publicationsStore.createPublication(content.value, picture)
-    }
-
-    if (content.value != "") {
-        console.log('on a ecrit quelque choses')
+function createPublication() {
+    if (picture.value && content.value) {
+        publicationsStore.createPublication(content.value, picture.value);
+        picture.value = '';
         content.value = '';
-    };
-    if (picture && picture.name.length > 0) {
-        pictureName.value = picture.name;
-        document.querySelector('#file').value = '';
+    } else if (content.value) {
+        publicationsStore.createPublication(content.value, null);
+        content.value = '';
+    } else if (picture.value) {
+        publicationsStore.createPublication(null, picture.value);
+        picture.value = '';
     }
 }
 
 function getAllPublications(page: number) {
-    let result = publicationsStore.getAllPublications(page);
+    publicationsStore.getAllPublications(page);
     setTimeout(() => {
         numberOfPages.value = publicationsStore.$state.numberOfPages;
         loading.value = false;
@@ -69,8 +61,6 @@ function deletePublication(id: number) {
 function checkIsConnected() {
     authStore.getMyInformations();
 }
-getAllPublications(page.value);
-
 
 watchEffect(() => {
     loading.value = true;
@@ -78,39 +68,55 @@ watchEffect(() => {
     getAllPublications(page.value);
 })
 
-
 function getComments(publication: any, more?: boolean) {
-
-    if (postIdOnState !== publication.publication_id) {
+    if (postIdOnState.value !== publication.publication_id && commentsStore.$state.comments.length !== 0) {
+        console.log('on reset');
         commentsStore.$reset();
-    }
-    if (more) {
-        from.value = from.value + limitValue.value;
-        limitValue.value = limitValue.value + limitValue.value;
-    };
-    if (commentsStore.$state.comments.length >= from.value) {
-        commentsStore.getAllComments(publication.publication_id, limitValue.value, from.value);
-        let state = publicationsStore.publicationList;
-        console.log(state)
-        state = state.map((item: any) => {
-            if (item.publication_id === postIdOnState.value) {
+        publicationsStore.publicationList.map((item: any) => {
+            if (item.publication_id == postIdOnState.value) {
+                console.log('display false');
                 item.displayComments = false;
-            }
-            else if (item.publication_id == publication.publication_id) {
-                item.displayComments = true;
-            }
+            };
             return item;
         });
-        publicationsStore.$patch({
-            publications: state,
+    } else if (more) {
+        console.log('jen veux plus');
+        commentsStore.$patch((state) => {
+            state.from = state.from + state.limit;
+            state.limit = state.limit + state.limit;
         });
-        postIdOnState.value = publication.publication_id;
+        if (commentsStore.$state.comments.length >= commentsStore.$state.from) {
+            // console.log('avant la requête');
+            commentsStore.getAllComments(publication.publication_id, commentsStore.$state.limit, commentsStore.$state.from);
+        }
+    }
+    if (!more) {
+        console.log("on rentre ici normalement car more n'est pas à true");
+            commentsStore.getAllComments(publication.publication_id, commentsStore.$state.limit, commentsStore.$state.from);
+            console.log(commentsStore.$state.comments);
+            let state = publicationsStore.publicationList;
+            console.log(state)
+            state = state.map((item: any) => {
+                if (item.publication_id == publication.publication_id) {
+                    console.log('display true');
+                    item.displayComments = true;
+                }
+                return item;
+            });
+            publicationsStore.$patch({
+                publications: state,
+            });
+            postIdOnState.value = publication.publication_id;
+            console.log('postIdOnState', postIdOnState.value);
 
     }
 }
 
-function likePublication(publication: any) {
-    publicationsStore.likePublication(publication.publication_id);
+
+
+
+function likePublication(id_publication: any) {
+    publicationsStore.likePublication(id_publication);
 };
 </script>
 
@@ -130,7 +136,7 @@ function likePublication(publication: any) {
                 </div>
                 <div class="create_post__content">
                     <div class="create_post__content__details">
-                        <form @submit.prevent="createPublication($refs)">
+                        <form @submit.prevent="createPublication">
                             <input type="text" v-model="content" placeholder="Quoi de neuf ?"
                                 class="create_post__content__details__input">
                             <div class="create_post__content__details">
@@ -181,7 +187,7 @@ function likePublication(publication: any) {
                             <div class="post__likeAndComment">
                                 <div class="post__interaction">
                                     <div class="post__interaction__like">
-                                        <button @click.stop="likePublication(publication)"
+                                        <button @click.stop="likePublication(publication.publication_id)"
                                             v-bind:class="[publication.iLike ? 'liked' : '']">
                                             <span>{{ publication.likes.length + ' ' }}</span>
                                             <fa icon="fa-solid fa-thumbs-up" />
@@ -191,15 +197,15 @@ function likePublication(publication: any) {
                                     <div class="post__interaction__comment">
                                         <!-- <span>{{ publication.comments.length }}</span> -->
                                         <button @click.stop="getComments(publication)" type="button">
+                                            <!-- <span>{{ publication.comments.length }}</span> -->
                                             <fa icon="fa-solid fa-comment-dots" />
                                         </button>
                                     </div>
                                 </div>
                                 <div class="post__interaction__comment__list">
                                     <div v-if="publication.displayComments">
-                                        <Comment :limit="limitValue" :from="from"
-                                            :publication_id="publication.publication_id" :user="user"
-                                            @getMore="getComments(publication.publication_id, true)" />
+                                        <Comment :publication_id="publication.publication_id" :user="user"
+                                            @getMore="getComments(publication, true)" />
                                     </div>
                                 </div>
                             </div>
@@ -254,9 +260,9 @@ function likePublication(publication: any) {
                 margin-right: 0.5rem;
 
                 img {
-                    width: 30px;
+                    width: 40px;
                     border-radius: 30px;
-                    height: 30px;
+                    height: 40px;
                     object-fit: cover;
                 }
             }
@@ -343,9 +349,9 @@ function likePublication(publication: any) {
                 margin-right: 0.5rem;
 
                 img {
-                    width: 30px;
+                    width: 40px;
                     border-radius: 30px;
-                    height: 30px;
+                    height: 40px;
                     object-fit: cover;
                 }
             }
@@ -379,7 +385,7 @@ function likePublication(publication: any) {
 
     &__content {
         display: flex;
-        flex-direction: column-reverse;
+        flex-direction: column;
         align-items: flex-start;
         padding: 10px 0 0 0;
 
@@ -387,6 +393,7 @@ function likePublication(publication: any) {
             margin: 0 20px;
             display: flex;
             flex-direction: row;
+            color: #4E5166;
 
             span {
                 font-weight: bold;
@@ -430,7 +437,6 @@ function likePublication(publication: any) {
         display: flex;
         width: 100%;
         border-radius: 0px 0px 15px 15px;
-        border-top: 1px solid #b7b7b7;
         padding: 5px 0px;
 
         &__like {
@@ -444,8 +450,7 @@ function likePublication(publication: any) {
                 cursor: pointer;
 
                 svg {
-                    width: 20px;
-                    height: 20px;
+                    font-size: 30px;
                 }
 
 
@@ -471,8 +476,7 @@ function likePublication(publication: any) {
                 cursor: pointer;
 
                 svg {
-                    width: 20px;
-                    height: 20px;
+                    font-size: 30px;
                 }
             }
 
