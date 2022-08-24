@@ -1,3 +1,36 @@
+<script setup lang="ts">
+import { ref, watchEffect } from 'vue';
+import { useAuthStore } from '@/shared/stores/authStore';
+const newMessage = ref('');
+const props = defineProps<{
+    user: any,
+    typing: any
+}>();
+
+
+function displaySender(message: any, index: number) {
+    return (
+        index === 0 ||
+        props.user.messages[index - 1].from !==
+        props.user.messages[index].from
+    );
+};
+function send() {
+    emit('input', newMessage.value);
+    newMessage.value = '';
+}
+
+
+watchEffect(() => {
+    newMessage.value.length >= 1 ? emit('typing', true) : emit('typing', false);
+})
+
+const emit = defineEmits<{
+    (e: 'input', input: any): any;
+    (e: 'typing', typing: any): any;
+}>();
+
+</script>
 <template>
     <div class="container-center__top">
         <div class="container-center__top__details">
@@ -27,13 +60,13 @@
         <div class="container-center__body__chat">
             <ul>
                 <li v-for="(message, index) in props.user.messages" :key="index"
-                    class="container-center__body__chat__item" v-bind:class="[message.from == myProfile.user_id ? 'fromSelf' : 'fromUser']">
+                    class="container-center__body__chat__item" v-bind:class="[message.from == useAuthStore().$state.user.user_id ? 'fromSelf' : 'fromUser']">
                     <div v-if="displaySender(message, index)" class="container-center__body__chat__item__left">
-                        <img v-if="message.from == myProfile.user_id" :src="myProfile.picture_url" alt="avatar" />
+                        <img v-if="message.from == useAuthStore().$state.user.user_id" :src="useAuthStore().$state.user.picture_url" alt="avatar" />
                         <img v-else :src="props.user.picture" alt="avatar" />
                     </div>
                     <div class="container-center__body__chat__item__right">
-                        <div class="container-center__body__chat__item__right__message" v-bind:class="[message.from == myProfile.user_id ? 'fromSelf' : 'fromUser']">
+                        <div class="container-center__body__chat__item__right__message" v-bind:class="[message.from == useAuthStore().$state.user.user_id ? 'fromSelf' : 'fromUser']">
                             {{ message.message }}
                         </div>
                     </div>
@@ -55,46 +88,6 @@
         </form>
     </div>
 </template>
-
-<script setup lang="ts">
-import { computed, ref, watchEffect } from 'vue';
-import socket from "../socket";
-import { useAuthStore } from '@/shared/stores/authStore';
-import { useChatStore } from '@/shared/stores/chatStore';
-const myProfile = useAuthStore().$state.user;
-const chatStore = useChatStore();
-const newMessage = ref('');
-const props = defineProps<{
-    user: any,
-    typing: any
-}>();
-
-
-function displaySender(message: any, index: number) {
-    return (
-        index === 0 ||
-        props.user.messages[index - 1].from !==
-        props.user.messages[index].from
-    );
-};
-function send() {
-    console.log(props.user.messages);
-    emit('input', newMessage.value);
-    newMessage.value = '';
-}
-
-
-watchEffect(() => {
-    newMessage.value.length >= 1 ? emit('typing', true) : emit('typing', false);
-})
-
-const emit = defineEmits<{
-    (e: 'input', input: any): any;
-    (e: 'typing', typing: any): any;
-}>();
-
-</script>
-
 <style scoped lang="scss">
 .container-center {
     small {

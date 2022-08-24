@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia';
 import axios from 'axios';
-import { ref } from 'vue';
 import type { Publication } from '../interfaces/publication.interface';
 import { useAuthStore } from '../stores/authStore';
 
@@ -26,7 +25,6 @@ export const usePublicationsStore = defineStore({
     },
     actions: {
         createPublication: (content?: any, picture?: any) => {
-            const store = usePublicationsStore();
             let formData = new FormData();
             if (content != null && picture != null) {
                 formData.append('content', content);
@@ -45,18 +43,15 @@ export const usePublicationsStore = defineStore({
                     },
                     data: formData,
                 }).then(response => {
-                    store.$reset();
-                    store.getAllPublications();
+                    usePublicationsStore().$reset();
+                    usePublicationsStore().getAllPublications();
                 }).catch(error => {
                     console.log(error);
-                    if (error.response.status === 403) {
-                        useAuthStore().logout();
-                    }
+                    error.response.status === 403 ? useAuthStore().logout() : "";
                 })
             };
         },
         getAllPublications: (page?: number) => {
-            const store = usePublicationsStore();
             let BASE_URL = ""
             if (page) {
                 BASE_URL = `http://localhost:3000/api/publications/?page=${page}`;
@@ -73,7 +68,7 @@ export const usePublicationsStore = defineStore({
             }).then(response => {
                 if (response.data.Publications) {
                     response.data.Publications = response.data.Publications.map((publication: any) => {
-                        store.getLikes(publication.publication_id);
+                        usePublicationsStore().getLikes(publication.publication_id);
                         return {
                             editMode: false,
                             displayComments: false,
@@ -81,7 +76,7 @@ export const usePublicationsStore = defineStore({
                             ...publication,
                         }
                     });
-                    store.$patch({
+                    usePublicationsStore().$patch({
                         publications: response.data.Publications,
                         numberOfPages: response.data.numOfPages,
                         isLoading: false,
@@ -89,7 +84,7 @@ export const usePublicationsStore = defineStore({
                     });
                 }
                 else {
-                    store.$patch({
+                    usePublicationsStore().$patch({
                         publications: [],
                         numberOfPages: 1,
                         isLoading: false,
@@ -98,16 +93,13 @@ export const usePublicationsStore = defineStore({
                 }
             }).catch(error => {
                 console.log(error);
-                if (error.response.status === 403) {
-                    useAuthStore().logout();
-                }
-            });
+                error.response.status === 403 ? useAuthStore().logout() : "";
+            })
         },
         updatePublication: (id: number, update: any) => {
             let formData = new FormData();
-            formData.append('content', update.content);
-            formData.append('picture', update.picture);
-            const store = usePublicationsStore();
+            update.post.content ? formData.append('content', update.post.content) : "";
+            update.post.picture ? formData.append('picture', update.post.picture) : "";
             axios({
                 method: 'put',
                 url: `http://localhost:3000/api/publications/${id}`,
@@ -117,40 +109,38 @@ export const usePublicationsStore = defineStore({
                 },
                 data: formData,
             }).then(response => {
-                store.getAllPublications();
+                usePublicationsStore().getAllPublications();
             }).catch(error => {
                 console.log(error);
-                if (error.response.status === 403) {
-                    useAuthStore().logout();
-                }
-            });
+                error.response.status === 403 ? useAuthStore().logout() : "";
+            })
         },
         deletePublication: (id: number) => {
-            axios({
-                method: 'delete',
-                url: `http://localhost:3000/api/publications/${id}`,
-                headers: {
-                    'Content-Type': 'application/json',
-                    authorization: `Bearer ${localStorage.getItem('token')}`
-                }
-            }).then(response => {
-                const store = usePublicationsStore();
-                let updatePublications = store.$state.publications.filter(item => {
-                    return item.publication_id !== id;
-                }
-                );
-                store.$patch({
-                    publications: updatePublications
-                });
-            }).catch(error => {
-                console.log(error);
-                if (error.response.status === 403) {
-                    useAuthStore().logout();
-                }
-            });
+            return new Promise((resolve, reject) => {
+                axios({
+                    method: 'delete',
+                    url: `http://localhost:3000/api/publications/${id}`,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        authorization: `Bearer ${localStorage.getItem('token')}`
+                    }
+                }).then(response => {
+                    let updatePublications = usePublicationsStore().$state.publications.filter(item => {
+                        return item.publication_id !== id;
+                    }
+                    );
+                    usePublicationsStore().$patch({
+                        publications: updatePublications
+                    });
+                    resolve(response);
+                }).catch(error => {
+                    console.log(error);
+                    error.response.status === 403 ? useAuthStore().logout() : "";
+                    reject(error);
+                })
+            })
         },
         getLikes: (id: number) => {
-            const store = usePublicationsStore();
             axios({
                 method: 'get',
                 url: `http://localhost:3000/api/publications/${id}`,
@@ -159,18 +149,16 @@ export const usePublicationsStore = defineStore({
                     authorization: `Bearer ${localStorage.getItem('token')}`
                 }
             }).then(response => {
-                const authStore = useAuthStore();
-                const user_id: any = authStore.$state.user.user_id;
+                const user_id: any = useAuthStore().$state.user.user_id;
                 response.data.data = response.data.data.map((publication: any) => {
                     return {
                         user_id: publication.user_id,
                         lastname: publication.user_lastname,
                         firstname: publication.user_firstname,
-                        // profil_picture: publication.picture,
                     };
                 })
 
-                let publication: any = store.$state.publications.map(item => {
+                let publication: any = usePublicationsStore().$state.publications.map(item => {
                     if (item.publication_id == id) {
                         for (let post of response.data.data) {
                             item.likes?.push(post);
@@ -190,18 +178,15 @@ export const usePublicationsStore = defineStore({
                     }
                     return item;
                 });
-                store.$patch({
+                usePublicationsStore().$patch({
                     publications: publication
                 });
             }).catch(error => {
                 console.log(error);
-                if (error.response.status === 403) {
-                    useAuthStore().logout();
-                }
-            });
+                error.response.status === 403 ? useAuthStore().logout() : "";
+            })
         },
         likePublication: (id: number) => {
-            const store = usePublicationsStore();
             axios({
                 method: 'post',
                 url: `http://localhost:3000/api/publications/${id}`,
@@ -210,14 +195,12 @@ export const usePublicationsStore = defineStore({
                     authorization: `Bearer ${localStorage.getItem('token')}`
                 },
             }).then(response => {
-                const authStore = useAuthStore();
-                const user: any = authStore.$state.user;
-                store.$state.publications.map((item: any) => {
+                const user: any = useAuthStore().$state.user;
+                usePublicationsStore().$state.publications.map((item: any) => {
                     if (item.publication_id == id) {
-                        if(response.data.liked) {
+                        if (response.data.liked) {
                             item.likes.push(user);
                             item.iLike = true;
-                            console.log(item.likes);
                         } else {
                             item.likes = item.likes.filter((item: any) => {
                                 return item.user_id !== user.user_id;
@@ -228,10 +211,8 @@ export const usePublicationsStore = defineStore({
                 });
             }).catch(error => {
                 console.log(error);
-                if (error.response.status === 403) {
-                    useAuthStore().logout();
-                }
-            });
+                error.response.status === 403 ? useAuthStore().logout() : "";
+            })
         }
     }
 });

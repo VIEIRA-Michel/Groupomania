@@ -3,14 +3,13 @@ import Publication from '../components/Publication.vue';
 import { computed, reactive, ref } from 'vue';
 import { useAuthStore } from '../shared/stores/authStore';
 import NavigationBar from '../components/NavigationBar.vue';
-const authStore = useAuthStore();
 
-checkIsConnected();
+localStorage.getItem('token') !== null ? useAuthStore().getMyInformations() : "";
 
-const isConnected = computed(() => authStore.$state.isConnected);
-const user = computed(() => authStore.$state.user);
-const invalidEmail = computed(() => authStore.$state.invalidEmail);
-const invalidPassword = computed(() => authStore.$state.invalidPassword);
+const isConnected = computed(() => useAuthStore().$state.isConnected);
+const user = computed(() => useAuthStore().$state.user);
+const invalidEmail = computed(() => useAuthStore().$state.invalidEmail);
+const invalidPassword = computed(() => useAuthStore().$state.invalidPassword);
 
 const open = ref(false);
 let hasAccount = ref(true);
@@ -26,29 +25,10 @@ let loginInput = reactive({
     password: ''
 });
 
-function register(userInput: any) {
-    authStore.register(userInput.lastname, userInput.firstname, userInput.email, userInput.password, userInput.confirmPassword);
-};
-
-function login(loginInput: any) {
-    authStore.login(loginInput.email, loginInput.password);
-}
-
-function logout() {
-    authStore.logout();
-}
-
-function checkIsConnected() {
-    if (localStorage.getItem('token') !== null) {
-        authStore.getMyInformations();
-    }
-}
-
 </script>
-
 <template>
     <div>
-        <NavigationBar :user="user" :isConnected="isConnected" @logout="logout()" />
+        <NavigationBar :user="user" :isConnected="isConnected" @logout="useAuthStore().logout()" />
         <div v-if="!isConnected" class="home">
             <div class="home__picture">
                 <img src="../assets/picture-home.png" alt="">
@@ -67,7 +47,7 @@ function checkIsConnected() {
                 </div>
                 <div class="container__content">
                     <div v-if="hasAccount" class="container__content__form">
-                        <form @submit.prevent="login(loginInput)">
+                        <form @submit.prevent="useAuthStore().login(loginInput.email, loginInput.password)">
                             <div class="container__content__form__login">
                                 <label for="email">Email</label>
                                 <input type="email" id="email" :class="[invalidEmail ? 'invalidInput' : 'default']"
@@ -91,7 +71,7 @@ function checkIsConnected() {
                         </form>
                     </div>
                     <div v-else class="container__content__form">
-                        <form @submit.prevent="register(userInput)">
+                        <form @submit.prevent="useAuthStore().register(userInput.lastname, userInput.firstname, userInput.email, userInput.password, userInput.confirmPassword)">
                             <div class="container__content__form__register">
                                 <label for="lastname">Nom</label>
                                 <input type="text" id="lastname" v-model="userInput.lastname" />
@@ -131,7 +111,6 @@ function checkIsConnected() {
     </div>
 
 </template>
-
 <style scoped lang="scss">
 @import '../styles/Utils/keyframes';
 

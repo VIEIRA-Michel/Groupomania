@@ -5,7 +5,6 @@
     Chargement des données
   </div>
 </template>
-
 <style scoped lang="scss">
 @keyframes fade {
   0% {

@@ -2,12 +2,11 @@
 import { computed, ref, reactive } from 'vue';
 import { useAuthStore } from '../shared/stores/authStore';
 import NavigationBar from '../components/NavigationBar.vue';
-const authStore = useAuthStore();
 
-checkIsConnected();
+localStorage.getItem('token') !== null ? useAuthStore().getMyInformations() : window.location.href = '/';
 
-const isConnected = computed(() => authStore.$state.isConnected);
-const user = computed(() => authStore.$state.user);
+const isConnected = computed(() => useAuthStore().$state.isConnected);
+const user = computed(() => useAuthStore().$state.user);
 
 let userEdit = reactive({
     picture_url: user.value.picture_url,
@@ -17,15 +16,8 @@ let userEdit = reactive({
     confirmPassword: ''
 });
 
-function checkIsConnected() {
-    if (localStorage.getItem('token') !== null) {
-        authStore.getMyInformations();
-    } else {
-        window.location.href = '/';
-    }
-};
 function logout() {
-    authStore.logout();
+    useAuthStore().logout();
     window.location.href = '/';
 };
 
@@ -33,24 +25,13 @@ function logout() {
 function previewPicture(e: any) {
     const image = document.getElementById('picture');
     userEdit.picture_url = e.target.files[0];
-    if (userEdit.picture_url) {
-        image.src = URL.createObjectURL(userEdit.picture_url);
-    }
+    userEdit.picture_url ? image.src = URL.createObjectURL(userEdit.picture_url) : "";
 }
 
-function updateProfile(update?: any) {
-    if (update.password != update.confirmPassword) {
-        alert('Les mots de passe ne correspondent pas');
-        return;
-    } else if (update.email != update.confirmEmail) {
-        alert('Les adresses email ne correspondent pas');
-        return;
-    } else {
-        authStore.updateProfile(update);
-    }
+function updateProfile(userEdit?: any) {
+    userEdit.password != userEdit.confirmPassword ? alert('Les mots de passe ne correspondent pas') : userEdit.email != userEdit.confirmEmail ? alert('Les emails ne correspondent pas') : useAuthStore().updateProfile(update);
 }
 </script>
-
 <template>
     <div>
         <NavigationBar :user="user" :isConnected="isConnected" @logout="logout()" />
@@ -99,7 +80,6 @@ function updateProfile(update?: any) {
         </div>
     </div>
 </template>
-
 <style scoped lang="scss">
 @import '../styles/Components/buttons';
 

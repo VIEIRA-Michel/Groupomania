@@ -38,12 +38,11 @@ export const useAuthStore = defineStore({
                         useAuthStore().login(email, password);
                     }).catch(error => {
                         console.log(error);
-                    });
+                    })
                 }
             }
         },
         login(username: string, password: string) {
-            const store = useAuthStore();
             axios({
                 method: 'post',
                 url: 'http://localhost:3000/api/auth/login',
@@ -54,40 +53,35 @@ export const useAuthStore = defineStore({
             }).then((response => {
                 localStorage.setItem('user', JSON.stringify(response.data.user));
                 localStorage.setItem('token', response.data.accessToken);
-                store.$patch({
+                useAuthStore().$patch({
                     user: response.data.user,
                     token: response.data.accessToken,
                     isConnected: true,
                 });
+            })).catch((error => {
+                if (error.response.data.message == `L'adresse email n'existe pas !`) {
+                    useAuthStore().$reset();
+                    useAuthStore().$patch({
+                        invalidEmail: true,
+                    });
+                } else {
+                    useAuthStore().$reset();
+                    useAuthStore().$patch({
+                        invalidPassword: true,
+                    });
+                }
             }))
-                .catch((error => {
-                    if (error.response.data.message == `L'adresse email n'existe pas !`) {
-                        store.$reset();
-                        store.$patch({
-                            invalidEmail: true,
-                        });
-                    } else {
-                        store.$reset();
-                        store.$patch({
-                            invalidPassword: true,
-                        });
-                    }
-                }))
         },
         logout: () => {
-            const store = useAuthStore();
             localStorage.removeItem('sessionID');
             localStorage.removeItem('token');
-            store.$reset();
+            useAuthStore().$reset();
         },
         getMyInformations: () => {
-            const store = useAuthStore();
             let token = localStorage.getItem('token');
-            if (token) {
-                store.$patch({
-                    isConnected: true,
-                })
-            };
+            token ? useAuthStore().$patch({
+                isConnected: true,
+            }) : "";
             axios({
                 method: 'get',
                 url: 'http://localhost:3000/api/user/me',
@@ -95,32 +89,20 @@ export const useAuthStore = defineStore({
                     authorization: `Bearer ${localStorage.getItem('token')}`
                 }
             }).then(response => {
-                store.$patch({
+                useAuthStore().$patch({
                     user: response.data,
                     isConnected: true,
                 });
             }).catch(error => {
-                if (error.response.status === 403) {
-                    useAuthStore().logout();
-                }
+                error.response.status === 403 ? useAuthStore().logout() : "";
                 console.log(error);
-            });
+            })
         },
         updateProfile: (update: any) => {
-            console.log(update);
             let formData = new FormData();
-            if (update.picture_url !== undefined) {
-                console.log('on a une image!');
-                formData.append('picture', update.picture_url);
-            }
-            if (update.email !== '' && update.email !== undefined) {
-                formData.append('email', update.email);
-                console.log('on a un email!');
-            }
-            if (update.password !== '' && update.password !== undefined) {
-                formData.append('password', update.password);
-                console.log('on a un password!');
-            }
+            update.picture_url !== undefined ? formData.append('picture', update.picture_url) : "";
+            update.email !== '' && update.email !== undefined ? formData.append('email', update.email) : "";
+            update.password !== '' && update.password !== undefined ? formData.append('password', update.password) : "";
             axios({
                 method: 'put',
                 url: 'http://localhost:3000/api/user/profil',
@@ -129,16 +111,11 @@ export const useAuthStore = defineStore({
                 },
                 data: formData
             }).then(response => {
-                console.log(response);
             }
             ).catch(error => {
-                if (error.response.status === 403) {
-                    useAuthStore().logout();
-                }
+                error.response.status === 403 ? useAuthStore().logout() : "";
                 console.log(error);
-            });
-
+            })
         }
-
     }
 });

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { useCommentsStore } from '../shared/stores/commentsStore';
-import { reactive, ref, watchEffect, computed, onMounted } from 'vue';
-const commentsStore = useCommentsStore();
+import { ref, computed } from 'vue';
 let inputComment = ref("");
 
 const props = defineProps({
@@ -14,37 +13,18 @@ const emit = defineEmits<{
     (e: 'getMore'): any;
 }>();
 
+const commentary = computed(() => useCommentsStore().$state.comments);
+const numOfResults = computed(() => useCommentsStore().$state.numOfResults);
+const displayButton = computed(() => useCommentsStore().$state.comments.length);
 
-const commentary = computed(() => {
-    return commentsStore.$state.comments;
-});
-const numOfResults = computed(() => {
-    return commentsStore.$state.numOfResults;
-});
-
-const displayButton = computed(() => {
-    return commentsStore.$state.comments.length;
-});
-
-// console.log('display button', displayButton.value);
-// console.log('num of results', numOfResults.value);
-// console.log('commentary', commentary.value);
-function createComment(event: any, inputComment: any) {
+function createComment(event: any) {
     event.preventDefault();
-    console.log(inputComment);
-    console.log(props.publication_id);
-    if (inputComment != "") {
-        commentsStore.createComment(props.publication_id, inputComment);
-        this.inputComment = "";
+    if (inputComment.value != "") {
+        useCommentsStore().createComment(props.publication_id, inputComment.value);
+        inputComment.value = "";
     };
 }
-
-function deleteComment(comment: any) {
-    console.log(comment.publication_id, comment.comment_id)
-    commentsStore.deleteComment(comment.publication_id, comment.comment_id);
-}
 </script>
-
 <template>
     <div class="container-post">
         <div v-for="com in commentary" class="post">
@@ -60,14 +40,11 @@ function deleteComment(comment: any) {
                         <div class="post__details__info__commentary__content">
                             <p>{{ com.comment_content }}</p>
                         </div>
-                        <!-- <div class="post__details__info__commentary__date">
-                        <span>{{ 'Publiée le ' + com.comment_created_at }}</span>
-                    </div> -->
                     </div>
                 </div>
             </div>
             <div class="post__button">
-                <fa v-if="props.user.email == com.email" @click="deleteComment(com)" icon="fa-solid fa-trash-can" />
+                <fa v-if="props.user.email == com.email" @click="commentsStore.deleteComment(com.publication_id, com.comment_id)" icon="fa-solid fa-trash-can" />
             </div>
         </div>
         <div class="more-post">
@@ -89,7 +66,7 @@ function deleteComment(comment: any) {
                     <form>
                         <input type="text" v-model="inputComment" class="create_post__info__content__input"
                             placeholder="Écrivez un commentaire...">
-                        <fa @click="createComment($event, inputComment)" icon="fa-solid fa-paper-plane" />
+                        <fa @click="createComment($event)" icon="fa-solid fa-paper-plane" />
                     </form>
                 </div>
 
@@ -98,7 +75,6 @@ function deleteComment(comment: any) {
     </div>
 
 </template>
-
 <style scoped lang="scss">
 @import '../styles/Utils/variables';
 
@@ -140,10 +116,6 @@ function deleteComment(comment: any) {
                     box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.2), 0px 1px 1px 0px rgba(0, 0, 0, 0.14), 0px 2px 1px -1px rgba(0, 0, 0, 0.12);
 
                     &__name {
-                        // display: flex;
-                        // align-items: center;
-                        // margin-bottom: 5px;
-
                         span {
                             font-weight: 700;
                         }

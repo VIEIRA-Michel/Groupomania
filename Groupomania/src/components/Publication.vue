@@ -6,24 +6,18 @@ import { ref, watchEffect, computed } from 'vue';
 import { useAuthStore } from '../shared/stores/authStore';
 import { usePublicationsStore } from '../shared/stores/publicationsStore';
 import { useCommentsStore } from '../shared/stores/commentsStore';
-const authStore = useAuthStore();
-const publicationsStore = usePublicationsStore();
-const commentsStore = useCommentsStore();
 
-checkIsConnected();
+useAuthStore().getMyInformations();
 
-let publications = computed(() => publicationsStore.$state.publications);
-let user = computed(() => authStore.$state.user);
-let isLoading = computed(() => publicationsStore.$state.isLoading);
+const publications = computed(() => usePublicationsStore().$state.publications);
+const user = computed(() => useAuthStore().$state.user);
+const isLoading = computed(() => usePublicationsStore().$state.isLoading);
+const numberOfPages = computed(() => usePublicationsStore().$state.numberOfPages);
 
 let page = ref(1);
-let count = ref(1);
-let numberOfPages = ref();
 let content = ref('');
 let picture = ref();
 let postIdOnState = ref();
-let loading = ref(publicationsStore.$state.isLoading);
-
 
 function onPickFile(event: any) {
     picture.value = event.target.files[0];
@@ -31,95 +25,66 @@ function onPickFile(event: any) {
 
 function createPublication() {
     if (picture.value && content.value) {
-        publicationsStore.createPublication(content.value, picture.value);
+        usePublicationsStore().createPublication(content.value, picture.value);
         picture.value = '';
         content.value = '';
     } else if (content.value) {
-        publicationsStore.createPublication(content.value, null);
+        usePublicationsStore().createPublication(content.value, null);
         content.value = '';
     } else if (picture.value) {
-        publicationsStore.createPublication(null, picture.value);
+        usePublicationsStore().createPublication(null, picture.value);
         picture.value = '';
     }
 }
 
-function getAllPublications(page: number) {
-    publicationsStore.getAllPublications(page);
-    setTimeout(() => {
-        numberOfPages.value = publicationsStore.$state.numberOfPages;
-        loading.value = false;
-    }, 1500);
-}
-function editPublication(id: number, update: any) {
-    publicationsStore.updatePublication(id, update.post);
-}
-
 function deletePublication(id: number) {
-    publicationsStore.deletePublication(id);
-}
-
-function checkIsConnected() {
-    authStore.getMyInformations();
+    usePublicationsStore().deletePublication(id).then((response) => {
+        if (numberOfPages.value != 1 && usePublicationsStore().$state.publications.length == 0) {
+            page.value = page.value - 1;
+        }
+    });
 }
 
 watchEffect(() => {
-    loading.value = true;
-    page.value = count.value;
-    getAllPublications(page.value);
+    usePublicationsStore().getAllPublications(page.value);
 })
 
 function getComments(publication: any, more?: boolean) {
-    if (postIdOnState.value !== publication.publication_id && commentsStore.$state.comments.length !== 0) {
-        console.log('on reset');
-        commentsStore.$reset();
-        publicationsStore.publicationList.map((item: any) => {
+    if (postIdOnState.value !== publication.publication_id && useCommentsStore().$state.comments.length !== 0) {
+        useCommentsStore().$reset();
+        usePublicationsStore().publicationList.map((item: any) => {
             if (item.publication_id == postIdOnState.value) {
-                console.log('display false');
                 item.displayComments = false;
             };
             return item;
         });
     } else if (more) {
-        console.log('jen veux plus');
-        commentsStore.$patch((state) => {
+        useCommentsStore().$patch((state) => {
             state.from = state.from + state.limit;
             state.limit = state.limit + state.limit;
         });
-        if (commentsStore.$state.comments.length >= commentsStore.$state.from) {
-            // console.log('avant la requête');
-            commentsStore.getAllComments(publication.publication_id, commentsStore.$state.limit, commentsStore.$state.from);
+        if (useCommentsStore().$state.comments.length >= useCommentsStore().$state.from) {
+            useCommentsStore().getAllComments(publication.publication_id, useCommentsStore().$state.limit, useCommentsStore().$state.from);
         }
     }
     if (!more) {
-        console.log("on rentre ici normalement car more n'est pas à true");
-            commentsStore.getAllComments(publication.publication_id, commentsStore.$state.limit, commentsStore.$state.from);
-            console.log(commentsStore.$state.comments);
-            let state = publicationsStore.publicationList;
-            console.log(state)
-            state = state.map((item: any) => {
-                if (item.publication_id == publication.publication_id) {
-                    console.log('display true');
-                    item.displayComments = true;
-                }
-                return item;
-            });
-            publicationsStore.$patch({
-                publications: state,
-            });
-            postIdOnState.value = publication.publication_id;
-            console.log('postIdOnState', postIdOnState.value);
+        useCommentsStore().getAllComments(publication.publication_id, useCommentsStore().$state.limit, useCommentsStore().$state.from);
+        let state = usePublicationsStore().publicationList;
+        state = state.map((item: any) => {
+            if (item.publication_id == publication.publication_id) {
+                item.displayComments = true;
+            }
+            return item;
+        });
+        usePublicationsStore().$patch({
+            publications: state,
+        });
+        postIdOnState.value = publication.publication_id;
 
     }
 }
 
-
-
-
-function likePublication(id_publication: any) {
-    publicationsStore.likePublication(id_publication);
-};
 </script>
-
 <template>
     <div>
         <div v-if="isLoading">
@@ -187,17 +152,15 @@ function likePublication(id_publication: any) {
                             <div class="post__likeAndComment">
                                 <div class="post__interaction">
                                     <div class="post__interaction__like">
-                                        <button @click.stop="likePublication(publication.publication_id)"
+                                        <button
+                                            @click.stop="usePublicationsStore().likePublication(publication.publication_id)"
                                             v-bind:class="[publication.iLike ? 'liked' : '']">
                                             <span>{{ publication.likes.length + ' ' }}</span>
                                             <fa icon="fa-solid fa-thumbs-up" />
                                         </button>
-                                        <!-- <button @click="like" type="button">J'aime</button> -->
                                     </div>
                                     <div class="post__interaction__comment">
-                                        <!-- <span>{{ publication.comments.length }}</span> -->
                                         <button @click.stop="getComments(publication)" type="button">
-                                            <!-- <span>{{ publication.comments.length }}</span> -->
                                             <fa icon="fa-solid fa-comment-dots" />
                                         </button>
                                     </div>
@@ -214,22 +177,21 @@ function likePublication(id_publication: any) {
                     <div v-else>
                         <PublicationForm :content="publication.content" :picture="publication.picture"
                             :id="publication.publication_id" :user="user" @cancel="publication.editMode = false"
-                            @update="editPublication(publication.publication_id, { editMode: false, post: $event })" />
+                            @update="usePublicationsStore().updatePublication(publication.publication_id, { editMode: false, post: $event })" />
                     </div>
                 </div>
                 <div class="post__page">
                     <div v-if="page > 1" class="post__page__previous">
-                        <button @click="count--" type="button">Page Précédente</button>
+                        <button @click="page--" type="button">Page Précédente</button>
                     </div>
                     <div v-if="page < numberOfPages" class="post__page__next">
-                        <button @click="count++" type="button">Page Suivante</button>
+                        <button @click="page++" type="button">Page Suivante</button>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </template>
-
 <style scoped lang="scss">
 @import '../styles/Components/buttons';
 
@@ -480,11 +442,7 @@ function likePublication(id_publication: any) {
                 }
             }
 
-            &__list {
-                // border-top: 1px solid #b7b7b7;
-                // padding: 5px 0px;
-                // margin-top: 10px;
-            }
+            &__list {}
         }
     }
 

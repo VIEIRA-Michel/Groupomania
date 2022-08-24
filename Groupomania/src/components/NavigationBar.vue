@@ -1,3 +1,22 @@
+<script setup lang="ts">
+import { ref } from 'vue';
+
+const open = ref(false);
+const props = defineProps<{
+    user: {
+        email: string,
+        firstname: string,
+        lastname: string,
+        picture_url: string,
+        user_id: number,
+    },
+    isConnected: boolean,
+}>();
+
+const emit = defineEmits<{
+    (e: 'logout'): any;
+}>();
+</script>
 <template>
     <header>
         <div class="logo">
@@ -40,39 +59,6 @@
 
     </header>
 </template>
-
-<script setup lang="ts">
-import { ref } from 'vue';
-import { useAuthStore } from '../shared/stores/authStore';
-const authStore = useAuthStore();
-
-const open = ref(false);
-
-function isLogged() {
-    return localStorage.getItem('token') !== null;
-}
-
-function handleShowLinks() {
-
-}
-
-const props = defineProps<{
-    user: {
-        email: string,
-        firstname: string,
-        lastname: string,
-        picture_url: string,
-        user_id: number,
-    },
-    isConnected: boolean,
-}>();
-
-const emit = defineEmits<{
-    (e: 'logout'): any;
-}>();
-
-</script>
-
 <style scoped lang="scss">
 header {
     display: flex;

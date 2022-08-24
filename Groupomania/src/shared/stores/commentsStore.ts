@@ -28,7 +28,6 @@ export const useCommentsStore = defineStore({
     },
     actions: {
         getAllComments: (id: number, limit: number, from: number) => {
-            const store = useCommentsStore();
             axios({
                 method: 'get',
                 url: `http://localhost:3000/api/publications/${id}/comments/?limit=${limit}&from=${from}`,
@@ -38,38 +37,25 @@ export const useCommentsStore = defineStore({
                 }
             }).then(response => {
                 let com = ref();
-                // console.log('response', response);
                 for (let comment of response.data.comments) {
-                    // console.log(comment);
                     com.value = comment;
-                    if (store.$state.comments) {
-                        store.$patch({
-                            comments: [...store.$state.comments, com.value],
+                    useCommentsStore().$state.comments ?
+                        useCommentsStore().$patch({
+                            comments: [...useCommentsStore().$state.comments, com.value],
+                            numOfResults: response.data.numOfResults,
+                        }) :
+                        useCommentsStore().$patch({
+                            comments: [com.value],
                             numOfResults: response.data.numOfResults,
                         });
-                    } else {
-                        // store.$patch((state: CommentState) => {
-                        //     state.comments.push(com.value);
-                        //     state.numOfResults = response.data.numOfResults;
-                        // });
-                        store.$patch({
-                            comments: [com.value],
-                            numOfResults : response.data.numOfResults,
-                        });
-                    }
-                    console.log(store.$state.comments);
                 }
 
             }).catch(error => {
+                error.response.status === 403 ? useAuthStore().logout() : "";
                 console.log(error);
-                if (error.response.status === 403) {
-                    useAuthStore().logout();
-                }
-            });
-
+            })
         },
         deleteComment: (publication_id: number, id: number) => {
-            const store = useCommentsStore();
             axios({
                 method: 'delete',
                 url: `http://localhost:3000/api/publications/${publication_id}/comments/${id}`,
@@ -78,25 +64,18 @@ export const useCommentsStore = defineStore({
                     authorization: `Bearer ${localStorage.getItem('token')}`
                 }
             }).then(response => {
-                let updateComments = store.$state.comments.filter(item => {
-                    console.log('item', item);
+                let updateComments = useCommentsStore().$state.comments.filter(item => {
                     return item.comment_id !== id;
-                }
-                );
-                console.log(updateComments);
-                store.$patch({
+                });
+                useCommentsStore().$patch({
                     comments: updateComments
                 });
             }).catch(error => {
+                error.response.status === 403 ? useAuthStore().logout() : "";
                 console.log(error);
-                if (error.response.status === 403) {
-                    useAuthStore().logout();
-                }
             })
         },
         createComment: (publication_id: number | undefined, comment: string) => {
-            const store = useCommentsStore();
-            console.log(publication_id, comment)
             axios({
                 method: 'post',
                 url: `http://localhost:3000/api/publications/${publication_id}/comments`,
@@ -108,7 +87,6 @@ export const useCommentsStore = defineStore({
                     "content": comment
                 },
             }).then(response => {
-                console.log('response', response);
                 let obj = ref({
                     account_disabled: response.data.data[0].account_disabled,
                     comment_content: response.data.data[0].comment_content,
@@ -127,23 +105,17 @@ export const useCommentsStore = defineStore({
                     role_id: response.data.data[0].role_id,
                     user_id: response.data.data[0].user_id,
                 });
-                if (!store.$state.comments) {
-                    store.$patch({
+                !useCommentsStore().$state.comments ?
+                    useCommentsStore().$patch({
                         comments: [obj.value]
+                    }) :
+                    useCommentsStore().$patch({
+                        comments: [...useCommentsStore().$state.comments, obj.value]
                     });
-                } else {
-                    store.$patch({
-                        comments: [...store.$state.comments, obj.value]
-                    })
-                }
             }).catch(error => {
+                error.response.status === 403 ? useAuthStore().logout() : "";
                 console.log(error);
-                if (error.response.status === 403) {
-                    useAuthStore().logout();
-                }
-            }
-            );
-
+            })
         }
     }
 });

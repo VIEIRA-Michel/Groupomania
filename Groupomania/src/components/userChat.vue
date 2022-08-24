@@ -1,3 +1,15 @@
+<script setup lang="ts">
+const props = defineProps<{
+    key: any,
+    user: any,
+    selected: any,
+}>();
+
+
+const emit = defineEmits<{
+    (e: 'select'): any;
+}>();
+</script>
 <template>
     <div @click="emit('select')" class="container-left__list__item">
         <div class="container-left__list__item__left">
@@ -17,26 +29,7 @@
         <div v-if="props.user.hasNewMessages" class="container-left__list__item__new-messages">!</div>
     </div>
 </template>
-
-<script setup lang="ts">
-import { watchEffect, computed } from 'vue';
-import { useChatStore } from '../shared/stores/chatStore';
-const chatStore = useChatStore();
-const users = computed(() => chatStore.$state.users);
-const props = defineProps<{
-    key: any,
-    user: any,
-    selected: any,
-}>();
-
-// console.log(props.user)
-
-const emit = defineEmits<{
-    (e: 'select'): any;
-}>();
-</script>
-
-<style lang="scss">
+<style scoped lang="scss">
 .container-left {
     &__list {
         &__item {

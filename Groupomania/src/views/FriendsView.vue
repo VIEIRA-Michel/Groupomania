@@ -1,90 +1,50 @@
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useAuthStore } from '../shared/stores/authStore';
 import { useFriendshipStore } from '../shared/stores/friendsStore';
 import NavigationBar from '../components/NavigationBar.vue';
-import Loading from '../components/Loading.vue';
-const authStore = useAuthStore();
-const friendshipStore = useFriendshipStore();
 
-checkIsConnected();
-friendshipStore.$reset();
+useAuthStore().getMyInformations();
+useAuthStore().$state.isConnected == false ? window.location.href = '/' : "";
+useFriendshipStore().$reset();
 
-const isConnected = computed(() => authStore.$state.isConnected);
-const user = computed(() => authStore.$state.user);
-const requests = computed(() => friendshipStore.$state.requests);
-const friends = computed(() => friendshipStore.$state.friends);
-const isLoading = computed(() => friendshipStore.$state.isLoading);
-const usersFound = computed(() => friendshipStore.$state.searchResults);
+const isConnected = computed(() => useAuthStore().$state.isConnected);
+const user = computed(() => useAuthStore().$state.user);
+const requests = computed(() => useFriendshipStore().$state.requests);
+const friends = computed(() => useFriendshipStore().$state.friends);
+const usersFound = computed(() => useFriendshipStore().$state.searchResults);
 
 const search = ref('');
 let open = ref(false);
 let modalRequest = ref(false);
-const chatting = ref(false);
 
-
-function getRequestsAndFriendlist() {
-    friendshipStore.getRequests();
-    friendshipStore.getAllFriends();
-}
-getRequestsAndFriendlist();
-
-
-function checkIsConnected() {
-    authStore.getMyInformations();
-    if (authStore.$state.isConnected == false) {
-        window.location.href = '/';
-    }
-}
+useFriendshipStore().getRequests();
+useFriendshipStore().getAllFriends();
 
 function logout() {
-    authStore.logout();
+    useAuthStore().logout();
     window.location.href = '/';
-}
-
-function replyToRequest(req: any, answer: string) {
-    friendshipStore.acceptOrDeclineRequest(req, answer);
 }
 
 function removeFriend(user_id: number) {
     open.value = false;
-    friendshipStore.removeFriend(user_id);
+    useFriendshipStore().removeFriend(user_id);
 }
 
 function searchUser(search: string) {
-    friendshipStore.$patch({
+    useFriendshipStore().$patch({
         isLoading: true,
     });
-    friendshipStore.checkRequestsSended();
-    friendshipStore.searchUser(search);
-}
-
-function sendFriendRequest(user_id: number) {
-    friendshipStore.sendFriendRequest(user_id);
+    useFriendshipStore().checkRequestsSended();
+    useFriendshipStore().searchUser(search);
 }
 
 function cancelRequest(user_id: number) {
     modalRequest.value = false;
-    friendshipStore.cancelRequest(user_id);
+    useFriendshipStore().cancelRequest(user_id);
 }
 
-function confirmRemoveFriend() {
-    open.value = true;
-}
-
-function confirmCancelRequest() {
-    modalRequest.value = true;
-}
-
-function openTheConversation() {
-    chatting.value = true;
-}
-
-function closeConversation() {
-    chatting.value = false;
-}
 </script>
-
 <template>
     <div>
         <NavigationBar :user="user" :isConnected="isConnected" @logout="logout()" />
@@ -110,13 +70,14 @@ function closeConversation() {
                                         <span>{{ user.lastname }}</span>
                                     </div>
                                 </div>
-                                <button v-if="!user.isFriend && !user.pending" @click="sendFriendRequest(user.user_id)">
+                                <button v-if="!user.isFriend && !user.pending"
+                                    @click="useFriendshipStore().sendFriendRequest(user.user_id)">
                                     <fa icon="fa-solid fa-user-plus" />
                                 </button>
-                                <button v-if="user.pending" @click="confirmCancelRequest()" class="pending">
+                                <button v-if="user.pending" @click="modalRequest = true" class="pending">
                                     <fa icon="fa-solid fa-user-clock" />
                                 </button>
-                                <button v-if="user.isFriend" @click="confirmRemoveFriend()" class="friend">
+                                <button v-if="user.isFriend" @click="open = true" class="friend">
                                     <fa icon="fa-solid fa-user-check" />
                                 </button>
                                 <Teleport to="body">
@@ -169,10 +130,12 @@ function closeConversation() {
                                 </div>
                             </div>
                             <div class="friends-request__list__item__name__button">
-                                <button @click="replyToRequest(req, 'refused')" class="refused">
+                                <button @click="useFriendshipStore().acceptOrDeclineRequest(req, 'refused')"
+                                    class="refused">
                                     <fa icon="fa-solid fa-xmark" />
                                 </button>
-                                <button @click="replyToRequest(req, 'accepted')" class="accepted">
+                                <button @click="useFriendshipStore().acceptOrDeclineRequest(req, 'accepted')"
+                                    class="accepted">
                                     <fa icon="fa-solid fa-check" />
                                 </button>
                             </div>
@@ -210,14 +173,9 @@ function closeConversation() {
                         </div>
                         <div class="friends-list__list__item__button">
 
-                            <button class="friend" @click="confirmRemoveFriend()">
+                            <button class="friend" @click="open = true">
                                 <fa icon="fa-solid fa-user-minus" />
                             </button>
-                            <button class="message" @click="openTheConversation()">
-                                <fa icon="fa-solid fa-envelope" />
-                            </button>
-                            <!-- <button @click="removeFriend(friend.user_id)"
-                                class="friend-list__list__item__button">Retirer</button> -->
                         </div>
                         <Teleport to="body">
                             <div v-if="open" @click="open = false"
@@ -253,7 +211,6 @@ function closeConversation() {
         </div>
     </div>
 </template>
-
 <style scoped lang="scss">
 @import '../styles/Components/buttons';
 

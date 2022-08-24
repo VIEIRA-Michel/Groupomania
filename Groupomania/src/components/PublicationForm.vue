@@ -1,7 +1,5 @@
 <script setup lang="ts">
-import { reactive, ref } from "vue";
-import { usePublicationsStore } from '../shared/stores/publicationsStore';
-const publicationsStore = usePublicationsStore();
+import { reactive } from "vue";
 
 const props = defineProps<{
     content: string,
@@ -38,10 +36,7 @@ const emit = defineEmits<{
 }>();
 
 </script>
-
-
 <template>
-
     <div v-if="props.user" class="create_post">
         <div class="create_post__top">
             <div class="create_post__top__details">
@@ -63,7 +58,6 @@ const emit = defineEmits<{
         </div>
     </div>
 </template>
-
 <style scoped lang="scss">
 @import '../styles/Components/buttons';
 

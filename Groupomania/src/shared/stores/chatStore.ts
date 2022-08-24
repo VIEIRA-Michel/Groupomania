@@ -25,31 +25,10 @@ export const useChatStore = defineStore({
     },
     actions: {
         userConnected: (user: any) => {
-            const store = useChatStore();
-            store.$patch((state) => state.users.push(user));
+            useChatStore().$patch((state) => state.users.push(user));
         },
         friendsConnected: (friend: any) => {
-            // console.log('friends connected on store');
-            const store = useChatStore();
-            store.$patch((state) => state.friendsConnected.push(friend));
-        },
-        saveSession: (session_id: any) => {
-            axios({
-                method: 'post',
-                url: 'http://localhost:3000/api/user/initializeSession',
-                headers: {
-                    authorization: `Bearer ${localStorage.getItem('token')}`
-                },
-                data: {
-                    session_id: session_id,
-                },
-            }).then(response => {
-            }).catch(error => {
-                if (error.response.status === 403) {
-                    useAuthStore().logout();
-                }
-                console.log(error);
-            });
+            useChatStore().$patch((state) => state.friendsConnected.push(friend));
         },
         sendMessage: (id: number, message: any, from: any) => {
             axios({
@@ -65,9 +44,7 @@ export const useChatStore = defineStore({
                 }
             }).then(response => {
             }).catch(error => {
-                if (error.response.status === 403) {
-                    useAuthStore().logout();
-                }
+                error.response.status === 403 ? useAuthStore().logout() : "";
                 console.log(error);
             })
         },
@@ -81,9 +58,7 @@ export const useChatStore = defineStore({
             }).then(response => {
                 useChatStore().$patch((state) => state.messages = response.data);
             }).catch(error => {
-                if (error.response.status === 403) {
-                    useAuthStore().logout();
-                }
+                error.response.status === 403 ? useAuthStore().logout() : "";
                 console.log(error);
             })
         }
