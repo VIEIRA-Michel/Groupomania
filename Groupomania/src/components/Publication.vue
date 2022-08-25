@@ -17,7 +17,6 @@ const numberOfPages = computed(() => usePublicationsStore().$state.numberOfPages
 let page = ref(1);
 let content = ref('');
 let picture = ref();
-let postIdOnState = ref();
 
 function onPickFile(event: any) {
     picture.value = event.target.files[0];
@@ -41,49 +40,52 @@ function deletePublication(id: number) {
     usePublicationsStore().deletePublication(id).then((response) => {
         if (numberOfPages.value != 1 && usePublicationsStore().$state.publications.length == 0) {
             page.value = page.value - 1;
+        } else if (numberOfPages.value != 1 && usePublicationsStore().$state.publications.length != 5) {
+            page.value = 1;
+            usePublicationsStore().getAllPublications(page.value);
         }
     });
 }
 
-watchEffect(() => {
-    usePublicationsStore().getAllPublications(page.value);
-})
-
 function getComments(publication: any, more?: boolean) {
-    if (postIdOnState.value !== publication.publication_id && useCommentsStore().$state.comments.length !== 0) {
-        useCommentsStore().$reset();
-        usePublicationsStore().publicationList.map((item: any) => {
-            if (item.publication_id == postIdOnState.value) {
-                item.displayComments = false;
-            };
-            return item;
-        });
-    } else if (more) {
+    usePublicationsStore().publicationList.map((item: any) => {
+        if (item.publication_id == publication.publication_id) {
+            item.displayComments = true;
+        } else {
+            item.displayComments = false;
+            useCommentsStore().$reset();
+        }
+        return item;
+    })
+
+    if (more) {
         useCommentsStore().$patch((state) => {
             state.from = state.from + state.limit;
             state.limit = state.limit + state.limit;
         });
-        if (useCommentsStore().$state.comments.length >= useCommentsStore().$state.from) {
-            useCommentsStore().getAllComments(publication.publication_id, useCommentsStore().$state.limit, useCommentsStore().$state.from);
-        }
-    }
-    if (!more) {
-        useCommentsStore().getAllComments(publication.publication_id, useCommentsStore().$state.limit, useCommentsStore().$state.from);
-        let state = usePublicationsStore().publicationList;
-        state = state.map((item: any) => {
+        usePublicationsStore().publicationList.map((item: any) => {
             if (item.publication_id == publication.publication_id) {
-                item.displayComments = true;
+                item.comments.length >= useCommentsStore().$state.from ? useCommentsStore().getAllComments(publication.publication_id, useCommentsStore().$state.limit, useCommentsStore().$state.from) : null;
             }
-            return item;
         });
-        usePublicationsStore().$patch({
-            publications: state,
-        });
-        postIdOnState.value = publication.publication_id;
-
     }
 }
 
+function displayMenu(menu: any) {
+    usePublicationsStore().publicationList.map((item: any) => {
+        if (item.publication_id == menu.publication_id) {
+            item.menu = !item.menu;
+        } else {
+            item.menu = false;
+        }
+        return item;
+    });
+}
+
+watchEffect(() => {
+    usePublicationsStore().$reset();
+    usePublicationsStore().getAllPublications(page.value);
+})
 </script>
 <template>
     <div>
@@ -116,7 +118,7 @@ function getComments(publication: any, more?: boolean) {
                 </div>
             </div>
             <div v-if="publications.length > 0">
-                <div v-for="publication in publications">
+                <div class="publication" v-for="publication in publications">
                     <div v-if="!publication.editMode">
                         <div class="post" :data-id="publication.publication_id">
                             <div class="post__information">
@@ -135,11 +137,21 @@ function getComments(publication: any, more?: boolean) {
                                             </div>
                                         </div>
                                     </div>
-                                    <div v-if="user.user_id == publication.user_id" class="post__top__button">
-                                        <fa @click.stop="publication.editMode = true"
-                                            icon="fa-solid fa-pen-to-square" />
-                                        <fa @click="deletePublication(publication.publication_id)"
-                                            icon="fa-solid fa-trash-can" />
+                                    <div v-if="user.user_id == publication.user_id" class="post__top__menu">
+                                        <div class="post__top__menu__button">
+                                            <fa icon="fa-solid fa-ellipsis" @click="displayMenu(publication)" />
+                                        </div>
+                                        <div v-if="publication.menu" class="post__top__menu__content">
+                                            <div class="post__top__menu__content__diamond"></div>
+                                            <div class="post__top__menu__content__item">
+                                                <fa @click="publication.editMode = true"
+                                                    icon="fa-solid fa-pen-to-square" />
+                                            </div>
+                                            <div class="post__top__menu__content__item">
+                                                <fa @click="deletePublication(publication.publication_id)"
+                                                    icon="fa-solid fa-trash-can" />
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="post__content">
@@ -152,22 +164,29 @@ function getComments(publication: any, more?: boolean) {
                             <div class="post__likeAndComment">
                                 <div class="post__interaction">
                                     <div class="post__interaction__like">
-                                        <button
-                                            @click.stop="usePublicationsStore().likePublication(publication.publication_id)"
-                                            v-bind:class="[publication.iLike ? 'liked' : '']">
+                                        <button v-if="!publication.iLike"
+                                            @click.stop="usePublicationsStore().likePublication(publication.publication_id)">
                                             <span>{{ publication.likes.length + ' ' }}</span>
-                                            <fa icon="fa-solid fa-thumbs-up" />
+                                            <fa icon="fa-regular fa-heart" />
+                                        </button>
+                                        <button v-else class="like"
+                                            @click.stop="usePublicationsStore().likePublication(publication.publication_id)">
+                                            <span>{{ publication.likes.length + ' ' }}</span>
+                                            <fa icon="fa-solid fa-heart" />
                                         </button>
                                     </div>
                                     <div class="post__interaction__comment">
                                         <button @click.stop="getComments(publication)" type="button">
-                                            <fa icon="fa-solid fa-comment-dots" />
+                                            <span>{{ publication.numberOfComments + ' ' }}</span>
+                                            <fa icon="fa-regular fa-comment-dots" />
                                         </button>
                                     </div>
                                 </div>
                                 <div class="post__interaction__comment__list">
                                     <div v-if="publication.displayComments">
                                         <Comment :publication_id="publication.publication_id" :user="user"
+                                            :numberOfComments="publication.numberOfComments"
+                                            :comments="publication.comments"
                                             @getMore="getComments(publication, true)" />
                                     </div>
                                 </div>
@@ -194,16 +213,19 @@ function getComments(publication: any, more?: boolean) {
 </template>
 <style scoped lang="scss">
 @import '../styles/Components/buttons';
+@import '../styles/Utils/keyframes';
 
 .create_post {
     max-height: 860px;
     display: flex;
     width: 470px;
     border-radius: 5px;
-    margin: 10px auto auto auto;
+    margin: 60px auto auto auto;
     backdrop-filter: blur(5px);
     background-color: #FFFFFF;
     border: 1px solid #FD2D01;
+    -webkit-animation: slide-in-top 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+    animation: slide-in-top 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
 
     @media (max-width: 768px) {
         width: 90%;
@@ -266,11 +288,12 @@ function getComments(publication: any, more?: boolean) {
 
             &__file {
                 margin: 10px 0px;
+                width: 240px;
 
             }
 
             &__button {
-                margin-right: 15px;
+                margin-right: 7px;
                 background-color: #FD2D01;
                 border-color: #FD2D01;
                 color: #FFFFFF;
@@ -303,6 +326,7 @@ function getComments(publication: any, more?: boolean) {
         padding: 10px 0 0 10px;
 
         &__details {
+            width: 50%;
             display: flex;
             flex-direction: row;
 
@@ -327,10 +351,61 @@ function getComments(publication: any, more?: boolean) {
 
         }
 
+        &__menu {
+            width: 50%;
+            display: flex;
+            justify-content: end;
+            margin-right: 20px;
+
+            &__button {
+                svg {
+                    cursor: pointer;
+                    color: #4E5166;
+                }
+            }
+
+            &__content {
+                position: absolute;
+                right: 10px;
+                top: 30px;
+                -webkit-animation: scale-in-ver-top 0.2s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+                animation: scale-in-ver-top 0.2s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+                border-radius: 5px;
+                background: #FFFFFF;
+                border: 1px solid #FD2D01;
+
+                &__diamond {
+                    transform: translate(-10px, -7px) rotate(-45deg);
+                    width: 10px;
+                    height: 10px;
+                    background: #FFFFFF;
+                    position: absolute;
+                    right: 0px;
+                    top: 1px;
+                    border-top: 1px solid #FD2D01;
+                    border-right: 1px solid #FD2D01;
+                }
+
+                &__item {
+                    display: flex;
+                    justify-content: center;
+                    margin: 10px;
+
+                    svg {
+                        cursor: pointer;
+                    }
+                }
+            }
+        }
+
         &__button {
             display: flex;
             justify-content: end;
             width: 50%;
+
+            &__ellipsis {
+                cursor: pointer;
+            }
 
             svg {
                 width: 20px;
@@ -410,18 +485,27 @@ function getComments(publication: any, more?: boolean) {
                 background-color: #FFFFFF;
                 border: none;
                 cursor: pointer;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+
+                span {
+                    font-size: 20px;
+                    margin-right: 5px;
+                }
 
                 svg {
-                    font-size: 30px;
+                    font-size: 20px;
+                    color: #4E5166;
                 }
 
 
             }
 
-            .liked {
-                background-color: #FFFFFF;
-
+            .like {
                 svg {
+                    font-size: 20px;
+                    // color: linear-gradient(to right, #FD2D01, #FFD7D7);
                     color: #FD2D01;
                 }
             }
@@ -436,9 +520,18 @@ function getComments(publication: any, more?: boolean) {
                 background-color: #FFFFFF;
                 border: none;
                 cursor: pointer;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+
+                span {
+                    font-size: 20px;
+                    margin-right: 5px;
+                }
 
                 svg {
-                    font-size: 30px;
+                    font-size: 20px;
+                    color: #4E5166;
                 }
             }
 
@@ -460,6 +553,33 @@ function getComments(publication: any, more?: boolean) {
         button {
             @include button-primary;
         }
+    }
+}
+
+.publication {
+    &:nth-child(1) {
+        -webkit-animation: slide-in-left 0.2s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.5s both;
+        animation: slide-in-left 0.2s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.5s both;
+    }
+
+    &:nth-child(2) {
+        -webkit-animation: slide-in-right 0.2s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.7s both;
+        animation: slide-in-right 0.2s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.7s both;
+    }
+
+    &:nth-child(3) {
+        -webkit-animation: slide-in-left 0.2s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.9s both;
+        animation: slide-in-left 0.2s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.9s both;
+    }
+
+    &:nth-child(4) {
+        -webkit-animation: slide-in-right 0.2s cubic-bezier(0.250, 0.460, 0.450, 0.940) 1.1s both;
+        animation: slide-in-right 0.2s cubic-bezier(0.250, 0.460, 0.450, 0.940) 1.1s both;
+    }
+
+    &:nth-child(5) {
+        -webkit-animation: slide-in-left 0.2s cubic-bezier(0.250, 0.460, 0.450, 0.940) 1.3s both;
+        animation: slide-in-left 0.2s cubic-bezier(0.250, 0.460, 0.450, 0.940) 1.3s both;
     }
 }
 </style>

@@ -68,6 +68,10 @@ header {
     padding: 10px 0px;
     justify-content: start;
     border-bottom: 1px solid #FD2D01;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1;
 
     @media only screen and (max-width: 768px) {
         justify-content: space-between;
@@ -137,7 +141,8 @@ header {
 }
 
 img {
-    height: 200px;
+    width: 200px;
+    height: 30px;
     object-fit: cover;
 }
 

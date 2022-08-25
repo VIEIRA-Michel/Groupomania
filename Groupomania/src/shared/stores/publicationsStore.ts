@@ -1,3 +1,4 @@
+import { useCommentsStore } from './commentsStore';
 import { defineStore } from 'pinia';
 import axios from 'axios';
 import type { Publication } from '../interfaces/publication.interface';
@@ -69,10 +70,14 @@ export const usePublicationsStore = defineStore({
                 if (response.data.Publications) {
                     response.data.Publications = response.data.Publications.map((publication: any) => {
                         usePublicationsStore().getLikes(publication.publication_id);
+                        useCommentsStore().getAllComments(publication.publication_id, 5, 0);
                         return {
                             editMode: false,
+                            menu: false,
                             displayComments: false,
                             likes: [],
+                            comments: [],
+                            numberOfComments: 0,
                             ...publication,
                         }
                     });
@@ -127,8 +132,7 @@ export const usePublicationsStore = defineStore({
                 }).then(response => {
                     let updatePublications = usePublicationsStore().$state.publications.filter(item => {
                         return item.publication_id !== id;
-                    }
-                    );
+                    });
                     usePublicationsStore().$patch({
                         publications: updatePublications
                     });

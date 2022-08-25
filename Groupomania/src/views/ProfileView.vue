@@ -33,47 +33,45 @@ function updateProfile(userEdit?: any) {
 }
 </script>
 <template>
-    <div>
-        <NavigationBar :user="user" :isConnected="isConnected" @logout="logout()" />
-        <div v-if="isConnected" class="container">
-            <div class="edit-profil">
-                <div class="edit-profil__title">
-                    <h1>Editer mon profil</h1>
-                </div>
-                <div class="edit-profil__body">
-                    <div class="edit-profil__body__content">
-                        <div class="edit-profil__body__content__picture">
-                            <img :src="user.picture_url" alt="profil picture" id="picture" />
-                        </div>
-                        <div class="edit-profil__body__content__form">
-                            <form @submit.prevent="updateProfile(userEdit)">
-                                <div class="edit-profil__body__content__form__input">
-                                    <label for="picture">Photo de profil</label>
-                                    <input type="file" class="input-file" accept="image/*"
-                                        @change="previewPicture($event)" />
-                                </div>
-                                <div class="edit-profil__body__content__form__input">
-                                    <label for="email">Email</label>
-                                    <input type="text" id="email" v-model="userEdit.email" />
-                                </div>
-                                <div class="edit-profil__body__content__form__input">
-                                    <label for="confirmEmail">Confirmation de l'adresse email</label>
-                                    <input type="text" id="confirmEmail" v-model="userEdit.confirmEmail" />
-                                </div>
-                                <div class="edit-profil__body__content__form__input">
-                                    <label for="password">Mot de passe</label>
-                                    <input type="password" id="password" v-model="userEdit.password" />
-                                </div>
-                                <div class="edit-profil__body__content__form__input">
-                                    <label for="confirmPassword">Confirmation du mot de passe</label>
-                                    <input type="password" id="confirmPassword" v-model="userEdit.confirmPassword" />
-                                </div>
-                                <div class="edit-profil__body__content__form__button">
-                                    <button>Annuler</button>
-                                    <button>Confirmer</button>
-                                </div>
-                            </form>
-                        </div>
+    <NavigationBar :user="user" :isConnected="isConnected" @logout="logout()" />
+    <div v-if="isConnected" class="container">
+        <div class="edit-profil">
+            <div class="edit-profil__title">
+                <h1>Editer mon profil</h1>
+            </div>
+            <div class="edit-profil__body">
+                <div class="edit-profil__body__content">
+                    <div class="edit-profil__body__content__picture">
+                        <img :src="user.picture_url" alt="profil picture" id="picture" />
+                    </div>
+                    <div class="edit-profil__body__content__form">
+                        <form @submit.prevent="updateProfile(userEdit)">
+                            <div class="edit-profil__body__content__form__input">
+                                <label for="picture">Photo de profil</label>
+                                <input type="file" class="input-file" accept="image/*"
+                                    @change="previewPicture($event)" />
+                            </div>
+                            <div class="edit-profil__body__content__form__input">
+                                <label for="email">Email</label>
+                                <input type="text" id="email" v-model="userEdit.email" />
+                            </div>
+                            <div class="edit-profil__body__content__form__input">
+                                <label for="confirmEmail">Confirmation de l'adresse email</label>
+                                <input type="text" id="confirmEmail" v-model="userEdit.confirmEmail" />
+                            </div>
+                            <div class="edit-profil__body__content__form__input">
+                                <label for="password">Mot de passe</label>
+                                <input type="password" id="password" v-model="userEdit.password" />
+                            </div>
+                            <div class="edit-profil__body__content__form__input">
+                                <label for="confirmPassword">Confirmation du mot de passe</label>
+                                <input type="password" id="confirmPassword" v-model="userEdit.confirmPassword" />
+                            </div>
+                            <div class="edit-profil__body__content__form__button">
+                                <button>Annuler</button>
+                                <button>Confirmer</button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -91,6 +89,7 @@ function updateProfile(userEdit?: any) {
 .container {
     display: flex;
     flex-direction: column;
+    margin-top: 20px;
 
     .edit-profil {
         display: flex;

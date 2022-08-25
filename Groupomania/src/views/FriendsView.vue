@@ -46,165 +46,163 @@ function cancelRequest(user_id: number) {
 
 </script>
 <template>
-    <div>
-        <NavigationBar :user="user" :isConnected="isConnected" @logout="logout()" />
-        <div v-if="isConnected" class="container">
-            <div class="search-user">
-                <div class="search-user__title">Rechercher un utilisateur</div>
-                <div class="search-user__input">
-                    <input type="text" v-model="search" @keyup.enter="searchUser(search)" />
-                </div>
-                <div v-if="usersFound" class="search-user__results">
-                    <div class="search-user__results__list">
-                        <div v-for="user in usersFound" class="search-user__results__list__item">
+    <NavigationBar :user="user" :isConnected="isConnected" @logout="logout()" />
+    <div v-if="isConnected" class="container">
+        <div class="search-user">
+            <div class="search-user__title">Rechercher un utilisateur</div>
+            <div class="search-user__input">
+                <input type="text" v-model="search" @keyup.enter="searchUser(search)" />
+            </div>
+            <div v-if="usersFound" class="search-user__results">
+                <div class="search-user__results__list">
+                    <div v-for="user in usersFound" class="search-user__results__list__item">
 
-                            <div class="search-user__results__list__item__avatar">
-                                <img :src="user.picture_url" alt="avatar-1">
-                            </div>
-                            <div class="search-user__results__list__item__name">
-                                <div class="search-user__results__list__item__name__text">
-                                    <div class="search-user__results__list__item__name__text__firstname">
-                                        <span>{{ user.firstname }}</span>
-                                    </div>
-                                    <div class="search-user__results__list__item__name__text__lastname">
-                                        <span>{{ user.lastname }}</span>
-                                    </div>
+                        <div class="search-user__results__list__item__avatar">
+                            <img :src="user.picture_url" alt="avatar-1">
+                        </div>
+                        <div class="search-user__results__list__item__name">
+                            <div class="search-user__results__list__item__name__text">
+                                <div class="search-user__results__list__item__name__text__firstname">
+                                    <span>{{ user.firstname }}</span>
                                 </div>
-                                <button v-if="!user.isFriend && !user.pending"
-                                    @click="useFriendshipStore().sendFriendRequest(user.user_id)">
-                                    <fa icon="fa-solid fa-user-plus" />
-                                </button>
-                                <button v-if="user.pending" @click="modalRequest = true" class="pending">
-                                    <fa icon="fa-solid fa-user-clock" />
-                                </button>
-                                <button v-if="user.isFriend" @click="open = true" class="friend">
-                                    <fa icon="fa-solid fa-user-check" />
-                                </button>
-                                <Teleport to="body">
-                                    <div v-if="modalRequest" @click="modalRequest = false"
-                                        class="calc d-flex flex-row justify-content-center align-items-center">
-                                        <div @click.stop class="modal-container">
+                                <div class="search-user__results__list__item__name__text__lastname">
+                                    <span>{{ user.lastname }}</span>
+                                </div>
+                            </div>
+                            <button v-if="!user.isFriend && !user.pending"
+                                @click="useFriendshipStore().sendFriendRequest(user.user_id)">
+                                <fa icon="fa-solid fa-user-plus" />
+                            </button>
+                            <button v-if="user.pending" @click="modalRequest = true" class="pending">
+                                <fa icon="fa-solid fa-user-clock" />
+                            </button>
+                            <button v-if="user.isFriend" @click="open = true" class="friend">
+                                <fa icon="fa-solid fa-user-check" />
+                            </button>
+                            <Teleport to="body">
+                                <div v-if="modalRequest" @click="modalRequest = false"
+                                    class="calc d-flex flex-row justify-content-center align-items-center">
+                                    <div @click.stop class="modal-container">
 
-                                            <div class="modal-container__content">
-                                                <div class="modal-container__content__header">
-                                                    <h5 class="modal-container__content__header__title">Êtes-vous
-                                                        certains de
-                                                        vouloir annuler votre demande d'amitié envers {{ user.firstname
-                                                        }} ?
-                                                    </h5>
-                                                </div>
-                                                <div class="modal-container__content__footer">
-                                                    <button @click="modalRequest = false" type="button"
-                                                        class="btn btn-secondary" data-dismiss="modal">Annuler</button>
-                                                    <button @click="cancelRequest(user.user_id)" type="button"
-                                                        class="btn btn-primary">Retirer
-                                                        {{ user.firstname }}</button>
-                                                </div>
+                                        <div class="modal-container__content">
+                                            <div class="modal-container__content__header">
+                                                <h5 class="modal-container__content__header__title">Êtes-vous
+                                                    certains de
+                                                    vouloir annuler votre demande d'amitié envers {{ user.firstname
+                                                    }} ?
+                                                </h5>
+                                            </div>
+                                            <div class="modal-container__content__footer">
+                                                <button @click="modalRequest = false" type="button"
+                                                    class="btn btn-secondary" data-dismiss="modal">Annuler</button>
+                                                <button @click="cancelRequest(user.user_id)" type="button"
+                                                    class="btn btn-primary">Retirer
+                                                    {{ user.firstname }}</button>
                                             </div>
                                         </div>
                                     </div>
-                                </Teleport>
-                            </div>
+                                </div>
+                            </Teleport>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="friends-request">
-                <div class="friends-request__title">
-                    <div class="friends-request__title__text">
-                        Demandes d'amis
-                    </div>
-                </div>
-                <div v-if="requests.length >= 1" class="friends-request__list">
-                    <div v-for="req in requests" class="friends-request__list__item">
-                        <div class="friends-request__list__item__avatar">
-                            <img :src="req.picture_url" alt="avatar-1">
-                        </div>
-                        <div class="friends-request__list__item__name">
-                            <div class="friends-request__list__item__name__text">
-                                <div class="friends-request__list__item__name__text__firstname">
-                                    <span>{{ req.firstname }}</span>
-                                </div>
-                                <div class="friends-request__list__item__name__text__lastname">
-                                    <span>{{ req.lastname }}</span>
-                                </div>
-                            </div>
-                            <div class="friends-request__list__item__name__button">
-                                <button @click="useFriendshipStore().acceptOrDeclineRequest(req, 'refused')"
-                                    class="refused">
-                                    <fa icon="fa-solid fa-xmark" />
-                                </button>
-                                <button @click="useFriendshipStore().acceptOrDeclineRequest(req, 'accepted')"
-                                    class="accepted">
-                                    <fa icon="fa-solid fa-check" />
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div v-else>
-                    <div class="friends-request__empty-requests">
-                        <div class="friends-request__empty-requests__text">
-                            <span>Vous n'avez aucune demande</span>
-                        </div>
-                    </div>
+        </div>
+        <div class="friends-request">
+            <div class="friends-request__title">
+                <div class="friends-request__title__text">
+                    Demandes d'amis
                 </div>
             </div>
-            <div class="friends-list">
-                <div class="friends-list__title">
-                    <div class="friends-list__title__text">
-                        Mes amis
+            <div v-if="requests.length >= 1" class="friends-request__list">
+                <div v-for="req in requests" class="friends-request__list__item">
+                    <div class="friends-request__list__item__avatar">
+                        <img :src="req.picture_url" alt="avatar-1">
                     </div>
-                </div>
-                <div v-if="friends.length > 0" class="friends-list__list">
-                    <div v-for="friend in friends" class="friends-list__list__item">
-                        <div class="friends-list__list__item__avatar">
-                            <img :src="friend.picture_url" alt="avatar-1">
-                        </div>
-                        <div class="friends-list__list__item__name">
-                            <div class="friends-list__list__item__name__text">
-                                <div class="friends-list__list__item__name__text__firstname">
-                                    <span>{{ friend.firstname }}</span>
-                                </div>
-                                <div class="friends-list__list__item__name__text__lastname">
-                                    <span>{{ friend.lastname }}</span>
-                                </div>
+                    <div class="friends-request__list__item__name">
+                        <div class="friends-request__list__item__name__text">
+                            <div class="friends-request__list__item__name__text__firstname">
+                                <span>{{ req.firstname }}</span>
+                            </div>
+                            <div class="friends-request__list__item__name__text__lastname">
+                                <span>{{ req.lastname }}</span>
                             </div>
                         </div>
-                        <div class="friends-list__list__item__button">
-
-                            <button class="friend" @click="open = true">
-                                <fa icon="fa-solid fa-user-minus" />
+                        <div class="friends-request__list__item__name__button">
+                            <button @click="useFriendshipStore().acceptOrDeclineRequest(req, 'refused')"
+                                class="refused">
+                                <fa icon="fa-solid fa-xmark" />
+                            </button>
+                            <button @click="useFriendshipStore().acceptOrDeclineRequest(req, 'accepted')"
+                                class="accepted">
+                                <fa icon="fa-solid fa-check" />
                             </button>
                         </div>
-                        <Teleport to="body">
-                            <div v-if="open" @click="open = false"
-                                class="calc d-flex flex-row justify-content-center align-items-center">
-                                <div @click.stop class="modal-container">
+                    </div>
+                </div>
+            </div>
+            <div v-else>
+                <div class="friends-request__empty-requests">
+                    <div class="friends-request__empty-requests__text">
+                        <span>Vous n'avez aucune demande</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="friends-list">
+            <div class="friends-list__title">
+                <div class="friends-list__title__text">
+                    Mes amis
+                </div>
+            </div>
+            <div v-if="friends.length > 0" class="friends-list__list">
+                <div v-for="friend in friends" class="friends-list__list__item">
+                    <div class="friends-list__list__item__avatar">
+                        <img :src="friend.picture_url" alt="avatar-1">
+                    </div>
+                    <div class="friends-list__list__item__name">
+                        <div class="friends-list__list__item__name__text">
+                            <div class="friends-list__list__item__name__text__firstname">
+                                <span>{{ friend.firstname }}</span>
+                            </div>
+                            <div class="friends-list__list__item__name__text__lastname">
+                                <span>{{ friend.lastname }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="friends-list__list__item__button">
 
-                                    <div class="modal-container__content">
-                                        <div class="modal-container__content__header">
-                                            <h5 class="modal-container__content__header__title">Êtes-vous certains de
-                                                vouloir retirer {{ friend.firstname }} de votre liste d'amis ?</h5>
-                                        </div>
-                                        <div class="modal-container__content__footer">
-                                            <button @click="open = false" type="button" class="btn btn-secondary"
-                                                data-dismiss="modal">Annuler</button>
-                                            <button @click="removeFriend(friend.user_id)" type="button"
-                                                class="btn btn-primary">Retirer
-                                                {{ friend.firstname }}</button>
-                                        </div>
+                        <button class="friend" @click="open = true">
+                            <fa icon="fa-solid fa-user-minus" />
+                        </button>
+                    </div>
+                    <Teleport to="body">
+                        <div v-if="open" @click="open = false"
+                            class="calc d-flex flex-row justify-content-center align-items-center">
+                            <div @click.stop class="modal-container">
+
+                                <div class="modal-container__content">
+                                    <div class="modal-container__content__header">
+                                        <h5 class="modal-container__content__header__title">Êtes-vous certains de
+                                            vouloir retirer {{ friend.firstname }} de votre liste d'amis ?</h5>
+                                    </div>
+                                    <div class="modal-container__content__footer">
+                                        <button @click="open = false" type="button" class="btn btn-secondary"
+                                            data-dismiss="modal">Annuler</button>
+                                        <button @click="removeFriend(friend.user_id)" type="button"
+                                            class="btn btn-primary">Retirer
+                                            {{ friend.firstname }}</button>
                                     </div>
                                 </div>
                             </div>
-                        </Teleport>
-                    </div>
-                </div>
-                <div v-else>
-                    <div class="friends-list__empty-friends">
-                        <div class="friends-list__empty-friends__text">
-                            <span>Vous n'avez aucun ami</span>
                         </div>
+                    </Teleport>
+                </div>
+            </div>
+            <div v-else>
+                <div class="friends-list__empty-friends">
+                    <div class="friends-list__empty-friends__text">
+                        <span>Vous n'avez aucun ami</span>
                     </div>
                 </div>
             </div>
@@ -213,7 +211,7 @@ function cancelRequest(user_id: number) {
 </template>
 <style scoped lang="scss">
 @import '../styles/Components/buttons';
-
+@import '../styles/Utils/keyframes';
 
 * {
     font-family: 'Lato', sans-serif;
@@ -222,12 +220,16 @@ function cancelRequest(user_id: number) {
 .container {
     display: flex;
     flex-direction: column;
+    margin-top: 50px;
 
     .search-user {
         background: #FFFFFF;
         border: 1px solid #FD2D01;
         width: 70%;
         margin: 10px auto 0px auto;
+        border-radius: 5px;
+        -webkit-animation: slide-in-top 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+        animation: slide-in-top 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
 
         &__title {
             text-align: center;
@@ -336,6 +338,9 @@ function cancelRequest(user_id: number) {
         border: 1px solid #FD2D01;
         width: 70%;
         margin: 10px auto 0px auto;
+        border-radius: 5px;
+        -webkit-animation: slide-in-bottom 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.3s both;
+        animation: slide-in-bottom 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.3s both;
 
         &__title {
             margin-top: 20px;
@@ -444,6 +449,9 @@ function cancelRequest(user_id: number) {
         border: 1px solid #FD2D01;
         width: 70%;
         margin: 10px auto 0px auto;
+        border-radius: 5px;
+        	-webkit-animation: slide-in-bottom 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.6s both;
+	        animation: slide-in-bottom 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.6s both;
 
         &__title {
             text-align: center;
@@ -481,7 +489,7 @@ function cancelRequest(user_id: number) {
                     button {
                         background-color: #ff7a7a;
                         font-size: 1rem;
-                        width: 40px;
+                        width: 100%;
                         height: 30px;
                         font-weight: bold;
                         cursor: pointer;

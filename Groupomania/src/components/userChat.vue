@@ -19,31 +19,44 @@ const emit = defineEmits<{
             <div class="container-left__list__item__right__name">
                 {{ props.user.username }}
             </div>
-            <div class="container-left__list__item__right__status">
-                <div class="container-left__list__item__right__status__online">
-                    <div v-if="props.user.connected" class="online"></div>
-                    <div v-else class="offline"></div>
-                </div>
+        </div>
+        <div class="container-left__list__item__status">
+            <div class="container-left__list__item__status__online">
+                <div v-if="props.user.connected" class="online"></div>
+                <div v-else class="offline"></div>
             </div>
         </div>
         <div v-if="props.user.hasNewMessages" class="container-left__list__item__new-messages">!</div>
     </div>
 </template>
 <style scoped lang="scss">
+@import '../styles/Utils/keyframes';
+
 .container-left {
     &__list {
         &__item {
             display: flex;
-            margin: 5px;
             flex-direction: row;
+            padding: 5px;
             align-items: center;
             justify-content: start;
-            border-bottom: 1px solid #DBDBDB;
             background-color: #FFFFFF;
             transition: all 0.4s;
+            cursor: pointer;
+
+            &:last-child {
+                border-radius: 0 0 5px 5px;
+            }
+
+            &:first-child {
+                border-radius: 5px 5px 0 0;
+            }
 
             &:hover {
-                background-color: #DBDBDB;
+                background-color: #F5F5F5;
+            }
+            &:focus {
+                border: 1px solid #00BFFF;
             }
 
             &__left {
@@ -62,28 +75,28 @@ const emit = defineEmits<{
                 &__name {
                     font-weight: bold;
                 }
+            }
 
-                &__status {
-                    &__online {
-                        .offline {
-                            border: 1px solid #DBDBDB;
-                            position: absolute;
-                            left: 30px;
-                            width: 10px;
-                            height: 10px;
-                            border-radius: 50px;
-                            background-color: #FD2D01;
-                        }
+            &__status {
+                &__online {
+                    margin-left: 10px;
+                    display: flex;
+                    align-items: center;
 
-                        .online {
-                            border: 1px solid #DBDBDB;
-                            position: absolute;
-                            left: 30px;
-                            width: 10px;
-                            height: 10px;
-                            border-radius: 50px;
-                            background-color: #00FF00;
-                        }
+                    .offline {
+                        border: 1px solid #DBDBDB;
+                        width: 10px;
+                        height: 10px;
+                        border-radius: 50px;
+                        background-color: #FD2D01;
+                    }
+
+                    .online {
+                        border: 1px solid #DBDBDB;
+                        width: 10px;
+                        height: 10px;
+                        border-radius: 50px;
+                        background-color: #00FF00;
                     }
                 }
             }

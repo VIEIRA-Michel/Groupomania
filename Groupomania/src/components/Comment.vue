@@ -4,18 +4,15 @@ import { ref, computed } from 'vue';
 let inputComment = ref("");
 
 const props = defineProps({
+    numberOfComments: Number,
     publication_id: Number,
-    displayComments: Boolean,
     user: Object,
+    comments: Array
 });
 
 const emit = defineEmits<{
     (e: 'getMore'): any;
 }>();
-
-const commentary = computed(() => useCommentsStore().$state.comments);
-const numOfResults = computed(() => useCommentsStore().$state.numOfResults);
-const displayButton = computed(() => useCommentsStore().$state.comments.length);
 
 function createComment(event: any) {
     event.preventDefault();
@@ -27,7 +24,7 @@ function createComment(event: any) {
 </script>
 <template>
     <div class="container-post">
-        <div v-for="com in commentary" class="post">
+        <div v-for="com in props.comments" class="post">
             <div class="post__details">
                 <div class="post__details__info">
                     <div class="post__details__info__avatar">
@@ -44,11 +41,11 @@ function createComment(event: any) {
                 </div>
             </div>
             <div class="post__button">
-                <fa v-if="props.user.email == com.email" @click="commentsStore.deleteComment(com.publication_id, com.comment_id)" icon="fa-solid fa-trash-can" />
+                <fa v-if="props.user.email == com.email" @click="useCommentsStore().deleteComment(com.publication_id, com.comment_id)" icon="fa-solid fa-trash-can" />
             </div>
         </div>
         <div class="more-post">
-            <button v-if="displayButton < numOfResults" @click="emit('getMore')" class="more-post__button">
+            <button v-if="props.comments?.length < props.numberOfComments" @click="emit('getMore')" class="more-post__button">
                 Afficher plus de commentaires
             </button>
         </div>
@@ -131,7 +128,9 @@ function createComment(event: any) {
             }
         }
 
-        &__button {}
+        &__button {
+            cursor: pointer;
+        }
     }
 }
 

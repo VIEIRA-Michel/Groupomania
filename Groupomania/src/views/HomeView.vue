@@ -27,89 +27,86 @@ let loginInput = reactive({
 
 </script>
 <template>
-    <div>
-        <NavigationBar :user="user" :isConnected="isConnected" @logout="useAuthStore().logout()" />
-        <div v-if="!isConnected" class="home">
-            <div class="home__picture">
-                <img src="../assets/picture-home.png" alt="">
-            </div>
-            <div class="container-shadow">
-            </div>
-            <div class="container">
-                <div class="container__header">
-                    <div class="container__header__title">
-                        <h1><span>Groupomania</span></h1>
-                    </div>
-                    <div class="container__header__message">
-                        <p>Prenons le temps de mieux nous connaître et partageons ensemble chacune de nos victoires
-                        </p>
-                    </div>
+    <NavigationBar :user="user" :isConnected="isConnected" @logout="useAuthStore().logout()" />
+    <div v-if="!isConnected" class="home">
+        <div class="home__picture">
+            <img src="../assets/picture-home.png" alt="">
+        </div>
+        <div class="container-shadow">
+        </div>
+        <div class="container">
+            <div class="container__header">
+                <div class="container__header__title">
+                    <h1><span>Groupomania</span></h1>
                 </div>
-                <div class="container__content">
-                    <div v-if="hasAccount" class="container__content__form">
-                        <form @submit.prevent="useAuthStore().login(loginInput.email, loginInput.password)">
-                            <div class="container__content__form__login">
-                                <label for="email">Email</label>
-                                <input type="email" id="email" :class="[invalidEmail ? 'invalidInput' : 'default']"
-                                    v-model="loginInput.email" />
-                                <p v-if="invalidEmail" class="invalidText">Adresse email incorrecte</p>
-                            </div>
-                            <div class="container__content__form__login">
-                                <label for="password">Mot de passe</label>
-                                <input type="password" id="password"
-                                    v-bind:class="[invalidPassword ? 'invalidInput' : 'default']"
-                                    v-model="loginInput.password" />
-                                <p v-if="invalidPassword" class="invalidText">Mot de passe incorrect</p>
-                            </div>
-                            <div class="container__content__form__login">
-                                <button>Connexion</button>
-                            </div>
-                            <div class="container__content__form__message">
-                                Vous n'avez pas encore de compte ? <span v-if="hasAccount"
-                                    @click="hasAccount = false">Inscrivez-vous gratuitement</span>
-                            </div>
-                        </form>
-                    </div>
-                    <div v-else class="container__content__form">
-                        <form @submit.prevent="useAuthStore().register(userInput.lastname, userInput.firstname, userInput.email, userInput.password, userInput.confirmPassword)">
-                            <div class="container__content__form__register">
-                                <label for="lastname">Nom</label>
-                                <input type="text" id="lastname" v-model="userInput.lastname" />
-                            </div>
-                            <div class="container__content__form__register">
-                                <label for="firstname">Prénom</label>
-                                <input type="text" id="firstname" v-model="userInput.firstname" />
-                            </div>
-                            <div class="container__content__form__register">
-                                <label for="email">Email</label>
-                                <input type="email" id="email" v-model="userInput.email" />
-                            </div>
-                            <div class="container__content__form__register">
-                                <label for="password">Mot de passe</label>
-                                <input type="password" id="password" v-model="userInput.password" />
-                            </div>
-                            <div class="container__content__form__register">
-                                <label for="confirmPassword">Confirmation du mot de passe</label>
-                                <input type="password" id="confirmPassword" v-model="userInput.confirmPassword" />
-                            </div>
-                            <div class="container__content__form__register">
-                                <button>S'enregistrer</button>
-                            </div>
-                            <div class="container__content__form__message">
-                                Vous avez déjà un compte ? <span v-if="!hasAccount"
-                                    @click="hasAccount = true">Connectez-vous</span>
-                            </div>
-                        </form>
-                    </div>
+                <div class="container__header__message">
+                    <p>Prenons le temps de mieux nous connaître et partageons ensemble chacune de nos victoires
+                    </p>
+                </div>
+            </div>
+            <div class="container__content">
+                <div v-if="hasAccount" class="container__content__form">
+                    <form @submit.prevent="useAuthStore().login(loginInput.email, loginInput.password)">
+                        <div class="container__content__form__login">
+                            <label for="email">Email</label>
+                            <input type="email" id="email" :class="[invalidEmail ? 'invalidInput' : 'default']"
+                                v-model="loginInput.email" />
+                            <p v-if="invalidEmail" class="invalidText">Adresse email incorrecte</p>
+                        </div>
+                        <div class="container__content__form__login">
+                            <label for="password">Mot de passe</label>
+                            <input type="password" id="password"
+                                v-bind:class="[invalidPassword ? 'invalidInput' : 'default']"
+                                v-model="loginInput.password" />
+                            <p v-if="invalidPassword" class="invalidText">Mot de passe incorrect</p>
+                        </div>
+                        <div class="container__content__form__login">
+                            <button>Connexion</button>
+                        </div>
+                        <div class="container__content__form__message">
+                            Vous n'avez pas encore de compte ? <span v-if="hasAccount"
+                                @click="hasAccount = false">Inscrivez-vous gratuitement</span>
+                        </div>
+                    </form>
+                </div>
+                <div v-else class="container__content__form">
+                    <form
+                        @submit.prevent="useAuthStore().register(userInput.lastname, userInput.firstname, userInput.email, userInput.password, userInput.confirmPassword)">
+                        <div class="container__content__form__register">
+                            <label for="lastname">Nom</label>
+                            <input type="text" id="lastname" v-model="userInput.lastname" />
+                        </div>
+                        <div class="container__content__form__register">
+                            <label for="firstname">Prénom</label>
+                            <input type="text" id="firstname" v-model="userInput.firstname" />
+                        </div>
+                        <div class="container__content__form__register">
+                            <label for="email">Email</label>
+                            <input type="email" id="email" v-model="userInput.email" />
+                        </div>
+                        <div class="container__content__form__register">
+                            <label for="password">Mot de passe</label>
+                            <input type="password" id="password" v-model="userInput.password" />
+                        </div>
+                        <div class="container__content__form__register">
+                            <label for="confirmPassword">Confirmation du mot de passe</label>
+                            <input type="password" id="confirmPassword" v-model="userInput.confirmPassword" />
+                        </div>
+                        <div class="container__content__form__register">
+                            <button>S'enregistrer</button>
+                        </div>
+                        <div class="container__content__form__message">
+                            Vous avez déjà un compte ? <span v-if="!hasAccount"
+                                @click="hasAccount = true">Connectez-vous</span>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
-        <div v-else-if="isConnected">
-            <Publication />
-        </div>
-
     </div>
-
+    <div v-else-if="isConnected">
+        <Publication />
+    </div>
 </template>
 <style scoped lang="scss">
 @import '../styles/Utils/keyframes';
@@ -131,12 +128,17 @@ let loginInput = reactive({
     display: flex;
     flex-direction: row;
     margin: 0;
+    height: 100vh;
+    overflow-x: hidden; 
 
     &__picture {
         img {
             z-index: -1;
+            object-fit: cover;
             position: absolute;
             left: 0;
+            width: 100%;
+            height: 100%;
         }
     }
 
@@ -161,9 +163,12 @@ let loginInput = reactive({
 
 
         &__header {
+            margin-top: 60px;
 
             &__title {
                 h1 {
+                    font-size: 30px;
+                    font-weight: bold;
                     -webkit-animation: focus-in-expand 2.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) 1s both;
                     animation: focus-in-expand 2.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) 1s both;
                 }

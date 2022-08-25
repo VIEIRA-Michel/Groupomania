@@ -2,12 +2,14 @@
 import { ref, watchEffect } from 'vue';
 import { useAuthStore } from '@/shared/stores/authStore';
 const newMessage = ref('');
+const numberOfMessages = ref(0);
+let msgDom: any = ref(document.getElementsByClassName('container-center__body'));
 const props = defineProps<{
     user: any,
     typing: any
 }>();
 
-
+console.log(props.user);
 function displaySender(message: any, index: number) {
     return (
         index === 0 ||
@@ -18,16 +20,27 @@ function displaySender(message: any, index: number) {
 function send() {
     emit('input', newMessage.value);
     newMessage.value = '';
+    setTimeout(() => {
+        msgDom.value[0].scrollTop = msgDom.value[0].scrollHeight;
+    }, 200);
 }
 
 
 watchEffect(() => {
     newMessage.value.length >= 1 ? emit('typing', true) : emit('typing', false);
+    console.log(props.user.hasNewMessages);
+    if (props.user.hasNewMessages) {
+        setTimeout(() => {
+            msgDom.value[0].scrollTop = msgDom.value[0].scrollHeight;
+        }, 200);
+        emit('read');
+    }
 })
 
 const emit = defineEmits<{
     (e: 'input', input: any): any;
     (e: 'typing', typing: any): any;
+    (e: 'read'): any;
 }>();
 
 </script>
@@ -60,13 +73,16 @@ const emit = defineEmits<{
         <div class="container-center__body__chat">
             <ul>
                 <li v-for="(message, index) in props.user.messages" :key="index"
-                    class="container-center__body__chat__item" v-bind:class="[message.from == useAuthStore().$state.user.user_id ? 'fromSelf' : 'fromUser']">
+                    class="container-center__body__chat__item"
+                    v-bind:class="[message.from == useAuthStore().$state.user.user_id ? 'fromSelf' : 'fromUser']">
                     <div v-if="displaySender(message, index)" class="container-center__body__chat__item__left">
-                        <img v-if="message.from == useAuthStore().$state.user.user_id" :src="useAuthStore().$state.user.picture_url" alt="avatar" />
-                        <img v-else :src="props.user.picture" alt="avatar" />
+                        <!-- <img v-if="message.from == useAuthStore().$state.user.user_id"
+                            :src="useAuthStore().$state.user.picture_url" alt="avatar" />
+                        <img v-else :src="props.user.picture" alt="avatar" /> -->
                     </div>
                     <div class="container-center__body__chat__item__right">
-                        <div class="container-center__body__chat__item__right__message" v-bind:class="[message.from == useAuthStore().$state.user.user_id ? 'fromSelf' : 'fromUser']">
+                        <div class="container-center__body__chat__item__right__message"
+                            v-bind:class="[message.from == useAuthStore().$state.user.user_id ? 'fromSelf' : 'fromUser']">
                             {{ message.message }}
                         </div>
                     </div>
@@ -89,6 +105,8 @@ const emit = defineEmits<{
     </div>
 </template>
 <style scoped lang="scss">
+@import '../styles/Utils/keyframes';
+
 .container-center {
     small {
         span {
@@ -103,6 +121,7 @@ const emit = defineEmits<{
             flex-direction: row;
             margin: auto;
             padding: 5px;
+            box-shadow: 0px 1px 8px -3px rgb(0 0 0 / 40%);
 
             &__left {
                 img {
@@ -171,11 +190,15 @@ const emit = defineEmits<{
         display: flex;
         flex-direction: column;
         justify-content: end;
+        overflow-y: scroll;
 
         &__chat {
+            height: 100%;
+
             ul {
                 padding: 10px;
             }
+
             &__item {
                 display: flex;
                 align-items: center;
@@ -202,15 +225,21 @@ const emit = defineEmits<{
                         color: white;
                         padding: 5px;
                         border-radius: 10px;
+                        -webkit-animation: slide-in-right-message 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+                        animation: slide-in-right-message 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
                     }
+
                     &__message.fromUser {
                         background-color: #DBDBDB;
                         color: black;
                         padding: 5px;
                         border-radius: 10px;
+                        -webkit-animation: slide-in-left-message 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+                        animation: slide-in-left-message 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
                     }
                 }
             }
+
             &__item.fromSelf {
                 display: flex;
                 flex-direction: row-reverse;
@@ -227,6 +256,7 @@ const emit = defineEmits<{
             justify-content: space-between;
             padding: 5px;
             border-top: 1px solid #DBDBDB;
+            border-radius: 0 0 5px 5px;
             background-color: #FFFFFF;
 
             input {

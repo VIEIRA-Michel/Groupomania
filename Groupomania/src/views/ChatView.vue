@@ -2,11 +2,12 @@
 import { computed, ref, onBeforeMount, onUnmounted } from 'vue';
 import NavigationBar from '../components/NavigationBar.vue';
 import userChat from '../components/userChat.vue';
+import ProfileChat from '../components/ProfileChat.vue';
+import MessageChat from "../components/MessageChat.vue";
 import { useAuthStore } from '../shared/stores/authStore';
 import { useFriendshipStore } from '../shared/stores/friendsStore';
 import { useChatStore } from '../shared/stores/chatStore';
 import socket from "../socket";
-import MessageChat from "../components/MessageChat.vue";
 
 useAuthStore().getMyInformations();
 useAuthStore().$state.isConnected == false ? logout() : "";
@@ -20,6 +21,9 @@ const friendsConnected = computed(() => useChatStore().$state.friendsConnected);
 const messages = computed(() => useChatStore().$state.messages);
 const friends = computed(() => useFriendshipStore().$state.friends);
 const selectedUser = ref<any>(null);
+const newUserSelected = ref<any>(null);
+const change = ref(false);
+
 
 function logout() {
     useAuthStore().logout();
@@ -31,8 +35,12 @@ function onSelectUser(utilisateur: any) {
         messages.value.forEach((message: any) => {
             message.from == utilisateur.user || message.to == utilisateur.user ? utilisateur.messages.push(message) : "";
         }) : "";
-    selectedUser.value = utilisateur;
     utilisateur.hasNewMessages = false;
+    change.value = true;
+    setTimeout(() => {
+        change.value = false;
+        selectedUser.value = utilisateur;
+    }, 500);
 }
 
 function onMessage(content: any) {
@@ -174,88 +182,68 @@ onUnmounted(() => {
 
 </script>
 <template>
-    <div>
-        <NavigationBar :user="user" :isConnected="isConnected" @logout="logout()" />
-    </div>
+    <NavigationBar :user="user" :isConnected="isConnected" @logout="logout()" />
     <div class="container">
-        <div class="container-left">
-            <div class="container-left__settings"></div>
+        <div :class="[selectedUser ? 'container-left active' : 'container-left']">
             <div class="container-left__list">
                 <userChat v-if="friendsConnected.length > 0" v-for="utilisateur in friendsConnected"
                     :key="utilisateur.userID" :user="utilisateur" :selected="selectedUser === utilisateur"
                     @select="onSelectUser(utilisateur)" />
                 <div v-else class="container-left__list__message">
-                    <p>Il n'y a aucun utilisateur en ligne pour le moment</p>
+                    <p>Aucun utilisateur en ligne actuellement</p>
                 </div>
             </div>
         </div>
-        <div class="container-center">
+        <div v-if="selectedUser != null"
+            :class="[change ? 'container-center-active' : 'container-center']">
             <MessageChat v-if="selectedUser != null" :user="selectedUser" :typing="typing" @input="onMessage"
-                @typing="isTyping" />
+                @typing="isTyping" @read="selectedUser.hasNewMessages = false"/>
         </div>
-        <div class="container-right">
-            <div class="container-right__profil">
-                <div class="container-right__profil__details">
-                    <div class="container-right__profil__details__avatar">
-                        <img src="https://media.lesechos.com/api/v1/images/view/5f3f5be68fe56f0be8160fab/1280x720/0603734518167-web-tete.jpg"
-                            alt="avatar" />
-                    </div>
-                    <div class="container-right__profil__details__name">
-                        <span>Elon Musk</span>
-                    </div>
-                    <div class="container-right__profil__details__status">
-                        <div class="container-right__profil__details__status__text">
-                            <p>" Je pense que les gens ordinaires peuvent choisir d’être extraordinaires. "</p>
-                        </div>
-                    </div>
-                    <div class="container-right__profil__details__informations">
-                        <div class="container-right__profil__details__informations__birthday">
-                            <div class="container-right__profil__details__informations__birthday__icon">
-                                <fa icon="fa-solid fa-birthday-cake" />
-                            </div>
-                            <div class="container-right__profil__details__informations__birthday__text">
-                                <span> 28 Juin</span>
-                            </div>
-                        </div>
-                        <div class="container-right__profil__details__informations__registered-since">
-                            <div class="container-right__profil__details__informations__registered-since__icon">
-                                <fa icon="fa-solid fa-pencil" />
-                            </div>
-                            <div class="container-right__profil__details__informations__registered-since__text">
-                                <span> Inscrit depuis le 10 août 2022 </span>
-                            </div>
-                        </div>
-                        <div class="container-right__profil__details__informations__email">
-                            <div class="container-right__profil__details__informations__email__icon">
-                                <fa icon="fa-solid fa-envelope" />
-                            </div>
-                            <div class="container-right__profil__details__informations__email__text">
-                                <span> elonmusk@spacex.com</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div v-if="selectedUser != null"
+            :class="[change ? 'container-right-active' : 'container-right']">
+            <ProfileChat v-if="selectedUser != null" :user="selectedUser" />
         </div>
     </div>
 </template>
 <style scoped lang="scss">
+@import '../styles/Utils/keyframes';
+
+* {
+    font-family: 'Lato', sans-serif;
+}
 .container {
-    width: 100%;
-    background: #FFFFFF;
+    width: 90%;
+    height: 89vh;
     display: flex;
     flex-direction: row;
+    margin: 60px auto auto auto;
+    justify-content: center;
+    transition: all 0.3s ease-in-out;
+
 
     .container-left {
         width: 30%;
         border-right: 1px solid #DBDBDB;
+        border: 1px solid #FD2D01;
+        border-radius: 5px;
+        margin-right: 10px;
+        background-color: #FFFFFF;
+        z-index: 2;
 
         &__list {
+            border-radius: 5px 5px 0 0;
+
             &__message {
                 text-align: center;
             }
         }
+
+        &.active {
+            -webkit-animation: slide-in-right 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+            animation: slide-in-right 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+        }
     }
+
 
     .container-center {
         width: 50%;
@@ -263,91 +251,48 @@ onUnmounted(() => {
         display: flex;
         flex-direction: column;
         justify-content: space-between;
+        border: 1px solid #FD2D01;
+        border-radius: 5px;
+        margin-right: 10px;
+        z-index: 1;
+        -webkit-animation: slide-in-left 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.3s both;
+        animation: slide-in-left 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.3s both;
+
+        &-active {
+            width: 50%;
+            background: #FFFFFF;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            border: 1px solid #FD2D01;
+            border-radius: 5px;
+            margin-right: 10px;
+            z-index: 1;
+            -webkit-animation: slide-out-right 0.3s cubic-bezier(0.550, 0.085, 0.680, 0.530) 0.3s both;
+            animation: slide-out-right 0.3s cubic-bezier(0.550, 0.085, 0.680, 0.530) 0.3s both;
+        }
     }
 
     .container-right {
+        background-color: #FFFFFF;
         display: flex;
         flex-direction: column;
         width: 20%;
         border-left: 1px solid #DBDBDB;
+        border: 1px solid #FD2D01;
+        border-radius: 5px;
+        -webkit-animation: slide-in-left 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.6s both;
+        animation: slide-in-left 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.6s both;
+        z-index: 0;
 
-        &__profil {
+        &-active {
             display: flex;
             flex-direction: column;
-
-            &__details {
-                width: 100%;
-                display: flex;
-                flex-direction: column;
-
-                &__avatar {
-                    display: flex;
-                    justify-content: center;
-                    margin-top: 10px;
-
-                    img {
-                        width: 45px;
-                        height: 45px;
-                        object-fit: cover;
-                        background-color: black;
-                        border-radius: 50px;
-                    }
-                }
-
-                &__name {
-                    font-weight: bold;
-                    display: flex;
-                    justify-content: center;
-                    font-size: 1.4em;
-                    margin-bottom: 10px;
-                }
-
-                &__status {
-                    &__text {
-                        p {
-                            text-align: center;
-                            font-size: 1em;
-                            font-style: italic;
-                            margin-bottom: 15px;
-                        }
-                    }
-                }
-
-                &__informations {
-                    &__birthday {
-                        display: flex;
-                        flex-direction: row;
-                        justify-content: center;
-                        margin-bottom: 15px;
-
-                        &__icon {}
-
-                        &__text {}
-                    }
-
-                    &__registered-since {
-                        display: flex;
-                        flex-direction: row;
-                        justify-content: center;
-                        margin-bottom: 15px;
-
-                        &__icon {}
-
-                        &__text {}
-                    }
-
-                    &__email {
-                        display: flex;
-                        flex-direction: row;
-                        justify-content: center;
-                        margin-bottom: 15px;
-
-                        &__icon {}
-
-                        &__text {}
-                    }
-                }
-            }
+            width: 20%;
+            border-radius: 5px;
+            z-index: 0;
+            -webkit-animation: slide-out-right 0.3s cubic-bezier(0.550, 0.085, 0.680, 0.530) both;
+            animation: slide-out-right 0.3s cubic-bezier(0.550, 0.085, 0.680, 0.530) both;
         }
     }
 }

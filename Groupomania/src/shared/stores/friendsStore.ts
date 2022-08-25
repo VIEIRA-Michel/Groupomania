@@ -183,31 +183,33 @@ export const useFriendshipStore = defineStore({
                     Authorization: `Bearer ${localStorage.getItem('token')}`
                 },
             }).then(response => {
-                let state = ref([]);
-                if (useFriendshipStore().$state.friends.length > 0) {
-                    response.data.results.map((item: any) => {
-                        useFriendshipStore().$state.friends.map((friend: any) => {
-                            friend.user_id == item.user_id ? item.isFriend = true : "";
+                if (response.data.results) {
+                    let state = ref([]);
+                    if (useFriendshipStore().$state.friends.length > 0) {
+                        response.data.results.map((item: any) => {
+                            useFriendshipStore().$state.friends.map((friend: any) => {
+                                friend.user_id == item.user_id ? item.isFriend = true : "";
+                            })
+                            useFriendshipStore().$state.invitSendedTo.map((invit: any) => {
+                                item.user_id == invit.id ? item.pending = true : "";
+                            })
+                            useAuthStore().$state.user.user_id !== item.user_id ? state.value.push(item) : "";
                         })
-                        useFriendshipStore().$state.invitSendedTo.map((invit: any) => {
-                            item.user_id == invit.id ? item.pending = true : "";
+                        useFriendshipStore().$patch({
+                            searchResults: state.value,
+                        });
+                    } else {
+                        response.data.results.map((item: any) => {
+                            useFriendshipStore().$state.invitSendedTo.map((invit: any) => {
+                                item.user_id == invit.id ? item.pending = true : "";
+                            })
+                            useAuthStore().$state.user.user_id !== item.user_id ? state.value.push(item) : "";
                         })
-                        useAuthStore().$state.user.user_id !== item.user_id ? state.value.push(item) : "";
-                    })
+                    };
                     useFriendshipStore().$patch({
                         searchResults: state.value,
                     });
-                } else {
-                    response.data.results.map((item: any) => {
-                        useFriendshipStore().$state.invitSendedTo.map((invit: any) => {
-                            item.user_id == invit.id ? item.pending = true : "";
-                        })
-                        useAuthStore().$state.user.user_id !== item.user_id ? state.value.push(item) : "";
-                    })
-                };
-                useFriendshipStore().$patch({
-                    searchResults: state.value,
-                });
+                }
             }).catch(error => {
                 error.response.status === 403 ? useAuthStore().logout() : "";
                 console.log(error);

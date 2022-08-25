@@ -1,14 +1,11 @@
+import { usePublicationsStore } from './publicationsStore';
 import { defineStore } from 'pinia';
 import axios from 'axios';
 import { ref } from 'vue';
-import type { Comment } from '../interfaces/comment.interface';
 import { useAuthStore } from '../stores/authStore';
 
 interface CommentState {
     isLoading: boolean;
-    numberOfPages: number;
-    comments: Comment[];
-    numOfResults: number;
     limit: number;
     from: number
 }
@@ -16,15 +13,11 @@ interface CommentState {
 export const useCommentsStore = defineStore({
     id: "comment",
     state: (): CommentState => ({
-        comments: [] as Comment[],
         isLoading: true,
-        numberOfPages: 1,
-        numOfResults: 0,
         limit: 5,
         from: 0
     }),
     getters: {
-        commentsList: (state: CommentState) => state.comments,
     },
     actions: {
         getAllComments: (id: number, limit: number, from: number) => {
@@ -36,20 +29,14 @@ export const useCommentsStore = defineStore({
                     authorization: `Bearer ${localStorage.getItem('token')}`
                 }
             }).then(response => {
-                let com = ref();
                 for (let comment of response.data.comments) {
-                    com.value = comment;
-                    useCommentsStore().$state.comments ?
-                        useCommentsStore().$patch({
-                            comments: [...useCommentsStore().$state.comments, com.value],
-                            numOfResults: response.data.numOfResults,
-                        }) :
-                        useCommentsStore().$patch({
-                            comments: [com.value],
-                            numOfResults: response.data.numOfResults,
-                        });
+                    usePublicationsStore().$state.publications.map((publication) => {
+                        if (publication.publication_id === comment.publication_id) {
+                            publication.comments!.push(comment);
+                            publication.numberOfComments = response.data.numOfResults;
+                        }
+                    })
                 }
-
             }).catch(error => {
                 error.response.status === 403 ? useAuthStore().logout() : "";
                 console.log(error);
@@ -64,11 +51,15 @@ export const useCommentsStore = defineStore({
                     authorization: `Bearer ${localStorage.getItem('token')}`
                 }
             }).then(response => {
-                let updateComments = useCommentsStore().$state.comments.filter(item => {
-                    return item.comment_id !== id;
-                });
-                useCommentsStore().$patch({
-                    comments: updateComments
+                let state = ref<any>();
+                state.value = usePublicationsStore().$state.publications.map((publication: any) => {
+                    if (publication.publication_id == publication_id) {
+                        if (publication.comments!.length > 0) {
+                            publication.numberOfComments = publication.numberOfComments! - 1;
+                            publication.comments!.splice(publication.comments!.findIndex((item: any) => item.comment_id === id), 1);
+                        }
+                    }
+                    return publication;
                 });
             }).catch(error => {
                 error.response.status === 403 ? useAuthStore().logout() : "";
@@ -105,13 +96,12 @@ export const useCommentsStore = defineStore({
                     role_id: response.data.data[0].role_id,
                     user_id: response.data.data[0].user_id,
                 });
-                !useCommentsStore().$state.comments ?
-                    useCommentsStore().$patch({
-                        comments: [obj.value]
-                    }) :
-                    useCommentsStore().$patch({
-                        comments: [...useCommentsStore().$state.comments, obj.value]
-                    });
+                usePublicationsStore().$state.publications.map((publication) => {
+                    if (publication.publication_id === publication_id) {
+                        publication.comments!.push(obj.value);
+                        publication.numberOfComments = publication.numberOfComments! + 1;
+                    }
+                })
             }).catch(error => {
                 error.response.status === 403 ? useAuthStore().logout() : "";
                 console.log(error);
