@@ -129,7 +129,7 @@ let loginInput = reactive({
     flex-direction: row;
     margin: 0;
     height: 100vh;
-    overflow-x: hidden; 
+    overflow-x: hidden;
 
     &__picture {
         img {
@@ -156,6 +156,7 @@ let loginInput = reactive({
         z-index: 1;
         width: 100%;
         height: 100%;
+        justify-content: center;
 
         span {
             color: #FD2D01;
@@ -163,7 +164,10 @@ let loginInput = reactive({
 
 
         &__header {
-            margin-top: 60px;
+            @media only screen and (min-width: 769px) {
+                position: absolute;
+                top: 80px;
+            }
 
             &__title {
                 h1 {
@@ -191,6 +195,11 @@ let loginInput = reactive({
             padding: 20px;
             -webkit-animation: slide-out-blurred-bottom 2.5s cubic-bezier(0.755, 0.050, 0.855, 0.060) 2.5s reverse both;
             animation: slide-out-blurred-bottom 2.5s cubic-bezier(0.755, 0.050, 0.855, 0.060) 2.5s reverse both;
+
+            @media only screen and (min-width: 769px) {
+                position: relative;
+                top: 20px;
+            }
 
             &__form {
                 border-radius: 5px;

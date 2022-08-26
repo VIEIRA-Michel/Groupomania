@@ -29,7 +29,7 @@ function previewPicture(e: any) {
 }
 
 function updateProfile(userEdit?: any) {
-    userEdit.password != userEdit.confirmPassword ? alert('Les mots de passe ne correspondent pas') : userEdit.email != userEdit.confirmEmail ? alert('Les emails ne correspondent pas') : useAuthStore().updateProfile(update);
+    userEdit.password != userEdit.confirmPassword ? alert('Les mots de passe ne correspondent pas') : userEdit.email != userEdit.confirmEmail ? alert('Les emails ne correspondent pas') : useAuthStore().updateProfile(userEdit);
 }
 </script>
 <template>
@@ -80,6 +80,7 @@ function updateProfile(userEdit?: any) {
 </template>
 <style scoped lang="scss">
 @import '../styles/Components/buttons';
+@import '../styles/Utils/keyframes';
 
 
 * {
@@ -90,6 +91,8 @@ function updateProfile(userEdit?: any) {
     display: flex;
     flex-direction: column;
     margin-top: 20px;
+    -webkit-animation: slide-in-bottom 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.2s both;
+    animation: slide-in-bottom 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.2s both;
 
     .edit-profil {
         display: flex;

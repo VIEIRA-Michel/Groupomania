@@ -311,37 +311,3 @@ exports.me = (req, res, next) => {
         })
 }
 
-exports.checkSession = (req, res, next) => {
-    let sql = `SELECT session_id FROM users WHERE id = ?;`;
-    connection.query(
-        sql, [req.user.userId], function (err, results) {
-            if (err) {
-                console.log(err)
-                res.status(500).json({ message: 'Erreur lors de la récupération de la session' });
-            }
-            res.status(200).json({ data: results[0] })
-        }
-    )
-}
-
-exports.initializeSession = (req, res, next) => {
-    let sql = `UPDATE users SET session_id = ? WHERE id = ?;`;
-    connection.query(
-        sql, [req.body.session_id, req.user.userId], function (err, results) {
-            if (err) {
-                console.log(err)
-                res.status(500).json({ message: 'Erreur lors de la récupération de la session' });
-            }
-            sql = `SELECT id, session_id FROM users WHERE id = ?;`;
-            connection.query(
-                sql, [req.user.userId], function (err, results) {
-                    if (err) {
-                        console.log(err)
-                        res.status(500).json({ message: 'Erreur lors de la récupération de la session' });
-                    }
-                    res.status(200).json({ data: results[0] })
-                }
-            )
-        }
-    )
-}

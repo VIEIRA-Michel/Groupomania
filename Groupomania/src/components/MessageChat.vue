@@ -1,15 +1,17 @@
 <script setup lang="ts">
-import { ref, watchEffect } from 'vue';
+import { ref, watchEffect, computed } from 'vue';
 import { useAuthStore } from '@/shared/stores/authStore';
+import { useOtherStore } from '@/shared/stores/otherStore';
+
+const display = computed(() => useOtherStore().$state.information)
+
 const newMessage = ref('');
-const numberOfMessages = ref(0);
 let msgDom: any = ref(document.getElementsByClassName('container-center__body'));
 const props = defineProps<{
     user: any,
     typing: any
 }>();
 
-console.log(props.user);
 function displaySender(message: any, index: number) {
     return (
         index === 0 ||
@@ -41,11 +43,17 @@ const emit = defineEmits<{
     (e: 'input', input: any): any;
     (e: 'typing', typing: any): any;
     (e: 'read'): any;
+    (e: 'return'): any
 }>();
 
 </script>
 <template>
     <div class="container-center__top">
+        <div class="container-center__top__previously" @click="emit('return')">
+            <div class="container-center__top__previously__button">
+                <fa icon="fa-solid fa-chevron-left" />
+            </div>
+        </div>
         <div class="container-center__top__details">
             <div class="container-center__top__details__left">
                 <img :src="props.user.picture" alt="avatar" />
@@ -66,6 +74,19 @@ const emit = defineEmits<{
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+        <div class="container-center__top__information" @click="useOtherStore().toggleInformation">
+            <div class="container-center__top__information__button">
+                <fa icon="fa-solid fa-circle-info" />
+            </div>
+        </div>
+        <div v-if="display" class="container-center__top__user">
+            <div class="container-center__top__user__description">
+                <div class="container-center__top__user__description__birthday"></div>
+                <div class="container-center__top__user__description__createdat"></div>
+                <div class="container-center__top__user__description__friendsince"></div>
+                <div class="container-center__top__user__description__friendlist"></div>
             </div>
         </div>
     </div>
@@ -116,12 +137,23 @@ const emit = defineEmits<{
     }
 
     &__top {
+        display: flex;
+        margin: auto;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        box-shadow: 0px 1px 8px -3px rgb(0 0 0 / 40%);
+        flex-wrap: wrap;
+
+        &__previously {
+            margin-left: 15px;
+        }
+
         &__details {
+            // margin-left: 50px;
             display: flex;
-            flex-direction: row;
-            margin: auto;
-            padding: 5px;
-            box-shadow: 0px 1px 8px -3px rgb(0 0 0 / 40%);
+            align-items: center;
+            justify-content: space-around;
 
             &__left {
                 img {
@@ -129,7 +161,7 @@ const emit = defineEmits<{
                     height: 45px;
                     border-radius: 50px;
                     object-fit: cover;
-                    background-color: black;
+                    margin: 5px;
                 }
             }
 
@@ -183,7 +215,20 @@ const emit = defineEmits<{
                 }
             }
         }
+
+        &__information {
+            margin-right: 15px;
+        }
+
+        &__user {
+            background-color: #FFFFFF;
+            -webkit-animation: slide-in-top-information 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+            animation: slide-in-top-information 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+
+            &__description {}
+        }
     }
+
 
     &__body {
         height: 100%;

@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-
+import { ref, computed } from 'vue';
+import { useOtherStore } from '@/shared/stores/otherStore';
+const burgerMenu = computed(() => useOtherStore().$state.burgerMenu);
 const open = ref(false);
 const props = defineProps<{
     user: {
@@ -14,7 +15,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-    (e: 'logout'): any;
+    (e: 'logout'): any
 }>();
 </script>
 <template>
@@ -45,21 +46,64 @@ const emit = defineEmits<{
                     <fa icon="circle-user" />
                 </div>
             </router-link>
-                <a>
-                    <div class="menu__navigate">
-                        <fa v-if="props.isConnected" @click="emit('logout')" icon="fa-right-from-bracket" />
-                    </div>
-                </a>
+            <a>
+                <div class="menu__navigate">
+                    <fa v-if="props.isConnected" @click="emit('logout')" icon="fa-right-from-bracket" />
+                </div>
+            </a>
         </div>
-        <div class="burger">
-            <button type="button" @click="open = !open" className="burger__button">
+        <div v-if="props.isConnected" class="burger">
+            <button type="button" @click="useOtherStore().toggleBurgerMenu" className="burger__button">
                 <fa icon="fa-solid fa-bars" />
             </button>
         </div>
-
+        <div :class="[burgerMenu ? 'burger__menu' : 'burger__menu hidden']">
+            <div class="burger__menu__item" @click="useOtherStore().toggleBurgerMenu">
+                <router-link to="/">
+                    <div class="burger__menu__item__navigate">
+                        <fa icon="home" />
+                        <span>Accueil</span>
+                    </div>
+                </router-link>
+            </div>
+            <div class="burger__menu__item" @click="useOtherStore().toggleBurgerMenu">
+                <router-link to="/friends">
+                    <div class="burger__menu__item__navigate">
+                        <fa icon="user-group" />
+                        <span>Amis</span>
+                    </div>
+                </router-link>
+            </div>
+            <div class="burger__menu__item" @click="useOtherStore().toggleBurgerMenu">
+                <router-link to="/chat">
+                    <div class="burger__menu__item__navigate">
+                        <fa icon="fa-solid fa-comments" />
+                        <span>Messagerie</span>
+                    </div>
+                </router-link>
+            </div>
+            <div class="burger__menu__item" @click="useOtherStore().toggleBurgerMenu">
+                <router-link to="/profil">
+                    <div class="burger__menu__item__navigate">
+                        <fa icon="circle-user" />
+                        <span>Profil</span>
+                    </div>
+                </router-link>
+            </div>
+            <div class="burger__menu__item" @click="useOtherStore().toggleBurgerMenu">
+                <a @click="emit('logout')">
+                    <div class="burger__menu__item__navigate">
+                        <fa icon="fa-right-from-bracket" />
+                        <span>Se déconnecter</span>
+                    </div>
+                </a>
+            </div>
+        </div>
     </header>
 </template>
 <style scoped lang="scss">
+@import '../styles/Utils/keyframes';
+
 header {
     display: flex;
     background-color: #FFF;
@@ -106,6 +150,8 @@ header {
     }
 
     .burger {
+        z-index: 10;
+
         @media only screen and (min-width: 769px) {
             display: none;
         }
@@ -126,7 +172,54 @@ header {
     }
 }
 
+.burger__menu {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    font-size: 30px;
+    align-items: center;
+    background-color: #FFF;
+    width: 100%;
+    height: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 9;
+    transform: translateX(-100%);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    -webkit-animation: slide-in-top 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+    animation: slide-in-top 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
 
+    @media only screen and (max-width: 768px) {
+        transform: translateX(0);
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+    }
+
+    &__item {
+        cursor: pointer;
+        margin-top: 20px;
+
+        a {
+            text-decoration: none;
+            color: #FD2D01;
+        }
+
+        &__navigate {
+            svg {
+                margin-right: 10px;
+            }
+        }
+    }
+
+    &.hidden {
+        -webkit-animation: slide-out-top 0.3s cubic-bezier(0.550, 0.085, 0.680, 0.530) both;
+        animation: slide-out-top 0.3s cubic-bezier(0.550, 0.085, 0.680, 0.530) both;
+    }
+}
 
 .logout {
     background: #FD2D01;
@@ -136,6 +229,7 @@ header {
 }
 
 .logo {
+    z-index: 10;
     display: flex;
     align-items: center;
 }

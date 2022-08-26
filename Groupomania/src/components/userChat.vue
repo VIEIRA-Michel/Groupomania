@@ -40,7 +40,6 @@ const emit = defineEmits<{
             padding: 5px;
             align-items: center;
             justify-content: start;
-            background-color: #FFFFFF;
             transition: all 0.4s;
             cursor: pointer;
 
@@ -55,9 +54,6 @@ const emit = defineEmits<{
             &:hover {
                 background-color: #F5F5F5;
             }
-            &:focus {
-                border: 1px solid #00BFFF;
-            }
 
             &__left {
                 img {
@@ -65,7 +61,6 @@ const emit = defineEmits<{
                     height: 45px;
                     border-radius: 50px;
                     object-fit: cover;
-                    background-color: black;
                 }
 
                 margin-right: 10px;

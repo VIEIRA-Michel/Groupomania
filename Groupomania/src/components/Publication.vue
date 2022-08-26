@@ -224,8 +224,8 @@ watchEffect(() => {
     backdrop-filter: blur(5px);
     background-color: #FFFFFF;
     border: 1px solid #FD2D01;
-    -webkit-animation: slide-in-top 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
-    animation: slide-in-top 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+    -webkit-animation: slide-in-top 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.3s both;
+    animation: slide-in-top 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.3s both;
 
     @media (max-width: 768px) {
         width: 90%;
@@ -313,7 +313,6 @@ watchEffect(() => {
     width: 470px;
     border-radius: 5px;
     margin: 10px auto auto auto;
-    backdrop-filter: blur(5px);
     background-color: #FFFFFF;
     border: 1px solid #FD2D01;
 
@@ -544,6 +543,8 @@ watchEffect(() => {
         flex-direction: row;
         justify-content: center;
         margin-top: 3rem;
+        -webkit-animation: slide-in-blurred-bottom 0.6s cubic-bezier(0.230, 1.000, 0.320, 1.000) 0.3s both;
+        animation: slide-in-blurred-bottom 0.6s cubic-bezier(0.230, 1.000, 0.320, 1.000) 0.3s both;
 
         :nth-child(1) {
             margin-right: 15px;

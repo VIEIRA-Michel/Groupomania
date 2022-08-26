@@ -2,7 +2,6 @@
 import { computed, ref, onBeforeMount, onUnmounted } from 'vue';
 import NavigationBar from '../components/NavigationBar.vue';
 import userChat from '../components/userChat.vue';
-import ProfileChat from '../components/ProfileChat.vue';
 import MessageChat from "../components/MessageChat.vue";
 import { useAuthStore } from '../shared/stores/authStore';
 import { useFriendshipStore } from '../shared/stores/friendsStore';
@@ -21,9 +20,7 @@ const friendsConnected = computed(() => useChatStore().$state.friendsConnected);
 const messages = computed(() => useChatStore().$state.messages);
 const friends = computed(() => useFriendshipStore().$state.friends);
 const selectedUser = ref<any>(null);
-const newUserSelected = ref<any>(null);
 const change = ref(false);
-
 
 function logout() {
     useAuthStore().logout();
@@ -40,8 +37,12 @@ function onSelectUser(utilisateur: any) {
     setTimeout(() => {
         change.value = false;
         selectedUser.value = utilisateur;
-    }, 500);
+    }, 200);
 }
+function unselect() {
+    selectedUser.value = null;
+}
+
 
 function onMessage(content: any) {
     if (selectedUser.value) {
@@ -182,7 +183,7 @@ onUnmounted(() => {
 
 </script>
 <template>
-    <NavigationBar :user="user" :isConnected="isConnected" @logout="logout()" />
+    <NavigationBar :user="user" :isConnected="isConnected" @logout="logout" />
     <div class="container">
         <div :class="[selectedUser ? 'container-left active' : 'container-left']">
             <div class="container-left__list">
@@ -194,14 +195,9 @@ onUnmounted(() => {
                 </div>
             </div>
         </div>
-        <div v-if="selectedUser != null"
-            :class="[change ? 'container-center-active' : 'container-center']">
+        <div v-if="selectedUser != null" :class="[change ? 'container-center active' : 'container-center']">
             <MessageChat v-if="selectedUser != null" :user="selectedUser" :typing="typing" @input="onMessage"
-                @typing="isTyping" @read="selectedUser.hasNewMessages = false"/>
-        </div>
-        <div v-if="selectedUser != null"
-            :class="[change ? 'container-right-active' : 'container-right']">
-            <ProfileChat v-if="selectedUser != null" :user="selectedUser" />
+                @typing="isTyping" @read="selectedUser.hasNewMessages = false" @return="unselect" />
         </div>
     </div>
 </template>
@@ -211,6 +207,7 @@ onUnmounted(() => {
 * {
     font-family: 'Lato', sans-serif;
 }
+
 .container {
     width: 90%;
     height: 89vh;
@@ -219,6 +216,10 @@ onUnmounted(() => {
     margin: 60px auto auto auto;
     justify-content: center;
     transition: all 0.3s ease-in-out;
+
+    @media only screen and (max-width: 768px) {
+        width: 100%;
+    }
 
 
     .container-left {
@@ -229,6 +230,8 @@ onUnmounted(() => {
         margin-right: 10px;
         background-color: #FFFFFF;
         z-index: 2;
+        -webkit-animation: slide-in-left 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+        animation: slide-in-left 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
 
         &__list {
             border-radius: 5px 5px 0 0;
@@ -236,11 +239,33 @@ onUnmounted(() => {
             &__message {
                 text-align: center;
             }
+
+            @media only screen and (max-width: 768px) {
+                width: 100%;
+            }
+
+            &__item {
+                @media only screen and (max-width: 768px) {
+                    display: flex;
+                    justify-content: center;
+                }
+            }
         }
 
         &.active {
             -webkit-animation: slide-in-right 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
             animation: slide-in-right 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+
+            @media only screen and (max-width: 768px) {
+                display: none;
+            }
+
+        }
+
+        @media only screen and (max-width: 768px) {
+            z-index: 0;
+            margin-right: 0;
+            width: 90%;
         }
     }
 
@@ -258,7 +283,15 @@ onUnmounted(() => {
         -webkit-animation: slide-in-left 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.3s both;
         animation: slide-in-left 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.3s both;
 
-        &-active {
+        @media only screen and (max-width: 768px) {
+            width: 90%;
+            margin-right: 0;
+            z-index: 0;
+            -webkit-animation: slide-in-left 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+            animation: slide-in-left 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+        }
+
+        &.active {
             width: 50%;
             background: #FFFFFF;
             display: flex;
@@ -268,29 +301,6 @@ onUnmounted(() => {
             border-radius: 5px;
             margin-right: 10px;
             z-index: 1;
-            -webkit-animation: slide-out-right 0.3s cubic-bezier(0.550, 0.085, 0.680, 0.530) 0.3s both;
-            animation: slide-out-right 0.3s cubic-bezier(0.550, 0.085, 0.680, 0.530) 0.3s both;
-        }
-    }
-
-    .container-right {
-        background-color: #FFFFFF;
-        display: flex;
-        flex-direction: column;
-        width: 20%;
-        border-left: 1px solid #DBDBDB;
-        border: 1px solid #FD2D01;
-        border-radius: 5px;
-        -webkit-animation: slide-in-left 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.6s both;
-        animation: slide-in-left 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.6s both;
-        z-index: 0;
-
-        &-active {
-            display: flex;
-            flex-direction: column;
-            width: 20%;
-            border-radius: 5px;
-            z-index: 0;
             -webkit-animation: slide-out-right 0.3s cubic-bezier(0.550, 0.085, 0.680, 0.530) both;
             animation: slide-out-right 0.3s cubic-bezier(0.550, 0.085, 0.680, 0.530) both;
         }

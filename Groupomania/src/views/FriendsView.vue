@@ -228,8 +228,8 @@ function cancelRequest(user_id: number) {
         width: 70%;
         margin: 10px auto 0px auto;
         border-radius: 5px;
-        -webkit-animation: slide-in-top 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
-        animation: slide-in-top 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+        -webkit-animation: slide-in-top 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.3s both;
+        animation: slide-in-top 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.3s both;
 
         &__title {
             text-align: center;
@@ -339,8 +339,8 @@ function cancelRequest(user_id: number) {
         width: 70%;
         margin: 10px auto 0px auto;
         border-radius: 5px;
-        -webkit-animation: slide-in-bottom 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.3s both;
-        animation: slide-in-bottom 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.3s both;
+        -webkit-animation: slide-in-bottom 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.6s both;
+        animation: slide-in-bottom 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.6s both;
 
         &__title {
             margin-top: 20px;
@@ -450,8 +450,8 @@ function cancelRequest(user_id: number) {
         width: 70%;
         margin: 10px auto 0px auto;
         border-radius: 5px;
-        	-webkit-animation: slide-in-bottom 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.6s both;
-	        animation: slide-in-bottom 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.6s both;
+        	-webkit-animation: slide-in-bottom 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.9s both;
+	        animation: slide-in-bottom 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.9s both;
 
         &__title {
             text-align: center;
