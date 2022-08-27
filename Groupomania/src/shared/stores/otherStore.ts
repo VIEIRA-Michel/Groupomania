@@ -19,11 +19,5 @@ export const useOtherStore = defineStore({
             })
             console.log(useOtherStore().$state.burgerMenu);
         },
-        toggleInformation: (): void => {
-            useOtherStore().$patch({
-                information: !useOtherStore().$state.information
-            })
-            console.log(useOtherStore().$state.information);
-        }
     }
 });

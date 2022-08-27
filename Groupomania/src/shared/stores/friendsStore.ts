@@ -12,6 +12,7 @@ interface FriendshipState {
     numberOfPages: number;
     searchResults: any[];
     invitSendedTo: any[];
+    friendsOfUser: any[]
 }
 
 export const useFriendshipStore = defineStore({
@@ -24,6 +25,7 @@ export const useFriendshipStore = defineStore({
         numberOfPages: 1,
         searchResults: [],
         invitSendedTo: [],
+        friendsOfUser: []
     }),
     getters: {
         friendsList: (state: FriendshipState) => state.friends,
@@ -57,23 +59,27 @@ export const useFriendshipStore = defineStore({
                 console.log(error);
             })
         },
-        getAllFriends: () => {
+        getAllFriends: (id?: number) => {
             return new Promise((resolve, reject) => {
+                let BASE_URL = "";
+                id ? BASE_URL = `http://localhost:3000/api/friends/${id}` : BASE_URL = 'http://localhost:3000/api/friends/';
                 axios({
                     method: 'get',
-                    url: 'http://localhost:3000/api/friends/',
+                    url: BASE_URL,
                     headers: {
                         Authorization: `Bearer ${localStorage.getItem('token')}`
                     },
                 }).then(response => {
+                    let userToCompare = 0;
                     let newFriend = ref({
                         user_id: 0,
                         picture_url: '',
                         firstname: '',
                         lastname: '',
                     });
+                    id ? userToCompare = id : userToCompare = useAuthStore().$state.user.user_id;
                     response.data.results.map((item: any) => {
-                        if (useAuthStore().$state.user.user_id == item.sender_user_id) {
+                        if (userToCompare == item.sender_user_id) {
                             newFriend.value = {
                                 user_id: item.recipient_user_id,
                                 picture_url: item.recipient_picture_url,
@@ -88,10 +94,15 @@ export const useFriendshipStore = defineStore({
                                 lastname: item.sender_lastname,
                             };
                         }
-                        useFriendshipStore().$patch((state: FriendshipState) => {
-                            state.friends.push(newFriend.value);
-                            state.isLoading = false;
-                        });
+                        id ?
+                            useFriendshipStore().$patch((state: FriendshipState) => {
+                                state.friendsOfUser.push(newFriend.value);
+                                state.isLoading = false;
+                            }) :
+                            useFriendshipStore().$patch((state: FriendshipState) => {
+                                state.friends.push(newFriend.value);
+                                state.isLoading = false;
+                            });
                     })
                     resolve(response);
                 }).catch(error => {

@@ -280,8 +280,7 @@ exports.disabledProfil = (req, res, next) => {
             if (err) {
                 console.log(err)
                 res.status(500).json({ message: 'Erreur lors de la désactivation du profil' });
-            }
-            if (!err) {
+            } else {
                 if (req.body.disabled === true) {
                     console.log('le resultat', results);
                     res.status(200).json({ message: 'Profil désactiver ! ' })
@@ -297,17 +296,19 @@ exports.me = (req, res, next) => {
     let sql = `SELECT id, picture_url, lastname, firstname, email, birthday, session_id, userID FROM users WHERE id = ?;`;
     connection.query(
         sql, [req.user.userId], function (err, results) {
-            if (err) throw err;
-            // console.log(results);
-            res.status(200).json({
-                user_id: results[0].id,
-                picture_url: results[0].picture_url,
-                lastname: results[0].lastname,
-                firstname: results[0].firstname,
-                email: results[0].email,
-                session_id: results[0].session_id,
-                userID: results[0].userID,
-            })
+            if (err) {
+                console.log(err)
+                res.status(500).json({ message: 'Erreur lors de la récupération du profil' });
+            } else {
+                res.status(200).json({
+                    user_id: results[0].id,
+                    picture_url: results[0].picture_url,
+                    lastname: results[0].lastname,
+                    firstname: results[0].firstname,
+                    email: results[0].email,
+                    session_id: results[0].session_id,
+                    userID: results[0].userID,
+                })
+            };
         })
-}
-
+};

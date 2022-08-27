@@ -53,7 +53,7 @@ export const usePublicationsStore = defineStore({
             };
         },
         getAllPublications: (page?: number) => {
-            let BASE_URL = ""
+            let BASE_URL = "";
             if (page) {
                 BASE_URL = `http://localhost:3000/api/publications/?page=${page}`;
             } else {

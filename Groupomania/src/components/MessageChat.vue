@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { ref, watchEffect, computed } from 'vue';
 import { useAuthStore } from '@/shared/stores/authStore';
-import { useOtherStore } from '@/shared/stores/otherStore';
+import { useFriendshipStore } from '@/shared/stores/friendsStore';
 
-const display = computed(() => useOtherStore().$state.information)
+const display = ref(false);
+const allow = ref(false);
+const friendsOfUser = computed(() => useFriendshipStore().$state.friendsOfUser);
 
 const newMessage = ref('');
 let msgDom: any = ref(document.getElementsByClassName('container-center__body'));
@@ -19,6 +21,20 @@ function displaySender(message: any, index: number) {
         props.user.messages[index].from
     );
 };
+
+function displayInformation() {
+    allow.value = !allow.value;
+    if (allow.value == true) {
+        useFriendshipStore().getAllFriends(props.user.user).then((response) => {
+            display.value = true;
+        })
+    } else {
+        useFriendshipStore().$patch((state) => {
+            state.friendsOfUser = []
+        })
+        display.value = false;
+    }
+}
 function send() {
     emit('input', newMessage.value);
     newMessage.value = '';
@@ -76,7 +92,7 @@ const emit = defineEmits<{
                 </div>
             </div>
         </div>
-        <div class="container-center__top__information" @click="useOtherStore().toggleInformation">
+        <div class="container-center__top__information" @click="displayInformation">
             <div class="container-center__top__information__button">
                 <fa icon="fa-solid fa-circle-info" />
             </div>
@@ -86,7 +102,32 @@ const emit = defineEmits<{
                 <div class="container-center__top__user__description__birthday"></div>
                 <div class="container-center__top__user__description__createdat"></div>
                 <div class="container-center__top__user__description__friendsince"></div>
-                <div class="container-center__top__user__description__friendlist"></div>
+                <div class="container-center__top__user__description__friendlist">
+                    <div class="friends-list">
+                        <div class="friends-list__title">
+                            <div class="friends-list__title__text">
+                                Amis ({{ friendsOfUser.length }})
+                            </div>
+                        </div>
+                        <div v-if="friendsOfUser.length > 0" class="friends-list__list">
+                            <div v-for="friend in friendsOfUser" class="friends-list__list__item">
+                                <div class="friends-list__list__item__avatar">
+                                    <img :src="friend.picture_url" alt="avatar-1">
+                                </div>
+                                <div class="friends-list__list__item__name">
+                                    <div class="friends-list__list__item__name__text">
+                                        <div class="friends-list__list__item__name__text__firstname">
+                                            <span>{{ friend.firstname }}</span>
+                                        </div>
+                                        <div class="friends-list__list__item__name__text__lastname">
+                                            <span>{{ friend.lastname }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -225,7 +266,120 @@ const emit = defineEmits<{
             -webkit-animation: slide-in-top-information 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
             animation: slide-in-top-information 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
 
-            &__description {}
+            &__description {
+                &__friendlist {
+                    .friends-list {
+                        background: #FFFFFF;
+                        width: 80%;
+                        margin: 10px auto 0px auto;
+                        border-radius: 5px;
+                        -webkit-animation: slide-in-bottom 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.9s both;
+                        animation: slide-in-bottom 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.9s both;
+
+                        &__title {
+                            text-align: center;
+                            margin-top: 20px;
+                            font-weight: 700;
+                        }
+
+                        &__list {
+                            display: flex;
+                            flex-direction: row;
+                            flex-wrap: wrap;
+                            margin: auto;
+                            width: 70%;
+                            justify-content: space-between;
+
+                            @media (max-width: 768px) {
+                                width: 100%;
+                            }
+
+                            &__item {
+
+                                margin: 10px auto;
+                                width: 90px;
+                                padding: 15px;
+                                background: linear-gradient(180deg, #FFD7D7, transparent);
+                                border: 1px solid #FD2D01;
+                                border-radius: 5px;
+
+
+                                &__button {
+                                    display: flex;
+                                    flex-direction: row;
+                                    justify-content: space-between;
+
+                                    button {
+                                        background-color: #ff7a7a;
+                                        font-size: 1rem;
+                                        width: 100%;
+                                        height: 30px;
+                                        font-weight: bold;
+                                        cursor: pointer;
+                                        border: 1px solid #DBDBDB;
+                                        padding: 5px 10px;
+                                        border-radius: 5px;
+                                        transition: all 0.3s ease-in-out;
+
+                                    }
+
+                                    .message {
+                                        background-color: #fffa7a;
+                                    }
+
+                                }
+
+                                &__avatar {
+                                    display: flex;
+                                    justify-content: center;
+
+                                    img {
+                                        width: 50px;
+                                        height: 50px;
+                                        object-fit: cover;
+                                    }
+                                }
+
+                                &__name {
+                                    &__text {
+                                        margin-bottom: 5px;
+
+                                        &__firstname {
+                                            display: flex;
+                                            justify-content: center;
+
+                                            span {
+                                                font-size: 20px;
+                                                font-weight: bold;
+                                            }
+                                        }
+
+                                        &__lastname {
+                                            display: flex;
+                                            justify-content: center;
+
+                                            span {
+
+                                                font-size: 20px;
+                                                font-weight: bold;
+                                            }
+                                        }
+                                    }
+                                }
+
+
+                            }
+                        }
+
+                        &__empty-friends {
+                            display: flex;
+                            justify-content: center;
+                            margin-bottom: 20px;
+                        }
+                    }
+
+                }
+            }
         }
     }
 
