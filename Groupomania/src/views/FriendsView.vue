@@ -17,9 +17,12 @@ const usersFound = computed(() => useFriendshipStore().$state.searchResults);
 const search = ref('');
 let open = ref(false);
 let modalRequest = ref(false);
+let done = ref(false);
 
 useFriendshipStore().getRequests();
-useFriendshipStore().getAllFriends();
+useFriendshipStore().getAllFriends().then((response) => {
+    done.value = true;
+});
 
 function logout() {
     useAuthStore().logout();
@@ -31,12 +34,12 @@ function removeFriend(user_id: number) {
     useFriendshipStore().removeFriend(user_id);
 }
 
-function searchUser(search: string) {
+function searchUser() {
     useFriendshipStore().$patch({
         isLoading: true,
     });
     useFriendshipStore().checkRequestsSended();
-    useFriendshipStore().searchUser(search);
+    useFriendshipStore().searchUser(search.value);
 }
 
 function cancelRequest(user_id: number) {
@@ -47,11 +50,11 @@ function cancelRequest(user_id: number) {
 </script>
 <template>
     <NavigationBar :user="user" :isConnected="isConnected" @logout="logout()" />
-    <div v-if="isConnected" class="container">
+    <div v-if="isConnected && done" class="container">
         <div class="search-user">
             <div class="search-user__title">Rechercher un utilisateur</div>
             <div class="search-user__input">
-                <input type="text" v-model="search" @keyup.enter="searchUser(search)" />
+                <input type="text" v-model="search" @keyup.enter="searchUser" />
             </div>
             <div v-if="usersFound" class="search-user__results">
                 <div class="search-user__results__list">

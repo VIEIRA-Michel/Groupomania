@@ -291,7 +291,6 @@ exports.disabledProfil = (req, res, next) => {
     )
 }
 
-
 exports.me = (req, res, next) => {
     let sql = `SELECT id, picture_url, lastname, firstname, email, birthday, session_id, userID FROM users WHERE id = ?;`;
     connection.query(
@@ -312,3 +311,18 @@ exports.me = (req, res, next) => {
             };
         })
 };
+
+exports.getAllFriendsOfUser = (req, res, next) => {
+    let sql = `SELECT sender.id as sender_user_id, sender.picture_url as sender_picture_url, sender.lastname as sender_lastname, sender.firstname as sender_firstname, sender.gender_id as sender_gender_id, sender.birthday as sender_birthday, sender.email as sender_email, sender.role_id as sender_role_id, sender.created_at as sender_created_at, sender.account_disabled as sender_account_disabled, recipient.id as recipient_user_id, recipient.picture_url as recipient_picture_url, recipient.lastname as recipient_lastname, recipient.firstname as recipient_firstname, recipient.gender_id as recipient_gender_id, recipient.birthday as recipient_birthday, recipient.email as recipient_email, recipient.role_id as recipient_role_id, recipient.created_at as recipient_created_at, recipient.account_disabled as recipient_account_disabled, requests_friendship.id as requestId, requests_friendship.request_date, requests_friendship.approve_date, requests_friendship.denied_date FROM requests_friendship LEFT JOIN users sender ON sender.id = requests_friendship.user_id_sender AND sender.account_disabled IS NULL LEFT JOIN users recipient ON recipient.id = requests_friendship.user_id_recipient AND recipient.account_disabled IS NULL WHERE (requests_friendship.user_id_recipient = ? AND requests_friendship.approve_date IS NOT NULL AND requests_friendship.denied_date IS NULL) OR (requests_friendship.user_id_sender = ? AND requests_friendship.approve_date IS NOT NULL AND requests_friendship.denied_date IS NULL) GROUP BY requestId;`;
+    connection.query(
+        sql, [req.params.id, req.params.id], function (err, results) {
+            if (err) throw err;
+            if (results === undefined || results.length === 0) {
+                res.status(200).json({ results });
+            }
+            else {
+                res.status(200).json({ results });
+            }
+        }
+    )
+}

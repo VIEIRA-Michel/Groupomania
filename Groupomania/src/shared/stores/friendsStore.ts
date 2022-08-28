@@ -62,7 +62,7 @@ export const useFriendshipStore = defineStore({
         getAllFriends: (id?: number) => {
             return new Promise((resolve, reject) => {
                 let BASE_URL = "";
-                id ? BASE_URL = `http://localhost:3000/api/friends/${id}` : BASE_URL = 'http://localhost:3000/api/friends/';
+                id ? BASE_URL = `http://localhost:3000/api/user/${id}/friends` : BASE_URL = 'http://localhost:3000/api/friends/';
                 axios({
                     method: 'get',
                     url: BASE_URL,
@@ -184,6 +184,7 @@ export const useFriendshipStore = defineStore({
             })
         },
         searchUser: (search: string) => {
+            console.log(search);
             useFriendshipStore().$patch({
                 searchResults: [],
             });
@@ -194,6 +195,7 @@ export const useFriendshipStore = defineStore({
                     Authorization: `Bearer ${localStorage.getItem('token')}`
                 },
             }).then(response => {
+                console.log(response);
                 if (response.data.results) {
                     let state = ref([]);
                     if (useFriendshipStore().$state.friends.length > 0) {

@@ -5,9 +5,10 @@ import { useFriendshipStore } from '@/shared/stores/friendsStore';
 
 const display = ref(false);
 const allow = ref(false);
+const user = computed(() => useAuthStore().user);
 const friendsOfUser = computed(() => useFriendshipStore().$state.friendsOfUser);
-
 const newMessage = ref('');
+const obj = ref({});
 let msgDom: any = ref(document.getElementsByClassName('container-center__body'));
 const props = defineProps<{
     user: any,
@@ -24,9 +25,27 @@ function displaySender(message: any, index: number) {
 
 function displayInformation() {
     allow.value = !allow.value;
+
     if (allow.value == true) {
-        useFriendshipStore().getAllFriends(props.user.user).then((response) => {
+        useFriendshipStore().getAllFriends(props.user.user).then((response: any) => {
             display.value = true;
+            response.data.results.map((friend: any) => {
+                if (friend.sender_user_id == user.value.user_id) {
+                    obj.value = {
+                        created_at: new Date(friend.recipient_created_at).toLocaleDateString("fr"),
+                        birthday: friend.recipient_birthday,
+                        email: friend.recipient_email,
+                        friend_since: new Date(friend.approve_date).toLocaleDateString("fr")
+                    }
+                } else {
+                    obj.value = {
+                        created_at: new Date(friend.sender_created_at).toLocaleDateString("fr"),
+                        birthday: friend.sender_birthday,
+                        email: friend.sender_email,
+                        friend_since: new Date(friend.approve_date).toLocaleDateString("fr")
+                    }
+                }
+            });
         })
     } else {
         useFriendshipStore().$patch((state) => {
@@ -99,14 +118,23 @@ const emit = defineEmits<{
         </div>
         <div v-if="display" class="container-center__top__user">
             <div class="container-center__top__user__description">
-                <div class="container-center__top__user__description__birthday"></div>
-                <div class="container-center__top__user__description__createdat"></div>
-                <div class="container-center__top__user__description__friendsince"></div>
+                <div v-if="obj.birthday" class="container-center__top__user__description__birthday">
+                    <fa icon="fa-solid fa-cake-candles" /><span>C'est son anniversaire le {{ obj.birthday }}</span>
+                </div>
+                <div v-else class="container-center__top__user__description__birthday">
+                    <fa icon="fa-solid fa-cake-candles" /><span>Date d'anniversaire masqué</span>
+                </div>
+                <div class="container-center__top__user__description__createdat">
+                    <fa icon="fa-solid fa-address-card" /><span>Inscrit depuis le {{ obj.created_at }}</span>
+                </div>
+                <div class="container-center__top__user__description__friendsince">
+                    <fa icon="fa-solid fa-user-check" /><span>Amis depuis le {{ obj.friend_since }}</span>
+                </div>
                 <div class="container-center__top__user__description__friendlist">
                     <div class="friends-list">
                         <div class="friends-list__title">
                             <div class="friends-list__title__text">
-                                Amis ({{ friendsOfUser.length }})
+                                <fa icon="fa-solid fa-user-group" /><span>Amis ({{ friendsOfUser.length }})</span>
                             </div>
                         </div>
                         <div v-if="friendsOfUser.length > 0" class="friends-list__list">
@@ -263,23 +291,94 @@ const emit = defineEmits<{
 
         &__user {
             background-color: #FFFFFF;
-            -webkit-animation: slide-in-top-information 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
-            animation: slide-in-top-information 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+            width: 100%;
+            height: 100%;
+            overflow-y: scroll;
 
             &__description {
+                &__birthday {
+                    svg {
+                        -webkit-animation: slide-in-left 0.2s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+                        animation: slide-in-left 0.2s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+                        margin-right: 5px;
+                        color: #FD2D01;
+                    }
+
+                    span {
+                        -webkit-animation: slide-in-right 0.2s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.2s both;
+                        animation: slide-in-right 0.2s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.2s both;
+                    }
+
+                    margin-bottom: 10px;
+                    display: flex;
+                    justify-content: center;
+                }
+
+                &__createdat {
+                    svg {
+                        -webkit-animation: slide-in-left 0.2s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.4s both;
+                        animation: slide-in-left 0.2s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.4s both;
+                        margin-right: 5px;
+                        color: #FD2D01;
+                    }
+
+                    span {
+                        -webkit-animation: slide-in-right 0.2s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.6s both;
+                        animation: slide-in-right 0.2s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.6s both;
+                    }
+
+                    margin-bottom: 10px;
+                    display: flex;
+                    justify-content: center;
+                }
+
+                &__friendsince {
+                    svg {
+                        -webkit-animation: slide-in-left 0.2s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.8s both;
+                        animation: slide-in-left 0.2s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.8s both;
+                        margin-right: 5px;
+                        color: #FD2D01;
+                    }
+
+                    span {
+                        -webkit-animation: slide-in-right 0.2s cubic-bezier(0.250, 0.460, 0.450, 0.940) 1s both;
+                        animation: slide-in-right 0.2s cubic-bezier(0.250, 0.460, 0.450, 0.940) 1s both;
+                    }
+
+                    margin-bottom: 10px;
+                    display: flex;
+                    justify-content: center;
+                }
+
                 &__friendlist {
+                    padding-bottom: 20px;
+                    box-shadow: 0px 5px 8px -3px rgb(0 0 0 / 40%);
+                    border-radius: 0 0 5px 5px;
+
                     .friends-list {
                         background: #FFFFFF;
                         width: 80%;
                         margin: 10px auto 0px auto;
                         border-radius: 5px;
-                        -webkit-animation: slide-in-bottom 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.9s both;
-                        animation: slide-in-bottom 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.9s both;
 
                         &__title {
                             text-align: center;
-                            margin-top: 20px;
+                            margin: 20px 0;
                             font-weight: 700;
+
+                            &__text {
+                                svg {
+                                    -webkit-animation: slide-in-left 0.2s cubic-bezier(0.250, 0.460, 0.450, 0.940) 1.2s both;
+                                    animation: slide-in-left 0.2s cubic-bezier(0.250, 0.460, 0.450, 0.940) 1.2s both;
+                                    margin-right: 5px;
+                                    color: #FD2D01;
+                                }
+
+                                span {
+                                    -webkit-animation: slide-in-right 0.2s cubic-bezier(0.250, 0.460, 0.450, 0.940) 1.4s both;
+                                    animation: slide-in-right 0.2s cubic-bezier(0.250, 0.460, 0.450, 0.940) 1.4s both;
+                                }
+                            }
                         }
 
                         &__list {
@@ -288,7 +387,9 @@ const emit = defineEmits<{
                             flex-wrap: wrap;
                             margin: auto;
                             width: 70%;
+                            height: 140px;
                             justify-content: space-between;
+                            overflow-y: scroll;
 
                             @media (max-width: 768px) {
                                 width: 100%;
@@ -302,7 +403,12 @@ const emit = defineEmits<{
                                 background: linear-gradient(180deg, #FFD7D7, transparent);
                                 border: 1px solid #FD2D01;
                                 border-radius: 5px;
+                                -webkit-animation: fade-in 1.2s cubic-bezier(0.390, 0.575, 0.565, 1.000) 1.6s both;
+                                animation: fade-in 1.2s cubic-bezier(0.390, 0.575, 0.565, 1.000) 1.6s both;
 
+                                @media (max-width: 768px) {
+                                    width: 35%;
+                                }
 
                                 &__button {
                                     display: flex;

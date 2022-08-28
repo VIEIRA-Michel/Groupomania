@@ -210,7 +210,8 @@ onUnmounted(() => {
 
 .container {
     width: 90%;
-    height: 89vh;
+    // height: 89vh;
+    height: 600px;
     display: flex;
     flex-direction: row;
     margin: 60px auto auto auto;
