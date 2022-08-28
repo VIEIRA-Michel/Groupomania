@@ -3,6 +3,7 @@ import { defineStore } from 'pinia';
 import axios from 'axios';
 import { ref } from 'vue';
 import { useAuthStore } from '../stores/authStore';
+import socket from '../../socket';
 
 interface CommentState {
     isLoading: boolean;
@@ -61,6 +62,7 @@ export const useCommentsStore = defineStore({
                     }
                     return publication;
                 });
+                socket.emit('delete comment', { publication_id, id });
             }).catch(error => {
                 error.response.status === 403 ? useAuthStore().logout() : "";
                 console.log(error);
@@ -96,6 +98,7 @@ export const useCommentsStore = defineStore({
                     role_id: response.data.data[0].role_id,
                     user_id: response.data.data[0].user_id,
                 });
+                socket.emit('has commented', obj);
                 usePublicationsStore().$state.publications.map((publication) => {
                     if (publication.publication_id === publication_id) {
                         publication.comments!.push(obj.value);

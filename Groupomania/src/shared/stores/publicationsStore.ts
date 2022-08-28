@@ -3,6 +3,8 @@ import { defineStore } from 'pinia';
 import axios from 'axios';
 import type { Publication } from '../interfaces/publication.interface';
 import { useAuthStore } from '../stores/authStore';
+import socket from "../../socket";
+import { ref } from 'vue';
 
 
 interface PublicationState {
@@ -44,8 +46,27 @@ export const usePublicationsStore = defineStore({
                     },
                     data: formData,
                 }).then(response => {
+                    let publication = ref({
+                        publication_id: response.data.data[0].publication_id,
+                        user_id: response.data.data[0].user_id,
+                        content: response.data.data[0].content,
+                        picture: response.data.data[0].picture,
+                        created_at: response.data.data[0].publication_created,
+                        updated_at : null,
+                        likes: [],
+                        comments: [],
+                        menu: false,
+                        displayComments: false,
+                        editMode: false,
+                        numberOfComments: 0,
+                        firstname: useAuthStore().$state.user.firstname,
+                        lastname: useAuthStore().$state.user.lastname,
+                        email: useAuthStore().$state.user.email,
+                        picture_url: useAuthStore().$state.user.picture_url,
+                    });
                     usePublicationsStore().$reset();
                     usePublicationsStore().getAllPublications();
+                    socket.emit('new publication', publication);
                 }).catch(error => {
                     console.log(error);
                     error.response.status === 403 ? useAuthStore().logout() : "";
@@ -81,6 +102,9 @@ export const usePublicationsStore = defineStore({
                             ...publication,
                         }
                     });
+                    response.data.Publications.sort((a: { publication_id: number; }, b: { publication_id: number; }) => {
+                        return b.publication_id - a.publication_id;
+                    })
                     usePublicationsStore().$patch({
                         publications: response.data.Publications,
                         numberOfPages: response.data.numOfPages,
@@ -114,6 +138,7 @@ export const usePublicationsStore = defineStore({
                 },
                 data: formData,
             }).then(response => {
+                socket.emit('edit publication', response.data.data[0]);
                 usePublicationsStore().getAllPublications();
             }).catch(error => {
                 console.log(error);
@@ -205,11 +230,19 @@ export const usePublicationsStore = defineStore({
                         if (response.data.liked) {
                             item.likes.push(user);
                             item.iLike = true;
+                            socket.emit('like', {
+                                publication_id: id,
+                                user_id: useAuthStore().$state.user.user_id
+                            });
                         } else {
                             item.likes = item.likes.filter((item: any) => {
                                 return item.user_id !== user.user_id;
                             });
                             item.iLike = false;
+                            socket.emit('remove like', {
+                                publication_id: id,
+                                user_id: useAuthStore().$state.user.user_id
+                            })
                         }
                     }
                 });

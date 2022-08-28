@@ -2,10 +2,11 @@
 import Loading from './Loading.vue';
 import PublicationForm from './PublicationForm.vue';
 import Comment from './Comment.vue';
-import { ref, watchEffect, computed } from 'vue';
+import { ref, watchEffect, computed, onBeforeMount } from 'vue';
 import { useAuthStore } from '../shared/stores/authStore';
 import { usePublicationsStore } from '../shared/stores/publicationsStore';
 import { useCommentsStore } from '../shared/stores/commentsStore';
+import socket from "../socket";
 
 useAuthStore().getMyInformations();
 
@@ -44,6 +45,7 @@ function deletePublication(id: number) {
             page.value = 1;
             usePublicationsStore().getAllPublications(page.value);
         }
+        socket.emit('delete publication', id);
     });
 }
 
@@ -81,11 +83,93 @@ function displayMenu(menu: any) {
         return item;
     });
 }
+function likePublication(publication_id: any) {
+    usePublicationsStore().likePublication(publication_id);
+}
 
 watchEffect(() => {
     usePublicationsStore().$reset();
     usePublicationsStore().getAllPublications(page.value);
 })
+
+onBeforeMount(() => {
+    socket.on('like', (data) => {
+        console.log(data);
+        usePublicationsStore().$patch((state: any) => {
+            state.publications.map((item: any) => {
+                if (item.publication_id == data.publication_id) {
+                    item.likes.push(data.user_id);
+                }
+                return item;
+            })
+        })
+    })
+    socket.on('remove like', (data) => {
+        console.log(data);
+        usePublicationsStore().$patch((state: any) => {
+            state.publications.map((item: any) => {
+                if (item.publication_id == data.publication_id) {
+                    item.likes = item.likes.filter((like: any) => like != data.user_id);
+                }
+                return item;
+            });
+        });
+    })
+    socket.on('new publication', (data) => {
+        usePublicationsStore().$patch((state: any) => {
+            state.publications.unshift(data._value);
+        });
+    });
+    socket.on('edit publication', (data) => {
+        usePublicationsStore().$patch((state: any) => {
+            state.publications.map((item: any) => {
+                if (item.publication_id == data.publication_id) {
+                    item.content = data.content;
+                    item.picture = data.picture;
+                    item.updated_at = data.updated_at;
+                }
+                return item;
+            });
+        });
+    });
+
+    socket.on('delete publication', (data) => {
+        usePublicationsStore().$patch((state: any) => {
+            state.publications.map((item: any) => {
+                if (item.publication_id == data) {
+                    state.publications.splice(usePublicationsStore().$state.publications.indexOf(item), 1);
+                }
+            });
+        });
+    });
+    socket.on('has commented', (data: any) => {
+        usePublicationsStore().$patch((state: any) => {
+            state.publications.map((item: any) => {
+                if (item.publication_id == data._value.publication_id) {
+                    item.comments.push(data._value);
+                    item.numberOfComments = item.numberOfComments + 1;
+                }
+                return item;
+            });
+        });
+    });
+
+    socket.on('delete comment', (data: any) => {
+        usePublicationsStore().$patch((state: any) => {
+            state.publications.map((item: any) => {
+                if (item.publication_id == data.publication_id) {
+                    item.comments = item.comments.filter((itemComment: any) => {
+                        return itemComment.comment_id != data.id;
+                    });
+                    console.log(item);
+                    item.numberOfComments = item.numberOfComments - 1;
+                }
+                return item;
+            });
+        })
+    })
+})
+
 </script>
 <template>
     <div>
@@ -165,12 +249,12 @@ watchEffect(() => {
                                 <div class="post__interaction">
                                     <div class="post__interaction__like">
                                         <button v-if="!publication.iLike"
-                                            @click.stop="usePublicationsStore().likePublication(publication.publication_id)">
+                                            @click.stop="likePublication(publication.publication_id)">
                                             <span>{{ publication.likes.length + ' ' }}</span>
                                             <fa icon="fa-regular fa-heart" />
                                         </button>
                                         <button v-else class="like"
-                                            @click.stop="usePublicationsStore().likePublication(publication.publication_id)">
+                                            @click.stop="likePublication(publication.publication_id)">
                                             <span>{{ publication.likes.length + ' ' }}</span>
                                             <fa icon="fa-solid fa-heart" />
                                         </button>

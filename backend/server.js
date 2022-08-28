@@ -174,6 +174,27 @@ io.on('connection', (socket) => {
   socket.on('stoptyping', (data) => {
     socket.broadcast.emit('stoptyping', data)
   })
+  socket.on('like', (data) => {
+    socket.broadcast.emit('like', data)
+  })
+  socket.on('remove like', (data) => {
+    socket.broadcast.emit('remove like', data)
+  })
+  socket.on('new publication', (data) => {
+    socket.broadcast.emit('new publication', data)
+  })
+  socket.on('edit publication', (data) => {
+    socket.broadcast.emit('edit publication', data)
+  })
+  socket.on('delete publication', (data) => {
+    socket.broadcast.emit('delete publication', data)
+  })
+  socket.on('has commented', (data) => {
+    socket.broadcast.emit('has commented', data)
+  })
+  socket.on('delete comment', (data) => {
+    socket.broadcast.emit('delete comment', data)
+  })
 
 });
 

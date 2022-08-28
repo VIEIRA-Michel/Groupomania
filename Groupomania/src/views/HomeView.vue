@@ -25,6 +25,7 @@ let loginInput = reactive({
     password: ''
 });
 
+
 </script>
 <template>
     <NavigationBar :user="user" :isConnected="isConnected" @logout="useAuthStore().logout()" />

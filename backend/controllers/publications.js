@@ -117,7 +117,17 @@ exports.updatePublication = (req, res, next) => {
                 console.log(err)
                 res.status(500).json({ message: 'Erreur lors de la modification de la publication' });
             } else {
-                res.status(200).json({ message: 'Publication modifiée ! ' })
+                sql = `SELECT id AS publication_id, content, picture, user_id, created_at, updated_at FROM publications WHERE id = ?;`;
+                connection.query(
+                    sql, [req.params.id], function (err, results) {
+                        if (err) {
+                            console.log(err);
+                            res.status(500).json({ message: 'Erreur lors de la récupération de la publications' });
+                        } else {
+                            res.status(200).json({ message: 'Publication modifiée !', data: results })
+                        }
+                    }
+                )
             }
         }
     )

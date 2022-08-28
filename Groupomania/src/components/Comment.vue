@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { useCommentsStore } from '../shared/stores/commentsStore';
-import { ref, computed } from 'vue';
+import { ref, computed, onBeforeMount } from 'vue';
+import socket from '../socket';
+import { usePublicationsStore } from '@/shared/stores/publicationsStore';
 let inputComment = ref("");
 
 const props = defineProps({
@@ -21,6 +23,7 @@ function createComment(event: any) {
         inputComment.value = "";
     };
 }
+
 </script>
 <template>
     <div class="container-post">
@@ -41,11 +44,14 @@ function createComment(event: any) {
                 </div>
             </div>
             <div class="post__button">
-                <fa v-if="props.user.email == com.email" @click="useCommentsStore().deleteComment(com.publication_id, com.comment_id)" icon="fa-solid fa-trash-can" />
+                <fa v-if="props.user.email == com.email"
+                    @click="useCommentsStore().deleteComment(com.publication_id, com.comment_id)"
+                    icon="fa-solid fa-trash-can" />
             </div>
         </div>
         <div class="more-post">
-            <button v-if="props.comments?.length < props.numberOfComments" @click="emit('getMore')" class="more-post__button">
+            <button v-if="props.comments?.length < props.numberOfComments" @click="emit('getMore')"
+                class="more-post__button">
                 Afficher plus de commentaires
             </button>
         </div>
@@ -60,10 +66,9 @@ function createComment(event: any) {
             </div>
             <div class="create_post_info">
                 <div class="create_post__info__content">
-                    <form>
+                    <form @submit.prevent="createComment($event)">
                         <input type="text" v-model="inputComment" class="create_post__info__content__input"
                             placeholder="Écrivez un commentaire...">
-                        <fa @click="createComment($event)" icon="fa-solid fa-paper-plane" />
                     </form>
                 </div>
 
