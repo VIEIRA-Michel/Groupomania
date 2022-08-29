@@ -1,28 +1,27 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, onBeforeMount, ref, watchEffect } from 'vue';
 import { useAuthStore } from '../shared/stores/authStore';
 import { useFriendshipStore } from '../shared/stores/friendsStore';
 import NavigationBar from '../components/NavigationBar.vue';
-
-useAuthStore().getMyInformations();
-useAuthStore().$state.isConnected == false ? window.location.href = '/' : "";
-useFriendshipStore().$reset();
+import socket from '../socket';
 
 const isConnected = computed(() => useAuthStore().$state.isConnected);
 const user = computed(() => useAuthStore().$state.user);
 const requests = computed(() => useFriendshipStore().$state.requests);
+const invitSended = computed(() => useFriendshipStore().$state.invitSendedTo);
 const friends = computed(() => useFriendshipStore().$state.friends);
 const usersFound = computed(() => useFriendshipStore().$state.searchResults);
+
+useAuthStore().getMyInformations();
+useAuthStore().$state.isConnected == false ? window.location.href = '/' : "";
+useFriendshipStore().getRequests();
+useFriendshipStore().checkRequestsSended();
 
 const search = ref('');
 let open = ref(false);
 let modalRequest = ref(false);
-let done = ref(false);
-
-useFriendshipStore().getRequests();
-useFriendshipStore().getAllFriends().then((response) => {
-    done.value = true;
-});
+let userToBeDeleted = ref(null);
+let invitToBeCanceled = ref(null);
 
 function logout() {
     useAuthStore().logout();
@@ -47,10 +46,95 @@ function cancelRequest(user_id: number) {
     useFriendshipStore().cancelRequest(user_id);
 }
 
+function cancelModal(user: any) {
+    console.log(user);
+    modalRequest.value = true
+    invitToBeCanceled.value = user;
+}
+function deleteModal(user: any) {
+    open.value = true;
+    userToBeDeleted.value = user;
+}
+
+onBeforeMount(() => {
+    socket.on('friendRequest sended', (data) => {
+        useFriendshipStore().$patch((state: any) => {
+            state.isLoading = false,
+                state.requests.push(data);
+        });
+    });
+    socket.on('friendRequest refused', (data) => {
+        useFriendshipStore().$patch((state: any) => {
+            if (state.invitSendedTo.length > 0) {
+                state.invitSendedTo.map((item: any) => {
+                    if (item.id == data.data.results[0].user_id_recipient) {
+                        state.invitSendedTo.splice(state.invitSendedTo.indexOf(item), 1);
+
+                    }
+                })
+            }
+            state.isLoading = false;
+        })
+    })
+
+    socket.on('friendRequest accepted', (data) => {
+        console.log(data.data.results[0]);
+        useFriendshipStore().$patch((state: any) => {
+            if (state.invitSendedTo.length > 0) {
+                state.invitSendedTo.map((item: any) => {
+                    if (item.id == data.data.results[0].user_id_recipient) {
+                        state.invitSendedTo.splice(state.invitSendedTo.indexOf(item), 1);
+
+                    }
+                })
+            }
+            if (state.searchResults.length > 0) {
+                state.searchResults.map((item: any) => {
+                    if (item.user_id == data.data.results[0].user_id_recipient) {
+                        item.pending = false;
+                        item.isFriend = true;
+
+                    }
+                })
+            }
+            let newFriend = ref({
+                user_id: data.data.results[0].id,
+                firstname: data.data.results[0].firstname,
+                lastname: data.data.results[0].lastname,
+                picture_url: data.data.results[0].picture_url,
+            })
+            state.friends.push(newFriend.value);
+            state.isLoading = false;
+        })
+    })
+
+    socket.on('friend removed', (data) => {
+        console.log(data);
+        useFriendshipStore().$patch((state: any) => {
+            if (state.friends.length > 0) {
+                state.friends.map((item: any) => {
+                    if (item.user_id == data) {
+                        state.friends.splice(state.friends.indexOf(item), 1);
+                    }
+                })
+            }
+            if (state.searchResults.length > 0) {
+                state.searchResults.map((item: any) => {
+                    if (item.user_id == data) {
+                        item.isFriend = false;
+                    }
+                })
+            }
+            state.isLoading = false;
+        })
+    })
+});
+
+
 </script>
 <template>
     <NavigationBar :user="user" :isConnected="isConnected" @logout="logout()" />
-    <div v-if="isConnected && done" class="container">
+    <div v-if="isConnected" class="container">
         <div class="search-user">
             <div class="search-user__title">Rechercher un utilisateur</div>
             <div class="search-user__input">
@@ -76,7 +160,7 @@ function cancelRequest(user_id: number) {
                                 @click="useFriendshipStore().sendFriendRequest(user.user_id)">
                                 <fa icon="fa-solid fa-user-plus" />
                             </button>
-                            <button v-if="user.pending" @click="modalRequest = true" class="pending">
+                            <button v-if="user.pending" @click="cancelModal(user)" class="pending">
                                 <fa icon="fa-solid fa-user-clock" />
                             </button>
                             <button v-if="user.isFriend" @click="open = true" class="friend">
@@ -91,16 +175,16 @@ function cancelRequest(user_id: number) {
                                             <div class="modal-container__content__header">
                                                 <h5 class="modal-container__content__header__title">Êtes-vous
                                                     certains de
-                                                    vouloir annuler votre demande d'amitié envers {{ user.firstname
+                                                    vouloir annuler votre demande d'amitié envers {{
+                                                            invitToBeCanceled.firstname
                                                     }} ?
                                                 </h5>
                                             </div>
                                             <div class="modal-container__content__footer">
                                                 <button @click="modalRequest = false" type="button"
                                                     class="btn btn-secondary" data-dismiss="modal">Annuler</button>
-                                                <button @click="cancelRequest(user.user_id)" type="button"
-                                                    class="btn btn-primary">Retirer
-                                                    {{ user.firstname }}</button>
+                                                <button @click="cancelRequest(invitToBeCanceled.user_id)" type="button"
+                                                    class="btn btn-primary">Retirer ma demande</button>
                                             </div>
                                         </div>
                                     </div>
@@ -175,7 +259,7 @@ function cancelRequest(user_id: number) {
                     </div>
                     <div class="friends-list__list__item__button">
 
-                        <button class="friend" @click="open = true">
+                        <button class="friend" @click="deleteModal(friend)">
                             <fa icon="fa-solid fa-user-minus" />
                         </button>
                     </div>
@@ -187,14 +271,14 @@ function cancelRequest(user_id: number) {
                                 <div class="modal-container__content">
                                     <div class="modal-container__content__header">
                                         <h5 class="modal-container__content__header__title">Êtes-vous certains de
-                                            vouloir retirer {{ friend.firstname }} de votre liste d'amis ?</h5>
+                                            vouloir retirer {{ userToBeDeleted.firstname }} de votre liste d'amis ?</h5>
                                     </div>
                                     <div class="modal-container__content__footer">
                                         <button @click="open = false" type="button" class="btn btn-secondary"
                                             data-dismiss="modal">Annuler</button>
-                                        <button @click="removeFriend(friend.user_id)" type="button"
+                                        <button @click="removeFriend(userToBeDeleted.user_id)" type="button"
                                             class="btn btn-primary">Retirer
-                                            {{ friend.firstname }}</button>
+                                            {{ userToBeDeleted.firstname }}</button>
                                     </div>
                                 </div>
                             </div>
@@ -453,8 +537,8 @@ function cancelRequest(user_id: number) {
         width: 70%;
         margin: 10px auto 0px auto;
         border-radius: 5px;
-        	-webkit-animation: slide-in-bottom 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.9s both;
-	        animation: slide-in-bottom 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.9s both;
+        -webkit-animation: slide-in-bottom 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.9s both;
+        animation: slide-in-bottom 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.9s both;
 
         &__title {
             text-align: center;

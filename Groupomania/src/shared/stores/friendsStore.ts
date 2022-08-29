@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import axios from 'axios';
 import { ref } from 'vue';
 import { useAuthStore } from '../stores/authStore';
+import socket from '../../socket';
 
 
 interface FriendshipState {
@@ -42,13 +43,14 @@ export const useFriendshipStore = defineStore({
                     Authorization: `Bearer ${localStorage.getItem('token')}`
                 },
             }).then(response => {
-                response.data.data == undefined ?
+                console.log(response);
+                response.data.results == undefined ?
                     useFriendshipStore().$patch({
                         requests: [],
                         numOfResults: 0,
                         numberOfPages: 1,
                     }) :
-                    response.data.data = response.data.data.map((item: any) => {
+                    response.data.results = response.data.results.map((item: any) => {
                         useFriendshipStore().$patch((state: FriendshipState) => {
                             state.requests.push(item);
                             state.isLoading = false;
@@ -61,6 +63,15 @@ export const useFriendshipStore = defineStore({
         },
         getAllFriends: (id?: number) => {
             return new Promise((resolve, reject) => {
+                if (useFriendshipStore().$state.friends.length > 0) {
+                    useFriendshipStore().$patch((state: any) => {
+                        state.friends = []
+                    });
+                } else if (useFriendshipStore().$state.friendsOfUser.length > 0) {
+                    useFriendshipStore().$patch((state: any) => {
+                        state.friendsOfUser = []
+                    });
+                }
                 let BASE_URL = "";
                 id ? BASE_URL = `http://localhost:3000/api/user/${id}/friends` : BASE_URL = 'http://localhost:3000/api/friends/';
                 axios({
@@ -123,6 +134,7 @@ export const useFriendshipStore = defineStore({
                     response: answer
                 }
             }).then(response => {
+                console.log(response);
                 if (answer == 'refused') {
                     let state = ref([]);
                     useFriendshipStore().$state.requests.map((item: any) => {
@@ -131,6 +143,7 @@ export const useFriendshipStore = defineStore({
                     useFriendshipStore().$patch({
                         requests: state.value,
                     });
+                    socket.emit('friendRequest refused', (response));
                 } else {
                     let stateRequests = ref([]);
                     let stateFriends = ref([]);
@@ -149,6 +162,7 @@ export const useFriendshipStore = defineStore({
                         requests: stateRequests.value,
                         friends: [...useFriendshipStore().$state.friends, ...stateFriends.value],
                     });
+                    socket.emit('friendRequest accepted', (response));
                 }
 
             }).catch(error => {
@@ -178,6 +192,7 @@ export const useFriendshipStore = defineStore({
                     friends: stateFriends.value,
                     searchResults: stateSearch.value,
                 });
+                socket.emit('friend removed', (useAuthStore().$state.user.user_id));
             }).catch(error => {
                 error.response.status === 403 ? useAuthStore().logout() : "";
                 console.log(error);
@@ -236,10 +251,36 @@ export const useFriendshipStore = defineStore({
                     Authorization: `Bearer ${localStorage.getItem('token')}`
                 }
             }).then(response => {
+                console.log(response);
                 useFriendshipStore().$state.searchResults.map((item: any) => {
                     item.user_id == user_id ? item.pending = true : "";
                     return item;
                 });
+                useFriendshipStore().$patch((state: FriendshipState) => {
+                    state.invitSendedTo.push({
+                        account_disabled: response.data.results[0].account_disabled,
+                        email: response.data.results[0].email,
+                        firstname: response.data.results[0].firstname,
+                        id: response.data.results[0].id,
+                        lastname: response.data.results[0].lastname,
+                        picture_url: response.data.results[0].picture_url,
+                        request_date: response.data.results[0].request_date,
+                        role_id: response.data.results[0].role_id,
+                    })
+                })
+                let req = ref({
+                    approve_date: response.data.results[0].approve_date,
+                    denied_date: response.data.results[0].denied_date,
+                    email: useAuthStore().$state.user.email,
+                    firstname: useAuthStore().$state.user.firstname,
+                    idRequest: response.data.results[0].id,
+                    lastname: useAuthStore().$state.user.lastname,
+                    picture_url: useAuthStore().$state.user.picture_url,
+                    recipient: response.data.results[0].user_id_recipient,
+                    request_date: response.data.results[0].request_date,
+                    sender: response.data.results[0].user_id_sender,
+                })
+                socket.emit('friendRequest sended', (req.value));
             }).catch(error => {
                 error.response.status === 403 ? useAuthStore().logout() : "";
                 console.log(error);

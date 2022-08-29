@@ -10,7 +10,7 @@ exports.getRequests = (req, res, next) => {
                 res.status(200).json({ message: 'Vous n\'avez aucune demande d\'amitié !' });
             }
             else {
-                res.status(200).json({ message: 'Vos demandes d\'amitié : ', data: results });
+                res.status(200).json({ message: 'Vos demandes d\'amitié : ', results });
             }
         }
     )
@@ -32,20 +32,33 @@ exports.getAllFriends = (req, res, next) => {
 }
 
 exports.sendRequest = (req, res, next) => {
-    let sqlSearch = `SELECT * FROM requests_friendship WHERE user_id_sender = ? AND user_id_recipient = ? OR user_id_sender = ? AND user_id_recipient = ?;`;
+    let sql = `SELECT * FROM requests_friendship WHERE user_id_sender = ? AND user_id_recipient = ? OR user_id_sender = ? AND user_id_recipient = ?;`;
     connection.query(
-        sqlSearch, [req.user.userId, req.params.id, req.params.id, req.user.userId], function (err, results) {
+        sql, [req.user.userId, req.params.id, req.params.id, req.user.userId], function (err, results) {
             if (err) throw err;
             if (results === undefined || results.length === 0) {
                 let sql = `INSERT INTO requests_friendship (user_id_sender, user_id_recipient, request_date) VALUES (?, ?, NOW());`;
                 connection.query(
                     sql, [req.user.userId, req.params.id], function (err, results) {
-                        if (err) throw err;
-                        res.status(200).json({ message: 'Votre demande d\'amitié a été envoyée !' });
+                        if (err) {
+                            console.log(err);
+                            res.status(500).json({ message: 'Erreur lors de la demande d\'amitié !' });
+                        } else {
+                            sql = `SELECT requests_friendship.id as requestId, requests_friendship.user_id_sender, requests_friendship.user_id_recipient, requests_friendship.request_date, requests_friendship.approve_date, requests_friendship.denied_date, users.id, users.firstname, users.lastname, users.picture_url, users.email, users.account_disabled, users.role_id FROM requests_friendship LEFT JOIN users ON users.id = requests_friendship.user_id_recipient WHERE requests_friendship.user_id_sender = ? AND requests_friendship.user_id_recipient = ?;`;
+                            connection.query(
+                                sql, [req.user.userId, req.params.id], function (err, results) {
+                                    if (err) {
+                                        console.log(err);
+                                        res.status(500).json({ message: 'Erreur lors de l\'envoi de la demande d\'amitié !' });
+                                    };
+                                    res.status(200).json({ message: 'Votre demande d\'amitié a été prise en compte !', results });
+                                }
+                            )
+
+                        }
                     }
                 )
-            }
-            else {
+            } else {
                 res.status(200).json({ message: 'Vous avez déjà une demande d\'amitié en cours avec cet utilisateur !' });
             }
         }
@@ -65,24 +78,36 @@ exports.replyToRequest = (req, res, next) => {
                     let sql = `UPDATE requests_friendship SET approve_date = NOW() WHERE user_id_sender = ?;`;
                     connection.query(
                         sql, [req.params.id], function (err, results) {
-                            if (err) throw err;
-                            res.status(200).json({ message: 'Demande d\'amitié approuvée !' });
+                            if (err) {
+                                console.log(err);
+                                res.status(500).json({ message: 'Erreur lors de la réponse à la demande d\'amitié !' });
+                            };
                         }
                     )
                 } else if (req.body.response == 'refused') {
                     let sql = `UPDATE requests_friendship SET denied_date = NOW() WHERE user_id_sender = ?;`;
                     connection.query(
                         sql, [req.params.id], function (err, results) {
-                            if (err) throw err;
-                            res.status(200).json({ message: 'Demande d\'amitié refusée !' });
+                            if (err) {
+                                console.log(err);
+                                res.status(500).json({ message: 'Erreur lors de la réponse à la demande d\'amitié !' });
+                            };
                         }
                     )
                 }
+                sql = `SELECT requests_friendship.id as requestId, requests_friendship.user_id_sender, requests_friendship.user_id_recipient, requests_friendship.request_date, requests_friendship.approve_date, requests_friendship.denied_date, users.id, users.firstname, users.lastname, users.picture_url FROM requests_friendship LEFT JOIN users ON users.id = requests_friendship.user_id_recipient WHERE requests_friendship.user_id_sender = ? AND requests_friendship.user_id_recipient = ?;`;
+                connection.query(
+                    sql, [req.params.id, req.user.userId], function (err, results) {
+                        if (err) {
+                            console.log(err);
+                            res.status(500).json({ message: 'Erreur lors de la réponse à la demande d\'amitié !' });
+                        };
+                        res.status(200).json({ message: 'Votre réponse à la demande d\'amitié a été prise en compte !', results });
+                    }
+                )
             }
         }
-
     )
-
 }
 
 exports.searchUser = (req, res, next) => {
