@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, onBeforeMount, onUnmounted } from 'vue';
+import { computed, ref, onBeforeMount, onUnmounted, watchEffect } from 'vue';
 import { useRoute } from 'vue-router';
 import { useAuthStore } from './shared/stores/authStore';
 import { useFriendshipStore } from './shared/stores/friendsStore';
@@ -16,16 +16,29 @@ const selectedUser = ref<any>(null);
 useAuthStore().getMyInformations();
 
 function displayFriends(usersOnline: any) {
-    usersOnline.forEach((userOnline: any) => {
-        friends.value.forEach((friend: any) => {
-            friend.user_id == userOnline.user ? useChatStore().friendsConnected(userOnline) : "";
-        });
+  usersOnline.forEach((userOnline: any) => {
+    friends.value.forEach((friend: any) => {
+      friend.user_id == userOnline.user ? useChatStore().friendsConnected(userOnline) : "";
     });
+  });
 }
 
 function checkIsFriend(utilisateur: any) {
-    friendsConnected.value.find(friend => friend.user == utilisateur.user) ? "" : friends.value.length > 0 && friends.value.find(friend => friend.user_id === utilisateur.user) ? useChatStore().friendsConnected(utilisateur) : "";
+  friendsConnected.value.find(friend => friend.user == utilisateur.user) ? "" : friends.value.length > 0 && friends.value.find(friend => friend.user_id === utilisateur.user) ? useChatStore().friendsConnected(utilisateur) : "";
 }
+
+function init() {
+  useFriendshipStore().getRequests();
+  useFriendshipStore().checkRequestsSended();
+  useFriendshipStore().getAllFriends();
+}
+
+watchEffect(() => {
+  if (isConnected.value) {
+    init();
+  }
+})
+
 onBeforeMount(() => {
   if (isConnected.value) {
     useFriendshipStore().getAllFriends().then((response) => {

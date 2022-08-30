@@ -14,8 +14,6 @@ const usersFound = computed(() => useFriendshipStore().$state.searchResults);
 
 useAuthStore().getMyInformations();
 useAuthStore().$state.isConnected == false ? window.location.href = '/' : "";
-useFriendshipStore().getRequests();
-useFriendshipStore().checkRequestsSended();
 
 const search = ref('');
 let open = ref(false);
@@ -59,26 +57,40 @@ function deleteModal(user: any) {
 onBeforeMount(() => {
     socket.on('friendRequest sended', (data) => {
         useFriendshipStore().$patch((state: any) => {
-            state.isLoading = false,
+            if(state.requests.find((item: any) => item.sender == data.sender)) {
+                return;
+            } else {
                 state.requests.push(data);
+            }
+            state.isLoading = false;
         });
     });
     socket.on('friendRequest refused', (data) => {
         useFriendshipStore().$patch((state: any) => {
             if (state.invitSendedTo.length > 0) {
                 state.invitSendedTo.map((item: any) => {
-                    if (item.id == data.data.results[0].user_id_recipient) {
+                    if (item.id == data) {
                         state.invitSendedTo.splice(state.invitSendedTo.indexOf(item), 1);
 
                     }
                 })
             }
+            if (state.searchResults.length > 0) {
+                state.searchResults.map((item: any) => {
+                    console.log(item);
+                    if (item.user_id == data) {
+                        item.pending = false;
+                        item.isFriend = false;
+
+                    }
+                })
+            }
+
             state.isLoading = false;
         })
     })
 
     socket.on('friendRequest accepted', (data) => {
-        console.log(data.data.results[0]);
         useFriendshipStore().$patch((state: any) => {
             if (state.invitSendedTo.length > 0) {
                 state.invitSendedTo.map((item: any) => {
@@ -109,7 +121,6 @@ onBeforeMount(() => {
     })
 
     socket.on('friend removed', (data) => {
-        console.log(data);
         useFriendshipStore().$patch((state: any) => {
             if (state.friends.length > 0) {
                 state.friends.map((item: any) => {
@@ -128,8 +139,20 @@ onBeforeMount(() => {
             state.isLoading = false;
         })
     })
-});
 
+    socket.on('friendRequest canceled', (data) => {
+        useFriendshipStore().$patch((state: any) => {
+            if (state.requests.length > 0) {
+                state.requests.map((item: any) => {
+                    if (item.sender == data) {
+                        state.requests.splice(state.requests.indexOf(item), 1);
+                    }
+                })
+            }
+            state.isLoading = false;
+        })
+    })
+});
 
 </script>
 <template>

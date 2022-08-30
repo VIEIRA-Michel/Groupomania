@@ -207,6 +207,9 @@ io.on('connection', (socket) => {
   socket.on('friend removed', (data) => {
     socket.broadcast.emit('friend removed', data)
   })
+  socket.on('friendRequest canceled', (data) => {
+    socket.broadcast.emit('friendRequest canceled', data)
+  })
 
 });
 

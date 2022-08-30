@@ -85,7 +85,7 @@ exports.replyToRequest = (req, res, next) => {
                         }
                     )
                 } else if (req.body.response == 'refused') {
-                    let sql = `UPDATE requests_friendship SET denied_date = NOW() WHERE user_id_sender = ?;`;
+                    let sql = `DELETE FROM requests_friendship WHERE user_id_sender = ?;`;
                     connection.query(
                         sql, [req.params.id], function (err, results) {
                             if (err) {
