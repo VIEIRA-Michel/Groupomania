@@ -81,7 +81,7 @@ exports.login = (req, res, next) => {
                                             email: results[0].email
                                         },
                                         process.env.ACCESS_TOKEN_SECRET,
-                                        { expiresIn: '120m' }),
+                                        { expiresIn: '7d' }),
                                     refreshToken: jwt.sign(
                                         {
                                             userId: results[0].id,
@@ -92,7 +92,7 @@ exports.login = (req, res, next) => {
                                             email: results[0].email
                                         },
                                         process.env.REFRESH_TOKEN_SECRET,
-                                        { expiresIn: '120m' }),
+                                        { expiresIn: '7d' }),
                                     user: {
                                         user_id: results[0].id,
                                         picture_url: results[0].picture_url,

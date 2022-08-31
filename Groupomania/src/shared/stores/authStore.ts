@@ -4,7 +4,6 @@ import axios from 'axios';
 export interface IAuthStore {
     isConnected: boolean | null;
     user: any | null;
-    token: string | null;
     invalidEmail: boolean;
     invalidPassword: boolean;
 }
@@ -14,12 +13,19 @@ export const useAuthStore = defineStore({
     state: (): IAuthStore => ({
         isConnected: false,
         user: {},
-        token: '',
         invalidEmail: false,
         invalidPassword: false
     }),
     getters: {
-        getUser: (state) => state.user,
+        isAuthenticated(state): boolean | null {
+            if (state.user) {
+                return true;
+            } else if (!state.user && state.isConnected) {
+                return false;
+            } else {
+                return null;
+            }
+        }
     },
     actions: {
         register(lastname: string, firstname: string, email: string, password: string, confirmPassword: string) {
@@ -43,39 +49,44 @@ export const useAuthStore = defineStore({
             }
         },
         login(username: string, password: string) {
-            axios({
-                method: 'post',
-                url: 'http://localhost:3000/api/auth/login',
-                data: {
-                    email: username,
-                    password: password,
-                },
-            }).then((response => {
-                localStorage.setItem('user', JSON.stringify(response.data.user));
-                localStorage.setItem('token', response.data.accessToken);
-                useAuthStore().$patch({
-                    user: response.data.user,
-                    token: response.data.accessToken,
-                    isConnected: true,
-                });
-            })).catch((error => {
-                if (error.response.data.message == `L'adresse email n'existe pas !`) {
-                    useAuthStore().$reset();
+            return new Promise((resolve, reject) => {
+                axios({
+                    method: 'post',
+                    url: 'http://localhost:3000/api/auth/login',
+                    data: {
+                        email: username,
+                        password: password,
+                    },
+                }).then((response => {
+                    localStorage.setItem('user', JSON.stringify(response.data.user));
+                    localStorage.setItem('token', response.data.accessToken);
                     useAuthStore().$patch({
-                        invalidEmail: true,
+                        user: response.data.user,
+                        isConnected: true,
                     });
-                } else {
-                    useAuthStore().$reset();
-                    useAuthStore().$patch({
-                        invalidPassword: true,
-                    });
-                }
-            }))
+                    resolve(response);
+                })).catch((error => {
+                    if (error.response.data.message == `L'adresse email n'existe pas !`) {
+                        useAuthStore().$reset();
+                        useAuthStore().$patch({
+                            invalidEmail: true,
+                        });
+                    } else {
+                        useAuthStore().$reset();
+                        useAuthStore().$patch({
+                            invalidPassword: true,
+                        });
+                    }
+                    reject(error);
+                }))
+            })
         },
-        logout: () => {
-            localStorage.removeItem('sessionID');
-            localStorage.removeItem('token');
-            useAuthStore().$reset();
+        logout() {
+            useAuthStore().$patch((state: IAuthStore) => {
+                state.isConnected = false;
+                state.user = null;
+            })
+            localStorage.clear();
         },
         getMyInformations: () => {
             let token = localStorage.getItem('token');

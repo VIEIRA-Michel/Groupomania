@@ -8,8 +8,6 @@ import { useFriendshipStore } from '../shared/stores/friendsStore';
 import { useChatStore } from '../shared/stores/chatStore';
 import socket from "../socket";
 
-useAuthStore().getMyInformations();
-useAuthStore().$state.isConnected == false ? logout() : "";
 useChatStore().getAllMessages();
 
 const isConnected = computed(() => useAuthStore().$state.isConnected);
@@ -21,11 +19,6 @@ const messages = computed(() => useChatStore().$state.messages);
 const friends = computed(() => useFriendshipStore().$state.friends);
 const selectedUser = ref<any>(null);
 const change = ref(false);
-
-function logout() {
-    useAuthStore().logout();
-    window.location.href = '/';
-}
 
 function onSelectUser(utilisateur: any) {
     !selectedUser.value || selectedUser.value.user !== utilisateur.user ?
@@ -95,7 +88,6 @@ onBeforeMount(() => {
 
 </script>
 <template>
-    <NavigationBar :user="user" :isConnected="isConnected" @logout="logout" />
     <div class="container">
         <div :class="[selectedUser ? 'container-left active' : 'container-left']">
             <div class="container-left__list">

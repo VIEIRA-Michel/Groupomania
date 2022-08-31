@@ -44,7 +44,7 @@ export const useFriendshipStore = defineStore({
                 },
             }).then(response => {
                 console.log(response);
-                if (response.data.results.length > 0) {
+                if (response.data.results && response.data.results.length > 0) {
                     response.data.results.map((item: any) => {
                         if (useFriendshipStore().$state.requests.find((requests: any) => requests.sender == item.sender)) {
                             return;

@@ -1,113 +1,419 @@
 <script setup lang="ts">
-import Publication from '../components/Publication.vue';
-import { computed, reactive, ref } from 'vue';
+import Loading from '../components/Loading.vue';
+import PublicationForm from '../components/PublicationForm.vue';
+import Comment from '../components/Comment.vue';
+import { computed, reactive, ref, onBeforeMount, onUnmounted, onMounted, watchEffect } from 'vue';
 import { useAuthStore } from '../shared/stores/authStore';
+import { useChatStore } from '../shared/stores/chatStore';
+import { useFriendshipStore } from '../shared/stores/friendsStore';
+import { usePublicationsStore } from '../shared/stores/publicationsStore';
+import { useCommentsStore } from '../shared/stores/commentsStore';
 import NavigationBar from '../components/NavigationBar.vue';
-
-localStorage.getItem('token') !== null ? useAuthStore().getMyInformations() : "";
+import socket from '../socket';
 
 const isConnected = computed(() => useAuthStore().$state.isConnected);
 const user = computed(() => useAuthStore().$state.user);
-const invalidEmail = computed(() => useAuthStore().$state.invalidEmail);
-const invalidPassword = computed(() => useAuthStore().$state.invalidPassword);
+const users = computed(() => useChatStore().$state.users);
+const friendsConnected = computed(() => useChatStore().$state.friendsConnected);
+const friends = computed(() => useFriendshipStore().$state.friends);
+const publications = computed(() => usePublicationsStore().$state.publications);
+const isLoading = computed(() => usePublicationsStore().$state.isLoading);
+const numberOfPages = computed(() => usePublicationsStore().$state.numberOfPages);
 
-const open = ref(false);
-let hasAccount = ref(true);
-let userInput = reactive({
-    lastname: '',
-    firstname: '',
-    email: '',
-    password: '',
-    confirmPassword: ''
-});
-let loginInput = reactive({
-    email: '',
-    password: ''
+useFriendshipStore().getRequests();
+useFriendshipStore().checkRequestsSended();
+useFriendshipStore().getAllFriends();
+
+const selectedUser = ref<any>(null);
+let page = ref(1);
+let content = ref('');
+let picture = ref();
+
+function onPickFile(event: any) {
+    picture.value = event.target.files[0];
+}
+
+function createPublication() {
+    if (picture.value && content.value) {
+        usePublicationsStore().createPublication(content.value, picture.value);
+        picture.value = '';
+        content.value = '';
+    } else if (content.value) {
+        usePublicationsStore().createPublication(content.value, null);
+        content.value = '';
+    } else if (picture.value) {
+        usePublicationsStore().createPublication(null, picture.value);
+        picture.value = '';
+    }
+}
+
+function deletePublication(id: number) {
+    usePublicationsStore().deletePublication(id).then((response) => {
+        if (numberOfPages.value != 1 && usePublicationsStore().$state.publications.length == 0) {
+            page.value = page.value - 1;
+        } else if (numberOfPages.value != 1 && usePublicationsStore().$state.publications.length != 5) {
+            page.value = 1;
+            usePublicationsStore().getAllPublications(page.value);
+        }
+        socket.emit('delete publication', id);
+    });
+}
+
+function getComments(publication: any, more?: boolean) {
+    usePublicationsStore().publicationList.map((item: any) => {
+        if (item.publication_id == publication.publication_id) {
+            item.displayComments = true;
+        } else {
+            item.displayComments = false;
+            useCommentsStore().$reset();
+        }
+        return item;
+    })
+
+    if (more) {
+        useCommentsStore().$patch((state) => {
+            state.from = state.from + state.limit;
+            state.limit = state.limit + state.limit;
+        });
+        usePublicationsStore().publicationList.map((item: any) => {
+            if (item.publication_id == publication.publication_id) {
+                item.comments.length >= useCommentsStore().$state.from ? useCommentsStore().getAllComments(publication.publication_id, useCommentsStore().$state.limit, useCommentsStore().$state.from) : null;
+            }
+        });
+    }
+}
+
+function displayMenu(menu: any) {
+    usePublicationsStore().publicationList.map((item: any) => {
+        if (item.publication_id == menu.publication_id) {
+            item.menu = !item.menu;
+        } else {
+            item.menu = false;
+        }
+        return item;
+    });
+}
+function likePublication(publication_id: any) {
+    usePublicationsStore().likePublication(publication_id);
+}
+
+watchEffect(() => {
+    usePublicationsStore().$reset();
+    usePublicationsStore().getAllPublications(page.value);
+})
+
+
+function displayFriends(usersOnline: any) {
+    usersOnline.forEach((userOnline: any) => {
+        friends.value.forEach((friend: any) => {
+            friend.user_id == userOnline.user ? useChatStore().friendsConnected(userOnline) : "";
+        });
+    });
+}
+
+function checkIsFriend(utilisateur: any) {
+    friendsConnected.value.find(friend => friend.user == utilisateur.user) ? "" : friends.value.length > 0 && friends.value.find(friend => friend.user_id === utilisateur.user) ? useChatStore().friendsConnected(utilisateur) : "";
+}
+
+onBeforeMount(() => {
+    console.log('onBeforeMount');
+    console.log(isConnected.value);
+    if (isConnected.value) {
+        useFriendshipStore().getAllFriends().then((response) => {
+            const session = JSON.parse(localStorage.getItem("user"));
+            if (session) {
+                socket.auth = { username: session.firstname + ' ' + session.lastname, picture: session.picture_url, user: session.user_id, sessionID: session.session_id };
+                socket.connect();
+            }
+            socket.on("session", ({ sessionID, userID }) => {
+                socket.auth = { sessionID };
+                socket.userID = userID;
+            });
+            socket.on('typing', (data) => {
+                useChatStore().$patch((state) => {
+                    state.typing = data;
+                });
+            });
+            socket.on('stoptyping', (data) => {
+                useChatStore().$patch((state) => {
+                    state.typing = false;
+                });
+            });
+            socket.on("connect", () => {
+                users.value.forEach((utilisateur: any) => {
+                    utilisateur.self ? utilisateur.connected = true : "";
+                });
+            });
+            socket.on("disconnect", () => {
+                users.value.forEach((utilisateur: any) => {
+                    utilisateur.self ? utilisateur.connected = false : "";
+                });
+            });
+            const initReactiveProperties = (utilisateur: any) => {
+                utilisateur.connected = true;
+                utilisateur.messages = [];
+                utilisateur.hasNewMessages = false;
+            };
+            socket.on("users", (users2) => {
+                users2.forEach((utilisateur: any) => {
+                    for (let i = 0; i < users2.length; i++) {
+                        const existingUser = users2[i];
+                        if (existingUser.userID === utilisateur.userID) {
+                            initReactiveProperties(existingUser);
+                            return;
+                        }
+                    }
+                    utilisateur.self = utilisateur.userID === socket.userID;
+                    initReactiveProperties(utilisateur);
+                });
+                users2 = users2.sort((a: any, b: any) => {
+                    if (a.self) return -1;
+                    if (b.self) return 1;
+                    if (a.username < b.username) return -1;
+                    return a.username > b.username ? 1 : 0;
+                });
+                let currentUserConnected = users2.filter((user: any) => user.userID !== socket.userID);
+                displayFriends(currentUserConnected);
+            });
+            socket.on("user connected", (utilisateur: any) => {
+                for (let i = 0; i < users.value.length; i++) {
+                    const existingUser: any = useChatStore().$state.users[i];
+                    if (existingUser.userID === utilisateur.userID) {
+                        existingUser.connected = true;
+                        return;
+                    }
+                }
+                initReactiveProperties(utilisateur);
+                useChatStore().userConnected(utilisateur);
+                checkIsFriend(utilisateur);
+            });
+            socket.on("user disconnected", (id) => {
+                let newArray = ref(users.value.filter((utilisateur: any) => utilisateur.userID !== id));
+                let newArrayFriend = ref(friendsConnected.value.filter((utilisateur: any) => utilisateur.user !== id));
+                useChatStore().$patch((state: any) => {
+                    state.users = newArray.value;
+                    state.friendsConnected = newArrayFriend.value;
+                });
+            });
+            socket.on("private message", ({ content, from, to }) => {
+                for (let i = 0; i < friendsConnected.value.length; i++) {
+                    const utilisateur: any = friendsConnected.value[i];
+                    if (utilisateur.userID === from) {
+                        utilisateur.messages.push({
+                            message: content,
+                            fromSelf: false,
+                        });
+                        if (utilisateur !== selectedUser) {
+                            utilisateur.hasNewMessages = true;
+                        }
+                        break;
+                    }
+                }
+            });
+            socket.on('like', (data) => {
+                console.log(data);
+                usePublicationsStore().$patch((state: any) => {
+                    state.publications.map((item: any) => {
+                        if (item.publication_id == data.publication_id) {
+                            item.likes.push(data.user_id);
+                        }
+                        return item;
+                    })
+                })
+            })
+            socket.on('remove like', (data) => {
+                console.log(data);
+                usePublicationsStore().$patch((state: any) => {
+                    state.publications.map((item: any) => {
+                        if (item.publication_id == data.publication_id) {
+                            item.likes = item.likes.filter((like: any) => like != data.user_id);
+                        }
+                        return item;
+                    });
+                });
+            })
+            socket.on('new publication', (data) => {
+                usePublicationsStore().$patch((state: any) => {
+                    state.publications.unshift(data._value);
+                });
+            });
+            socket.on('edit publication', (data) => {
+                usePublicationsStore().$patch((state: any) => {
+                    state.publications.map((item: any) => {
+                        if (item.publication_id == data.publication_id) {
+                            item.content = data.content;
+                            item.picture = data.picture;
+                            item.updated_at = data.updated_at;
+                        }
+                        return item;
+                    });
+                });
+            });
+
+            socket.on('delete publication', (data) => {
+                usePublicationsStore().$patch((state: any) => {
+                    state.publications.map((item: any) => {
+                        if (item.publication_id == data) {
+                            state.publications.splice(usePublicationsStore().$state.publications.indexOf(item), 1);
+                        }
+                    });
+                });
+            });
+            socket.on('has commented', (data: any) => {
+                usePublicationsStore().$patch((state: any) => {
+                    state.publications.map((item: any) => {
+                        if (item.publication_id == data._value.publication_id) {
+                            item.comments.push(data._value);
+                            item.numberOfComments = item.numberOfComments + 1;
+                        }
+                        return item;
+                    });
+                });
+            });
+
+            socket.on('delete comment', (data: any) => {
+                usePublicationsStore().$patch((state: any) => {
+                    state.publications.map((item: any) => {
+                        if (item.publication_id == data.publication_id) {
+                            item.comments = item.comments.filter((itemComment: any) => {
+                                return itemComment.comment_id != data.id;
+                            });
+                            console.log(item);
+                            item.numberOfComments = item.numberOfComments - 1;
+                        }
+                        return item;
+                    });
+                })
+            })
+        });
+    }
 });
 
+onMounted(() => {
+    console.log('onMounted');
+    console.log(isConnected.value);
+})
 
 </script>
 <template>
-    <NavigationBar :user="user" :isConnected="isConnected" @logout="useAuthStore().logout()" />
-    <div v-if="!isConnected" class="home">
-        <div class="home__picture">
-            <img src="../assets/picture-home.png" alt="">
-        </div>
-        <div class="container-shadow">
-        </div>
-        <div class="container">
-            <div class="container__header">
-                <div class="container__header__title">
-                    <h1><span>Groupomania</span></h1>
-                </div>
-                <div class="container__header__message">
-                    <p>Prenons le temps de mieux nous connaître et partageons ensemble chacune de nos victoires
-                    </p>
+    <template v-if="isLoading">
+        <Loading />
+    </template>
+    <template v-else-if="!isLoading">
+        <div v-if="user" class="create_post">
+            <div class="create_post__top">
+                <div class="create_post__top__details">
+                    <div class="create_post__top__details__avatar">
+                        <img :src="user.picture_url" alt="avatar" />
+                    </div>
                 </div>
             </div>
-            <div class="container__content">
-                <div v-if="hasAccount" class="container__content__form">
-                    <form @submit.prevent="useAuthStore().login(loginInput.email, loginInput.password)">
-                        <div class="container__content__form__login">
-                            <label for="email">Email</label>
-                            <input type="email" id="email" :class="[invalidEmail ? 'invalidInput' : 'default']"
-                                v-model="loginInput.email" />
-                            <p v-if="invalidEmail" class="invalidText">Adresse email incorrecte</p>
-                        </div>
-                        <div class="container__content__form__login">
-                            <label for="password">Mot de passe</label>
-                            <input type="password" id="password"
-                                v-bind:class="[invalidPassword ? 'invalidInput' : 'default']"
-                                v-model="loginInput.password" />
-                            <p v-if="invalidPassword" class="invalidText">Mot de passe incorrect</p>
-                        </div>
-                        <div class="container__content__form__login">
-                            <button>Connexion</button>
-                        </div>
-                        <div class="container__content__form__message">
-                            Vous n'avez pas encore de compte ? <span v-if="hasAccount"
-                                @click="hasAccount = false">Inscrivez-vous gratuitement</span>
-                        </div>
-                    </form>
-                </div>
-                <div v-else class="container__content__form">
-                    <form
-                        @submit.prevent="useAuthStore().register(userInput.lastname, userInput.firstname, userInput.email, userInput.password, userInput.confirmPassword)">
-                        <div class="container__content__form__register">
-                            <label for="lastname">Nom</label>
-                            <input type="text" id="lastname" v-model="userInput.lastname" />
-                        </div>
-                        <div class="container__content__form__register">
-                            <label for="firstname">Prénom</label>
-                            <input type="text" id="firstname" v-model="userInput.firstname" />
-                        </div>
-                        <div class="container__content__form__register">
-                            <label for="email">Email</label>
-                            <input type="email" id="email" v-model="userInput.email" />
-                        </div>
-                        <div class="container__content__form__register">
-                            <label for="password">Mot de passe</label>
-                            <input type="password" id="password" v-model="userInput.password" />
-                        </div>
-                        <div class="container__content__form__register">
-                            <label for="confirmPassword">Confirmation du mot de passe</label>
-                            <input type="password" id="confirmPassword" v-model="userInput.confirmPassword" />
-                        </div>
-                        <div class="container__content__form__register">
-                            <button>S'enregistrer</button>
-                        </div>
-                        <div class="container__content__form__message">
-                            Vous avez déjà un compte ? <span v-if="!hasAccount"
-                                @click="hasAccount = true">Connectez-vous</span>
+            <div class="create_post__content">
+                <div class="create_post__content__details">
+                    <form @submit.prevent="createPublication">
+                        <input type="text" v-model="content" placeholder="Quoi de neuf ?"
+                            class="create_post__content__details__input">
+                        <div class="create_post__content__details">
+                            <input type="file" ref="fileInput" accept="image/*" @change="onPickFile"
+                                @submit="picture = ''" class="create_post__content__details__file" id="file">
+                            <button class="create_post__content__details__button">
+                                <fa icon="fa-solid fa-paper-plane" />
+                            </button>
                         </div>
                     </form>
                 </div>
             </div>
         </div>
-    </div>
-    <div v-else-if="isConnected">
-        <Publication />
-    </div>
+        <div v-if="publications.length > 0">
+            <div class="publication" v-for="publication in publications">
+                <div v-if="!publication.editMode">
+                    <div class="post" :data-id="publication.publication_id">
+                        <div class="post__information">
+                            <div class="post__top">
+                                <div class="post__top__details">
+                                    <div class="post__top__details__avatar">
+                                        <img :src="publication.picture_url" alt="avatar" />
+                                    </div>
+                                    <div class="post__top__details__info">
+                                        <div class="post__top__details__info__name">
+                                            <span>{{  publication.firstname + ' ' + publication.lastname 
+                                                }}</span>
+                                        </div>
+                                        <div class="post__top__details__info__date">
+                                            <span>{{  'Publiée ' + publication.created_at  }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div v-if="user.user_id == publication.user_id" class="post__top__menu">
+                                    <div class="post__top__menu__button">
+                                        <fa icon="fa-solid fa-ellipsis" @click="displayMenu(publication)" />
+                                    </div>
+                                    <div v-if="publication.menu" class="post__top__menu__content">
+                                        <div class="post__top__menu__content__diamond"></div>
+                                        <div class="post__top__menu__content__item">
+                                            <fa @click="publication.editMode = true" icon="fa-solid fa-pen-to-square" />
+                                        </div>
+                                        <div class="post__top__menu__content__item">
+                                            <fa @click="deletePublication(publication.publication_id)"
+                                                icon="fa-solid fa-trash-can" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="post__content">
+                                <div class="post__content__text">
+                                    <p v-if="publication.content">{{  publication.content  }}</p>
+                                </div>
+                                <img v-if="publication.picture" :src="publication.picture" alt="">
+                            </div>
+                        </div>
+                        <div class="post__likeAndComment">
+                            <div class="post__interaction">
+                                <div class="post__interaction__like">
+                                    <button v-if="!publication.iLike"
+                                        @click.stop="likePublication(publication.publication_id)">
+                                        <span>{{  publication.likes.length + ' '  }}</span>
+                                        <fa icon="fa-regular fa-heart" />
+                                    </button>
+                                    <button v-else class="like"
+                                        @click.stop="likePublication(publication.publication_id)">
+                                        <span>{{  publication.likes.length + ' '  }}</span>
+                                        <fa icon="fa-solid fa-heart" />
+                                    </button>
+                                </div>
+                                <div class="post__interaction__comment">
+                                    <button @click.stop="getComments(publication)" type="button">
+                                        <span>{{  publication.numberOfComments + ' '  }}</span>
+                                        <fa icon="fa-regular fa-comment-dots" />
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="post__interaction__comment__list">
+                                <template v-if="publication.displayComments">
+                                    <Comment :publication_id="publication.publication_id" :user="user"
+                                        :numberOfComments="publication.numberOfComments"
+                                        :comments="publication.comments" @getMore="getComments(publication, true)" />
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <template v-else>
+                    <PublicationForm :content="publication.content" :picture="publication.picture"
+                        :id="publication.publication_id" :user="user" @cancel="publication.editMode = false"
+                        @update="usePublicationsStore().updatePublication(publication.publication_id, { editMode: false, post: $event })" />
+                </template>
+            </div>
+            <div class="post__page">
+                <div v-if="page > 1" class="post__page__previous">
+                    <button @click="page--" type="button">Page Précédente</button>
+                </div>
+                <div v-if="page < numberOfPages" class="post__page__next">
+                    <button @click="page++" type="button">Page Suivante</button>
+                </div>
+            </div>
+        </div>
+    </template>
 </template>
 <style scoped lang="scss">
 @import '../styles/Utils/keyframes';
@@ -116,350 +422,374 @@ let loginInput = reactive({
     font-family: 'Lato', sans-serif;
 }
 
-.register {
-    display: flex;
-    align-items: center;
-    background-color: #4E5166;
-    color: #000;
-    padding: 10px;
-    cursor: pointer;
-}
+@import '../styles/Components/buttons';
+@import '../styles/Utils/keyframes';
 
-.home {
+.create_post {
+    max-height: 860px;
     display: flex;
-    flex-direction: row;
-    margin: 0;
-    height: 100vh;
-    overflow-x: hidden;
+    width: 470px;
+    border-radius: 5px;
+    margin: 60px auto auto auto;
+    backdrop-filter: blur(5px);
+    background-color: #FFFFFF;
+    border: 1px solid #FD2D01;
+    -webkit-animation: slide-in-top 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.3s both;
+    animation: slide-in-top 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.3s both;
 
-    &__picture {
-        img {
-            z-index: -1;
-            object-fit: cover;
-            position: absolute;
-            left: 0;
-            width: 100%;
-            height: 100%;
-        }
+    @media (max-width: 768px) {
+        width: 90%;
     }
 
-    .container-shadow {
-        height: 370px;
-        width: 100vw;
-        position: absolute;
-        background: linear-gradient(180deg, rgb(250, 250, 250) 19%, rgba(0, 212, 255, 0) 100%);
-    }
-
-    .container {
+    &__top {
         display: flex;
-        flex-direction: column;
-        align-items: center;
-        z-index: 1;
-        width: 100%;
-        height: 100%;
-        justify-content: center;
+        padding: 10px 0 0 10px;
 
-        span {
-            color: #FD2D01;
-        }
-
-
-        &__header {
-            @media only screen and (min-width: 769px) {
-                position: absolute;
-                top: 80px;
-            }
-
-            &__title {
-                h1 {
-                    font-size: 30px;
-                    font-weight: bold;
-                    -webkit-animation: focus-in-expand 2.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) 1s both;
-                    animation: focus-in-expand 2.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) 1s both;
-                }
-            }
-
-            &__message {
-                text-align: center;
-
-                p {
-                    -webkit-animation: text-focus-in 3s cubic-bezier(0.215, 0.610, 0.355, 1.000) 4s both;
-                    animation: text-focus-in 3s cubic-bezier(0.215, 0.610, 0.355, 1.000) 4s both;
-                }
-            }
-        }
-
-        &__content {
+        &__details {
             display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
-            -webkit-animation: slide-out-blurred-bottom 2.5s cubic-bezier(0.755, 0.050, 0.855, 0.060) 2.5s reverse both;
-            animation: slide-out-blurred-bottom 2.5s cubic-bezier(0.755, 0.050, 0.855, 0.060) 2.5s reverse both;
+            flex-direction: row;
 
-            @media only screen and (min-width: 769px) {
-                position: relative;
-                top: 20px;
-            }
+            &__avatar {
+                border-radius: 50%;
+                margin-right: 0.5rem;
 
-            &__form {
-                border-radius: 5px;
-                background: #FFFFFF;
-                border: 1px solid #FD2D01;
-                padding: 20px;
-                -webkit-animation: focus-in-expand 1s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
-                animation: focus-in-expand 1s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
-
-
-
-
-                form {
-                    display: flex;
-                    flex-direction: column;
+                img {
+                    width: 40px;
+                    border-radius: 5px;
+                    height: 40px;
+                    object-fit: cover;
                 }
-
-                &__login {
-
-                    margin-bottom: 15px;
-                    display: flex;
-                    flex-direction: column;
-
-                    .invalidInput {
-                        border: #FD2D01 2px ridge;
-                        -webkit-animation: shake-horizontal 0.8s cubic-bezier(0.455, 0.030, 0.515, 0.955) both;
-                        animation: shake-horizontal 0.8s cubic-bezier(0.455, 0.030, 0.515, 0.955) both;
-                    }
-
-                    .default {
-                        border: 2px ridge #4E5166;
-                    }
-
-                    .invalidText {
-                        color: #FD2D01;
-                        margin-top: 5px;
-                    }
-
-                    label {
-                        font-weight: 800;
-                        text-align: center;
-                    }
-
-                    input {
-                        border-radius: 5px;
-                        height: 20px;
-                        text-align: center;
-                    }
-
-                    button {
-                        background-color: #FFFFFF;
-                        border-color: #FD2D01;
-                        color: #FD2D01;
-                        padding: 10px;
-                        border: 1px solid #FD2D01;
-                        border-radius: 5px;
-                        cursor: pointer;
-                        transition: all 0.3s ease-in-out;
-
-                        &:hover {
-                            background-color: #FD2D01;
-                            color: #FFFFFF;
-                        }
-                    }
-                }
-
-                &__message {
-                    cursor: pointer;
-                }
-
-                &__register {
-                    display: flex;
-                    flex-direction: column;
-
-                    margin-bottom: 15px;
-                    display: flex;
-                    flex-direction: column;
-
-                    label {
-                        font-weight: 800;
-                        text-align: center;
-                    }
-
-                    input {
-                        border-radius: 5px;
-                        height: 20px;
-                        text-align: center;
-
-                        &:focus {
-                            outline: none;
-                        }
-                    }
-
-                    button {
-                        background-color: #FFFFFF;
-                        border-color: #FD2D01;
-                        color: #FD2D01;
-                        padding: 10px;
-                        border: 1px solid #FD2D01;
-                        border-radius: 5px;
-                        cursor: pointer;
-                        transition: all 0.3s ease-in-out;
-
-                        &:hover {
-                            background-color: #FD2D01;
-                            color: #FFFFFF;
-                        }
-                    }
-                }
-            }
-        }
-
-        &__header {
-
-            &__title {
-                text-align: center;
-            }
-
-            &__picture {
-                max-height: 300px;
-                width: 100%;
             }
         }
     }
 
-    .hero-banner {
-        width: 75%;
+    &__content {
+        display: flex;
+        width: 100%;
+        flex-direction: column-reverse;
+        align-items: flex-start;
+        padding: 10px 0 0 0;
 
-        img {
-            width: 100%;
-            height: 100%;
-        }
-    }
-}
-
-.home_picture {
-    img {
-        position: absolute;
-    }
-}
-
-
-.welcome {
-    max-width: 1440px;
-    margin: 0 auto;
-
-    .welcome__content {
-        padding: 0 20px;
-        text-align: center;
-        margin-top: 100px;
-
-        &__container {
+        &__details {
             display: flex;
             flex-direction: row;
             align-items: center;
-            justify-content: center;
-            margin-top: 50px;
+            width: 100%;
+            justify-content: space-between;
+
+            form {
+                width: 100%;
+            }
+
+            &__input {
+                width: 94%;
+                height: 30px;
+                border: none;
+                border-radius: 15px;
+                padding: 0px 7px 0px 7px;
+                background-color: rgb(255, 255, 255);
+                color: rgb(0, 0, 0);
+
+                @media (max-width: 768px) {
+                    width: 90%;
+                }
+
+            }
+
+            &__file {
+                margin: 10px 0px;
+                width: 240px;
+
+            }
 
             &__button {
+                margin-right: 7px;
                 background-color: #FD2D01;
                 border-color: #FD2D01;
-                color: #fff;
-                font-size: 1.5rem;
-                padding: 10px 20px;
+                color: #FFFFFF;
+                padding: 5px 10px;
+                border: 1px solid #FD2D01;
                 border-radius: 5px;
-                border-width: 1px;
-                border-style: solid;
                 cursor: pointer;
                 transition: all 0.3s ease-in-out;
-                margin: 0 10px;
+            }
+        }
+    }
+}
 
-                &:hover {
-                    background-color: #FFD7D7;
-                    border-color: #FFD7D7;
-                    color: #fff;
+.post {
+    display: flex;
+    flex-direction: column;
+    width: 470px;
+    border-radius: 5px;
+    margin: 10px auto auto auto;
+    background-color: #FFFFFF;
+    border: 1px solid #FD2D01;
+
+    @media (max-width: 768px) {
+        width: 90%;
+    }
+
+    &__top {
+        display: flex;
+        padding: 10px 0 0 10px;
+
+        &__details {
+            width: 50%;
+            display: flex;
+            flex-direction: row;
+
+            &__avatar {
+                margin-right: 0.5rem;
+
+                img {
+                    width: 40px;
+                    border-radius: 5px;
+                    height: 40px;
+                    object-fit: cover;
+                }
+            }
+
+            &__info {
+                &__name {
+                    font-weight: bold;
+                }
+            }
+
+
+        }
+
+        &__menu {
+            width: 50%;
+            display: flex;
+            justify-content: end;
+            margin-right: 20px;
+
+            &__button {
+                svg {
+                    cursor: pointer;
+                    color: #4E5166;
+                }
+            }
+
+            &__content {
+                position: absolute;
+                right: 10px;
+                top: 30px;
+                -webkit-animation: scale-in-ver-top 0.2s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+                animation: scale-in-ver-top 0.2s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+                border-radius: 5px;
+                background: #FFFFFF;
+                border: 1px solid #FD2D01;
+
+                &__diamond {
+                    transform: translate(-10px, -7px) rotate(-45deg);
+                    width: 10px;
+                    height: 10px;
+                    background: #FFFFFF;
+                    position: absolute;
+                    right: 0px;
+                    top: 1px;
+                    border-top: 1px solid #FD2D01;
+                    border-right: 1px solid #FD2D01;
+                }
+
+                &__item {
+                    display: flex;
+                    justify-content: center;
+                    margin: 10px;
+
+                    svg {
+                        cursor: pointer;
+                    }
                 }
             }
         }
 
-        h1 {
-            font-size: 2.5rem;
-            font-weight: bold;
-            margin-bottom: 20px;
-        }
+        &__button {
+            display: flex;
+            justify-content: end;
+            width: 50%;
 
-        p {
-            font-size: 1.5rem;
-            line-height: 1.5;
-            margin-bottom: 20px;
-        }
-    }
-}
+            &__ellipsis {
+                cursor: pointer;
+            }
 
-.calc {
-    position: absolute;
-    top: 0;
-    background-color: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(2px);
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-}
+            svg {
+                width: 20px;
+                height: 20px;
+                margin-right: 10px;
+            }
 
-.modal-container {
-    background-color: #FFF;
-    color: #4E5166;
-    padding: 40px;
-    border-radius: 5px;
-    width: 300px;
-    height: 300px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    backdrop-filter: blur(2px);
-    transition: all 0.3s ease-in-out;
-    transform: translateY(-100px);
-    transform-origin: center;
+            button {
+                @include button-primary;
+            }
 
-    h2 {
-        font-size: 1.5rem;
-        margin-bottom: 20px;
-
-        span {
-            color: #FD2D01;
         }
     }
 
-    &__form {
+    &__content {
         display: flex;
         flex-direction: column;
+        align-items: flex-start;
+        padding: 10px 0 0 0;
 
-        &__row {
+        &__text {
+            margin: 0 20px;
             display: flex;
-            flex-direction: column;
+            flex-direction: row;
+            color: #4E5166;
 
-            &:nth-child(6) {
-                margin-top: 20px;
+            span {
+                font-weight: bold;
+            }
+        }
+
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background: #FFFFFF;
+        }
+
+        &__details {
+
+            &__input {
+                width: 94%;
+                height: 30px;
+                border: none;
+                border-radius: 15px;
+                padding: 0px 7px 0px 7px;
+                background-color: rgb(255, 255, 255);
+                color: rgb(0, 0, 0);
+            }
+
+            &__button {
+                @include button-primary;
+            }
+
+            &__file {
+                margin: 10px 0px;
+            }
+        }
+    }
+
+    &__likeAndComment {
+        padding: 10px 20px;
+    }
+
+    &__interaction {
+        display: flex;
+        width: 100%;
+        border-radius: 0px 0px 15px 15px;
+        padding: 5px 0px;
+
+        &__like {
+            width: 50%;
+
+            button {
+                width: 100%;
+                height: 100%;
+                background-color: #FFFFFF;
+                border: none;
+                cursor: pointer;
                 display: flex;
+                justify-content: center;
                 align-items: center;
 
-                button {
-                    background-color: #FD2D01;
-                    border-color: #FD2D01;
-                    color: #fff;
-                    font-size: 1.5rem;
-                    padding: 10px 20px;
-                    border-radius: 5px;
-                    border-width: 1px;
-                    border-style: solid;
-                    cursor: pointer;
-                    transition: all 0.3s ease-in-out;
-                    margin: 0 10px;
+                span {
+                    font-size: 20px;
+                    margin-right: 5px;
+                }
+
+                svg {
+                    font-size: 20px;
+                    color: #4E5166;
+                }
+
+
+            }
+
+            .like {
+                svg {
+                    font-size: 20px;
+                    // color: linear-gradient(to right, #FD2D01, #FFD7D7);
+                    color: #FD2D01;
                 }
             }
         }
+
+        &__comment {
+            width: 50%;
+
+            button {
+                width: 100%;
+                height: 100%;
+                background-color: #FFFFFF;
+                border: none;
+                cursor: pointer;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+
+                span {
+                    font-size: 20px;
+                    margin-right: 5px;
+                }
+
+                svg {
+                    font-size: 20px;
+                    color: #4E5166;
+                }
+            }
+
+            &__list {}
+        }
+    }
+
+    &__page {
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        margin-top: 3rem;
+        -webkit-animation: slide-in-blurred-bottom 0.6s cubic-bezier(0.230, 1.000, 0.320, 1.000) 0.3s both;
+        animation: slide-in-blurred-bottom 0.6s cubic-bezier(0.230, 1.000, 0.320, 1.000) 0.3s both;
+
+        :nth-child(1) {
+            margin-right: 15px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            @include button-primary;
+        }
+    }
+}
+
+.publication {
+    &:nth-child(1) {
+        -webkit-animation: slide-in-left 0.2s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.5s both;
+        animation: slide-in-left 0.2s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.5s both;
+    }
+
+    &:nth-child(2) {
+        -webkit-animation: slide-in-right 0.2s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.7s both;
+        animation: slide-in-right 0.2s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.7s both;
+    }
+
+    &:nth-child(3) {
+        -webkit-animation: slide-in-left 0.2s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.9s both;
+        animation: slide-in-left 0.2s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.9s both;
+    }
+
+    &:nth-child(4) {
+        -webkit-animation: slide-in-right 0.2s cubic-bezier(0.250, 0.460, 0.450, 0.940) 1.1s both;
+        animation: slide-in-right 0.2s cubic-bezier(0.250, 0.460, 0.450, 0.940) 1.1s both;
+    }
+
+    &:nth-child(5) {
+        -webkit-animation: slide-in-left 0.2s cubic-bezier(0.250, 0.460, 0.450, 0.940) 1.3s both;
+        animation: slide-in-left 0.2s cubic-bezier(0.250, 0.460, 0.450, 0.940) 1.3s both;
     }
 }
 </style>

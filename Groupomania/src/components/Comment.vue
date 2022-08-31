@@ -31,7 +31,7 @@ function createComment(event: any) {
             <div class="post__details">
                 <div class="post__details__info">
                     <div class="post__details__info__avatar">
-                        <img :src="props.user.picture_url" alt="avatar" />
+                        <img :src="com.picture_url" alt="avatar" />
                     </div>
                     <div class="post__details__info__commentary">
                         <div class="post__details__info__commentary__name">
@@ -99,22 +99,21 @@ function createComment(event: any) {
                 align-items: start;
 
                 &__avatar {
-                    width: 40px;
-                    height: 40px;
-                    border-radius: 50%;
                     overflow: hidden;
                     margin-right: 10px;
-
+                    
                     img {
-                        width: 100%;
+                        width: 40px;
+                        height: 40px;
+                        object-fit: cover;
+                        border-radius: 5px;
                     }
                 }
 
                 &__commentary {
                     background: #FFFFFF;
-                    border-radius: 25px;
+                    border-radius: 5px;
                     padding: 10px 15px;
-                    margin-bottom: 10px;
                     box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.2), 0px 1px 1px 0px rgba(0, 0, 0, 0.14), 0px 2px 1px -1px rgba(0, 0, 0, 0.12);
 
                     &__name {
@@ -148,15 +147,14 @@ function createComment(event: any) {
     &__top {
         &__details {
             &__avatar {
-                width: 50px;
-                height: 50px;
-                border-radius: 50%;
                 overflow: hidden;
                 margin-right: 10px;
 
                 img {
                     width: 40px;
                     height: 40px;
+                    object-fit: cover;
+                    border-radius: 5px;
                 }
             }
         }

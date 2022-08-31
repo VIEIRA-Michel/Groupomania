@@ -3,8 +3,6 @@ import { computed, ref, reactive } from 'vue';
 import { useAuthStore } from '../shared/stores/authStore';
 import NavigationBar from '../components/NavigationBar.vue';
 
-localStorage.getItem('token') !== null ? useAuthStore().getMyInformations() : window.location.href = '/';
-
 const isConnected = computed(() => useAuthStore().$state.isConnected);
 const user = computed(() => useAuthStore().$state.user);
 
@@ -15,12 +13,6 @@ let userEdit = reactive({
     password: '',
     confirmPassword: ''
 });
-
-function logout() {
-    useAuthStore().logout();
-    window.location.href = '/';
-};
-
 
 function previewPicture(e: any) {
     const image = document.getElementById('picture');
@@ -33,7 +25,6 @@ function updateProfile(userEdit?: any) {
 }
 </script>
 <template>
-    <NavigationBar :user="user" :isConnected="isConnected" @logout="logout()" />
     <div v-if="isConnected" class="container">
         <div class="edit-profil">
             <div class="edit-profil__title">

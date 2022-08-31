@@ -12,19 +12,11 @@ const invitSended = computed(() => useFriendshipStore().$state.invitSendedTo);
 const friends = computed(() => useFriendshipStore().$state.friends);
 const usersFound = computed(() => useFriendshipStore().$state.searchResults);
 
-useAuthStore().getMyInformations();
-useAuthStore().$state.isConnected == false ? window.location.href = '/' : "";
-
 const search = ref('');
 let open = ref(false);
 let modalRequest = ref(false);
 let userToBeDeleted = ref(null);
 let invitToBeCanceled = ref(null);
-
-function logout() {
-    useAuthStore().logout();
-    window.location.href = '/';
-}
 
 function removeFriend(user_id: number) {
     open.value = false;
@@ -156,7 +148,6 @@ onBeforeMount(() => {
 
 </script>
 <template>
-    <NavigationBar :user="user" :isConnected="isConnected" @logout="logout()" />
     <div v-if="isConnected" class="container">
         <div class="search-user">
             <div class="search-user__title">Rechercher un utilisateur</div>

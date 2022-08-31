@@ -1,16 +1,9 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { useOtherStore } from '@/shared/stores/otherStore';
+
 const burgerMenu = computed(() => useOtherStore().$state.burgerMenu);
-const open = ref(false);
 const props = defineProps<{
-    user: {
-        email: string,
-        firstname: string,
-        lastname: string,
-        picture_url: string,
-        user_id: number,
-    },
     isConnected: boolean,
 }>();
 
@@ -51,6 +44,14 @@ const emit = defineEmits<{
                     <fa v-if="props.isConnected" @click="emit('logout')" icon="fa-right-from-bracket" />
                 </div>
             </a>
+        </div>
+        <div v-else-if="!props.isConnected" class="menu notLogged">
+            <router-link to="/login">
+                <div class="menu__navigate">
+                    <fa icon="fa-solid fa-user-pen" />
+                    <span>Se connecter / S'enregistrer</span>
+                </div>
+            </router-link>
         </div>
         <div v-if="props.isConnected" class="burger">
             <button type="button" @click="useOtherStore().toggleBurgerMenu" className="burger__button">
@@ -104,6 +105,10 @@ const emit = defineEmits<{
 <style scoped lang="scss">
 @import '../styles/Utils/keyframes';
 
+* {
+    font-family: 'Lato', sans-serif;
+}
+
 header {
     display: flex;
     background-color: #FFF;
@@ -128,6 +133,8 @@ header {
         align-items: center;
         width: 100%;
         justify-content: space-around;
+        margin-right: 20px;
+        cursor: pointer;
 
         @media only screen and (max-width: 768px) {
             display: none;
@@ -147,7 +154,11 @@ header {
         &__navigate {
             cursor: pointer;
         }
+        &.notLogged {
+            justify-content: end;
+        }
     }
+
 
     .burger {
         z-index: 10;

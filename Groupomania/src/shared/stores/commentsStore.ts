@@ -80,6 +80,7 @@ export const useCommentsStore = defineStore({
                     "content": comment
                 },
             }).then(response => {
+                console.log(response);
                 let obj = ref({
                     account_disabled: response.data.data[0].account_disabled,
                     comment_content: response.data.data[0].comment_content,
@@ -91,6 +92,7 @@ export const useCommentsStore = defineStore({
                     firstname: response.data.data[0].firstname,
                     lastname: response.data.data[0].lastname,
                     picture: response.data.data[0].picture,
+                    picture_url: response.data.data[0].picture_url,
                     publication_content: response.data.data[0].publication_content,
                     publication_created: response.data.data[0].publication_created,
                     publication_id: response.data.data[0].publication_id,
@@ -101,8 +103,12 @@ export const useCommentsStore = defineStore({
                 socket.emit('has commented', obj);
                 usePublicationsStore().$state.publications.map((publication) => {
                     if (publication.publication_id === publication_id) {
-                        publication.comments!.push(obj.value);
-                        publication.numberOfComments = publication.numberOfComments! + 1;
+                        if (publication.comments.find((comment) => comment.comment_id == response.data.data[0].comment_id)) {
+                            console.log('comment already exists');
+                        } else {
+                            publication.comments.push(obj.value)
+                            publication.numberOfComments = publication.numberOfComments! + 1;
+                        }
                     }
                 })
             }).catch(error => {
