@@ -1,5 +1,6 @@
 import { defineStore, storeToRefs } from 'pinia';
 import axios from 'axios';
+import socket from "../../socket";
 
 export interface IAuthStore {
     isConnected: boolean | null;
@@ -82,11 +83,30 @@ export const useAuthStore = defineStore({
             })
         },
         logout() {
-            useAuthStore().$patch((state: IAuthStore) => {
-                state.isConnected = false;
-                state.user = null;
+            return new Promise((resolve, reject) => {
+                let user = JSON.parse(localStorage.getItem('user'));
+                axios({
+                    method: 'post',
+                    url: 'http://localhost:3000/api/auth/logout',
+                    headers: {
+                        authorization: `Bearer ${localStorage.getItem('token')}`
+                    },
+                    data: {
+                        userID: user.session_id
+                    }
+                }).then(response => {
+                    localStorage.removeItem('user');
+                    localStorage.removeItem('token');
+                    useAuthStore().$patch((state: IAuthStore) => {
+                        state.isConnected = false;
+                        state.user = null;
+                    });
+                    resolve(response);
+                }).catch(error => {
+                    console.log(error);
+                    reject(error);
+                })
             })
-            localStorage.clear();
         },
         getMyInformations: () => {
             let token = localStorage.getItem('token');
@@ -98,12 +118,18 @@ export const useAuthStore = defineStore({
                 url: 'http://localhost:3000/api/user/me',
                 headers: {
                     authorization: `Bearer ${localStorage.getItem('token')}`
-                }
+                },
             }).then(response => {
                 useAuthStore().$patch({
                     user: response.data,
                     isConnected: true,
                 });
+                const session = JSON.parse(localStorage.getItem("user"));
+                if (socket.connected == false) {
+                    socket.auth = { username: session.firstname + ' ' + session.lastname, picture: session.picture_url, user: session.user_id, sessionID: session.session_id };
+                    socket.connect();
+                }
+
             }).catch(error => {
                 error.response.status === 403 ? useAuthStore().logout() : "";
                 console.log(error);

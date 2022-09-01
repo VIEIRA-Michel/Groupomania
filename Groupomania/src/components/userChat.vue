@@ -4,8 +4,6 @@ const props = defineProps<{
     user: any,
     selected: any,
 }>();
-
-
 const emit = defineEmits<{
     (e: 'select'): any;
 }>();

@@ -6,5 +6,6 @@ const chatController = require('../controllers/chat');
 // router.put('/profil', multer, userController.updateProfil);
 router.post('/:id/messages', multer, chatController.sendMessage);
 router.get('/inbox', chatController.getAllMessages);
+router.get('/connected', chatController.getUsersConnected);
 
 module.exports = router;

@@ -8,8 +8,13 @@ const router = useRouter();
 
 const isConnected = computed(() => useAuthStore().isConnected);
 async function logout() {
-  await useAuthStore().logout();
-  router.push("/login");
+  try {
+    useAuthStore().logout().then((response) => {
+      router.push("/login");
+    })
+  } catch (error) {
+    throw error;
+  }
 }
 
 onUnmounted(() => {

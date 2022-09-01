@@ -58,7 +58,7 @@ const emit = defineEmits<{
                 <fa icon="fa-solid fa-bars" />
             </button>
         </div>
-        <div :class="[burgerMenu ? 'burger__menu' : 'burger__menu hidden']">
+        <div :class="[burgerMenu == null ? 'burger__menu disabled' : !burgerMenu ? 'burger__menu hidden' : 'burger__menu']">
             <div class="burger__menu__item" @click="useOtherStore().toggleBurgerMenu">
                 <router-link to="/">
                     <div class="burger__menu__item__navigate">
@@ -229,6 +229,10 @@ header {
     &.hidden {
         -webkit-animation: slide-out-top 0.3s cubic-bezier(0.550, 0.085, 0.680, 0.530) both;
         animation: slide-out-top 0.3s cubic-bezier(0.550, 0.085, 0.680, 0.530) both;
+    }
+
+    &.disabled {
+        display: none;
     }
 }
 

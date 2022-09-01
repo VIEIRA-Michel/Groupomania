@@ -1,14 +1,11 @@
 <script setup lang="ts">
-import { computed, onBeforeMount, ref, watchEffect } from 'vue';
+import { computed, onBeforeMount, ref } from 'vue';
 import { useAuthStore } from '../shared/stores/authStore';
 import { useFriendshipStore } from '../shared/stores/friendsStore';
-import NavigationBar from '../components/NavigationBar.vue';
 import socket from '../socket';
 
 const isConnected = computed(() => useAuthStore().$state.isConnected);
-const user = computed(() => useAuthStore().$state.user);
 const requests = computed(() => useFriendshipStore().$state.requests);
-const invitSended = computed(() => useFriendshipStore().$state.invitSendedTo);
 const friends = computed(() => useFriendshipStore().$state.friends);
 const usersFound = computed(() => useFriendshipStore().$state.searchResults);
 
@@ -19,8 +16,39 @@ let userToBeDeleted = ref(null);
 let invitToBeCanceled = ref(null);
 
 function removeFriend(user_id: number) {
-    open.value = false;
-    useFriendshipStore().removeFriend(user_id);
+    useFriendshipStore().removeFriend(user_id).then((response) => {
+        open.value = false;
+        socket.emit('friend removed', (useAuthStore().$state.user.user_id));
+    });
+}
+
+function addToFriends(user_id: any) {
+    useFriendshipStore().sendFriendRequest(user_id).then((response: any) => {
+        console.log(response);
+        let req = ref({
+            approve_date: response.data.results[0].approve_date,
+            denied_date: response.data.results[0].denied_date,
+            email: useAuthStore().$state.user.email,
+            firstname: useAuthStore().$state.user.firstname,
+            idRequest: response.data.results[0].id,
+            lastname: useAuthStore().$state.user.lastname,
+            picture_url: useAuthStore().$state.user.picture_url,
+            recipient: response.data.results[0].user_id_recipient,
+            request_date: response.data.results[0].request_date,
+            sender: response.data.results[0].user_id_sender,
+        })
+        socket.emit('friendRequest sended', (req.value));
+    })
+}
+
+function replyToRequest(invitation: any, reply: string) {
+    useFriendshipStore().acceptOrDeclineRequest(invitation, reply).then((response) => {
+        if (reply == 'accepted') {
+            socket.emit('friendRequest accepted', (response));
+        } else {
+            socket.emit('friendRequest refused', (useAuthStore().$state.user.user_id));
+        }
+    })
 }
 
 function searchUser() {
@@ -32,8 +60,10 @@ function searchUser() {
 }
 
 function cancelRequest(user_id: number) {
-    modalRequest.value = false;
-    useFriendshipStore().cancelRequest(user_id);
+    useFriendshipStore().cancelRequest(user_id).then((response) => {
+        modalRequest.value = false;
+        socket.emit('friendRequest canceled', (useAuthStore().$state.user.user_id));
+    });
 }
 
 function cancelModal(user: any) {
@@ -47,101 +77,104 @@ function deleteModal(user: any) {
 }
 
 onBeforeMount(() => {
-    socket.on('friendRequest sended', (data) => {
-        useFriendshipStore().$patch((state: any) => {
-            if(state.requests.find((item: any) => item.sender == data.sender)) {
-                return;
-            } else {
-                state.requests.push(data);
-            }
-            state.isLoading = false;
+    useFriendshipStore().getAllFriends().then((response) => {
+        socket.on('friendRequest sended', (data) => {
+            useFriendshipStore().$patch((state: any) => {
+                if (state.requests.find((item: any) => item.sender == data.sender)) {
+                    return;
+                } else {
+                    state.requests.push(data);
+                }
+                state.isLoading = false;
+            });
         });
-    });
-    socket.on('friendRequest refused', (data) => {
-        useFriendshipStore().$patch((state: any) => {
-            if (state.invitSendedTo.length > 0) {
-                state.invitSendedTo.map((item: any) => {
-                    if (item.id == data) {
-                        state.invitSendedTo.splice(state.invitSendedTo.indexOf(item), 1);
+        socket.on('friendRequest refused', (data) => {
+            useFriendshipStore().$patch((state: any) => {
+                if (state.invitSendedTo.length > 0) {
+                    state.invitSendedTo.map((item: any) => {
+                        if (item.id == data) {
+                            state.invitSendedTo.splice(state.invitSendedTo.indexOf(item), 1);
 
-                    }
-                })
-            }
-            if (state.searchResults.length > 0) {
-                state.searchResults.map((item: any) => {
-                    console.log(item);
-                    if (item.user_id == data) {
-                        item.pending = false;
-                        item.isFriend = false;
+                        }
+                    })
+                }
+                if (state.searchResults.length > 0) {
+                    state.searchResults.map((item: any) => {
+                        console.log(item);
+                        if (item.user_id == data) {
+                            item.pending = false;
+                            item.isFriend = false;
 
-                    }
-                })
-            }
+                        }
+                    })
+                }
 
-            state.isLoading = false;
-        })
-    })
-
-    socket.on('friendRequest accepted', (data) => {
-        useFriendshipStore().$patch((state: any) => {
-            if (state.invitSendedTo.length > 0) {
-                state.invitSendedTo.map((item: any) => {
-                    if (item.id == data.data.results[0].user_id_recipient) {
-                        state.invitSendedTo.splice(state.invitSendedTo.indexOf(item), 1);
-
-                    }
-                })
-            }
-            if (state.searchResults.length > 0) {
-                state.searchResults.map((item: any) => {
-                    if (item.user_id == data.data.results[0].user_id_recipient) {
-                        item.pending = false;
-                        item.isFriend = true;
-
-                    }
-                })
-            }
-            let newFriend = ref({
-                user_id: data.data.results[0].id,
-                firstname: data.data.results[0].firstname,
-                lastname: data.data.results[0].lastname,
-                picture_url: data.data.results[0].picture_url,
+                state.isLoading = false;
             })
-            state.friends.push(newFriend.value);
-            state.isLoading = false;
         })
-    })
 
-    socket.on('friend removed', (data) => {
-        useFriendshipStore().$patch((state: any) => {
-            if (state.friends.length > 0) {
-                state.friends.map((item: any) => {
-                    if (item.user_id == data) {
-                        state.friends.splice(state.friends.indexOf(item), 1);
-                    }
+        socket.on('friendRequest accepted', (data) => {
+            useFriendshipStore().$patch((state: any) => {
+                if (state.invitSendedTo.length > 0) {
+                    state.invitSendedTo.map((item: any) => {
+                        if (item.id == data.data.results[0].user_id_recipient) {
+                            state.invitSendedTo.splice(state.invitSendedTo.indexOf(item), 1);
+
+                        }
+                    })
+                }
+                if (state.searchResults.length > 0) {
+                    state.searchResults.map((item: any) => {
+                        if (item.user_id == data.data.results[0].user_id_recipient) {
+                            item.pending = false;
+                            item.isFriend = true;
+
+                        }
+                    })
+                }
+                let newFriend = ref({
+                    user_id: data.data.results[0].id,
+                    firstname: data.data.results[0].firstname,
+                    lastname: data.data.results[0].lastname,
+                    picture_url: data.data.results[0].picture_url,
                 })
-            }
-            if (state.searchResults.length > 0) {
-                state.searchResults.map((item: any) => {
-                    if (item.user_id == data) {
-                        item.isFriend = false;
-                    }
-                })
-            }
-            state.isLoading = false;
+                state.friends.push(newFriend.value);
+                state.isLoading = false;
+            })
         })
-    })
 
-    socket.on('friendRequest canceled', (data) => {
-        useFriendshipStore().$patch((state: any) => {
-            if (state.requests.length > 0) {
-                state.requests.map((item: any) => {
-                    if (item.sender == data) {
-                        state.requests.splice(state.requests.indexOf(item), 1);
-                    }
-                })
-            }
-            state.isLoading = false;
+        socket.on('friend removed', (data) => {
+            useFriendshipStore().$patch((state: any) => {
+                if (state.friends.length > 0) {
+                    state.friends.map((item: any) => {
+                        console.log(item);
+                        if (item.user_id == data) {
+                            state.friends.splice(state.friends.indexOf(item), 1);
+                        }
+                    })
+                }
+                if (state.searchResults.length > 0) {
+                    state.searchResults.map((item: any) => {
+                        if (item.user_id == data) {
+                            item.isFriend = false;
+                        }
+                    })
+                }
+                state.isLoading = false;
+            })
+        })
+
+        socket.on('friendRequest canceled', (data) => {
+            useFriendshipStore().$patch((state: any) => {
+                if (state.requests.length > 0) {
+                    state.requests.map((item: any) => {
+                        if (item.sender == data) {
+                            state.requests.splice(state.requests.indexOf(item), 1);
+                        }
+                    })
+                }
+                state.isLoading = false;
+            })
         })
     })
 });
@@ -170,8 +203,7 @@ onBeforeMount(() => {
                                     <span>{{ user.lastname }}</span>
                                 </div>
                             </div>
-                            <button v-if="!user.isFriend && !user.pending"
-                                @click="useFriendshipStore().sendFriendRequest(user.user_id)">
+                            <button v-if="!user.isFriend && !user.pending" @click="addToFriends(user.user_id)">
                                 <fa icon="fa-solid fa-user-plus" />
                             </button>
                             <button v-if="user.pending" @click="cancelModal(user)" class="pending">
@@ -230,12 +262,10 @@ onBeforeMount(() => {
                             </div>
                         </div>
                         <div class="friends-request__list__item__name__button">
-                            <button @click="useFriendshipStore().acceptOrDeclineRequest(req, 'refused')"
-                                class="refused">
+                            <button @click="replyToRequest(req, 'refused')" class="refused">
                                 <fa icon="fa-solid fa-xmark" />
                             </button>
-                            <button @click="useFriendshipStore().acceptOrDeclineRequest(req, 'accepted')"
-                                class="accepted">
+                            <button @click="replyToRequest(req, 'accepted')" class="accepted">
                                 <fa icon="fa-solid fa-check" />
                             </button>
                         </div>

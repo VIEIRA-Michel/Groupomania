@@ -76,38 +76,6 @@ io.use((socket, next) => {
 })
 
 io.on('connection', (socket) => {
-  (async () => {
-    const alreadyConnected = await redis.get(`connected`);
-    if (!alreadyConnected) {
-      await redis.set(`connected`,
-        JSON.stringify({
-          userID: socket.userID,
-          user: socket.user,
-          username: socket.username,
-          picture: socket.picture,
-          connected: true,
-        })
-      );
-    } else {
-      const userConnected = await redis.get(`connected`);
-      const arr = `[${userConnected}]`;
-      const userConnectedData = JSON.parse(arr);
-
-      if (userConnectedData.find(user => user.userID == socket.userID)) {
-        console.log('lutilisateur est deja présent');
-      } else {
-        await redis.append(`connected`, ',');
-        await redis.append(`connected`, JSON.stringify({
-          userID: socket.userID,
-          user: socket.user,
-          username: socket.username,
-          picture: socket.picture,
-          connected: true,
-        }));
-      }
-    }
-  })();
-
   socket.emit("session", {
     sessionID: socket.sessionID,
     userID: socket.userID,
@@ -149,22 +117,6 @@ io.on('connection', (socket) => {
     const isDisconnected = matchingSockets.size === 0;
     if (isDisconnected) {
       socket.broadcast.emit("user disconnected", socket.userID);
-      (async () => {
-        const connected = await redis.get(`connected`);
-        const arr = `[${connected}]`;
-        const userConnectedData = JSON.parse(arr);
-        let userConnectedDataFiltered = "";
-        for (let i = 0; i < userConnectedData.length; i++) {
-          if (userConnectedData[i].userID != socket.userID) {
-            if (userConnectedDataFiltered != "") {
-              userConnectedDataFiltered += ",";
-            }
-            userConnectedDataFiltered += JSON.stringify(userConnectedData[i]);
-          }
-        }
-        await redis.set(`connected`, userConnectedDataFiltered);
-        const result = await redis.get(`connected`);
-      })();
     }
   });
 

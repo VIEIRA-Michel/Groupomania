@@ -70,6 +70,34 @@ exports.login = (req, res, next) => {
                             }
                             (async () => {
                                 const getStringResult = await redis.get(`user:${results[0].id}`);
+                                let userFound = JSON.parse(getStringResult);
+                                const userConnected = await redis.get(`connected`);
+                                if (!userConnected) {
+                                    await redis.set(`connected`,
+                                        JSON.stringify({
+                                            userID: userFound.userID,
+                                            user: userFound.user,
+                                            username: userFound.username,
+                                            picture: userFound.picture,
+                                            connected: true,
+                                        })
+                                    );
+                                } else {
+                                    const arr = `[${userConnected}]`;
+                                    const userConnectedData = JSON.parse(arr);
+                                    if (userConnectedData.find(user => user.userID == userFound.userID)) {
+                                        console.log('lutilisateur est deja présent');
+                                    } else {
+                                        await redis.append(`connected`, ',');
+                                        await redis.append(`connected`, JSON.stringify({
+                                            userID: userFound.userID,
+                                            user: userFound.user,
+                                            username: userFound.username,
+                                            picture: userFound.picture,
+                                            connected: true,
+                                        }));
+                                    }
+                                }
                                 res.status(200).json({
                                     accessToken: jwt.sign(
                                         {
@@ -113,6 +141,33 @@ exports.login = (req, res, next) => {
         }
     )
 }
+
+exports.logout = (req, res, next) => {
+    try {
+        (async () => {
+            const connected = await redis.get(`connected`);
+            const arr = `[${connected}]`;
+            const userConnectedData = JSON.parse(arr);
+            let userConnectedDataFiltered = "";
+            for (let i = 0; i < userConnectedData.length; i++) {
+                if (userConnectedData[i].userID != req.body.userID) {
+                    if (userConnectedDataFiltered != "") {
+                        userConnectedDataFiltered += ",";
+                    }
+                    userConnectedDataFiltered += JSON.stringify(userConnectedData[i]);
+                }
+            }
+            await redis.set(`connected`, userConnectedDataFiltered);
+            const result = await redis.get(`connected`);
+            res.status(200).json({ message: 'Utilisateur déconnecté !' });
+        })();
+    } catch (error) {
+        res.status(500).json({ message: error });
+    }
+
+}
+
+
 
 exports.updateProfil = (req, res, next) => {
     let sql = `SELECT * FROM users WHERE id = ?;`;

@@ -1,23 +1,28 @@
 import { defineStore } from 'pinia';
 
 export interface otherStore {
-    burgerMenu: boolean;
+    burgerMenu: boolean | null;
     information: boolean;
 }
 
 export const useOtherStore = defineStore({
     id: "otherStore",
     state: (): otherStore => ({
-        burgerMenu: false,
+        burgerMenu: null,
         information: false
     }),
     getters: {},
     actions: {
         toggleBurgerMenu: (): void => {
-            useOtherStore().$patch({
-                burgerMenu: !useOtherStore().$state.burgerMenu
-            })
-            console.log(useOtherStore().$state.burgerMenu);
+            if (useOtherStore().$state.burgerMenu == null) {
+                useOtherStore().$patch({
+                    burgerMenu: true,
+                })
+            } else {
+                useOtherStore().$patch({
+                    burgerMenu: !useOtherStore().$state.burgerMenu
+                })
+            }
         },
     }
 });

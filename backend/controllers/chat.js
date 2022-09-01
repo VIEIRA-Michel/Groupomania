@@ -70,3 +70,10 @@ exports.getAllMessages = async (req, res, next) => {
         res.status(200).json({ message: "Pas de messages" });
     }
 }
+
+exports.getUsersConnected = async (req, res, next) => {
+    const connected = await redis.get(`connected`);
+    const arr = `[${connected}]`;
+    const userConnectedData = JSON.parse(arr);
+    res.status(200).json(userConnectedData);
+};
