@@ -104,10 +104,11 @@ io.on('connection', (socket) => {
     connected: true,
   });
 
-  socket.on("private message", ({ content, to }) => {
+  socket.on("private message", ({ id, message, to }) => {
     socket.to(to).to(socket.userID).emit("private message", {
-      content,
       from: socket.userID,
+      id,
+      message,
       to,
     });
   });

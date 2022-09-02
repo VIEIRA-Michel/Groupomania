@@ -66,9 +66,12 @@ function send() {
 watchEffect(() => {
     newMessage.value.length >= 1 ? emit('typing', true) : emit('typing', false);
     console.log(props.user.hasNewMessages);
+    setTimeout(() => {
+        msgDom.value[0].scrollTop = msgDom.value[0].scrollHeight;
+    }, 1);
     if (props.user.hasNewMessages) {
+        msgDom.value[0].scrollTop = msgDom.value[0].scrollHeight;
         setTimeout(() => {
-            msgDom.value[0].scrollTop = msgDom.value[0].scrollHeight;
         }, 200);
         emit('read');
     }

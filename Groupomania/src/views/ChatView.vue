@@ -8,8 +8,6 @@ import { useFriendshipStore } from '../shared/stores/friendsStore';
 import { useChatStore } from '../shared/stores/chatStore';
 import socket from "../socket";
 
-useChatStore().getAllMessages();
-
 const isConnected = computed(() => useAuthStore().$state.isConnected);
 const user = computed(() => useAuthStore().$state.user);
 const typing = computed(() => useChatStore().$state.typing);
@@ -21,17 +19,16 @@ const selectedUser = ref<any>(null);
 const change = ref(false);
 
 function onSelectUser(utilisateur: any) {
-    console.log('onselectuser', utilisateur);
-    // !selectedUser.value || selectedUser.value.user !== utilisateur.user ?
-    //     messages.value.forEach((message: any) => {
-    //         message.from == utilisateur.user || message.to == utilisateur.user ? utilisateur.messages.push(message) : "";
-    //     }) : "";
-    // utilisateur.hasNewMessages = false;
-    // change.value = true;
-    // setTimeout(() => {
-    //     change.value = false;
-    //     selectedUser.value = utilisateur;
-    // }, 200);
+    !selectedUser.value || selectedUser.value.user !== utilisateur.user ?
+        messages.value.forEach((message: any) => {
+            message.from == utilisateur.user || message.to == utilisateur.user ? utilisateur.messages.push(message) : "";
+        }) : "";
+    utilisateur.hasNewMessages = false;
+    change.value = true;
+    setTimeout(() => {
+        change.value = false;
+        selectedUser.value = utilisateur;
+    }, 200);
 }
 function unselect() {
     selectedUser.value = null;
@@ -40,30 +37,41 @@ function unselect() {
 
 function onMessage(content: any) {
     if (selectedUser.value) {
-        useChatStore().sendMessage(selectedUser.value.user, content, user.value.user_id);
-        socket.emit("private message", {
-            content,
-            to: selectedUser.value.userID,
-        });
-        selectedUser.value.messages.push({
-            message: content,
-            from: user.value.user_id,
-            to: selectedUser.value.user,
-        });
-    }
+        useChatStore().sendMessage(selectedUser.value.user, content, user.value.user_id).then((response) => {
+            useChatStore().$patch((state: any) => {
+                state.messages.push({
+                    from: user.value.user_id,
+                    id: response,
+                    message: content,
+                    to: selectedUser.value.user,
+                });
+            })
+            socket.emit("private message", {
+                id: response,
+                message: content,
+                to: selectedUser.value.userID,
+            });
+            selectedUser.value.messages.push({
+                from: user.value.user_id,
+                id: response,
+                message: content,
+                to: selectedUser.value.user,
+            });
+        })
+    };
 };
 
 function displayFriends(usersOnline: any) {
-    console.log(usersOnline)
+    // console.log(usersOnline)
     usersOnline.forEach((userOnline: any) => {
-        console.log(friendsConnected.value);
+        // console.log(friendsConnected.value);
         if (friendsConnected.value.length == 0) {
             useChatStore().$patch((state: any) => {
                 state.friendsConnected.push(userOnline)
             });
         } else {
             friendsConnected.value.map((friend: any) => {
-                console.log(userOnline, friend);
+                // console.log(userOnline, friend);
                 if (friend.user != userOnline.user) {
                     useChatStore().friendsConnected(userOnline)
                 }
@@ -83,7 +91,8 @@ function isTyping(param: any) {
 onBeforeMount(() => {
     useFriendshipStore().getAllFriends().then((response: any) => {
         useChatStore().getUsersConnected().then((response2: any) => {
-            displayFriends(response2)
+            displayFriends(response2);
+            useChatStore().getAllMessages();
 
             socket.on('typing', (data) => {
                 useChatStore().$patch((state) => {
@@ -122,100 +131,34 @@ onBeforeMount(() => {
                     state.friendsConnected = newArrayFriend.value;
                 });
             });
-            socket.on("private message", ({ content, from, to }) => {
-                for (let i = 0; i < friendsConnected.value.length; i++) {
-                    const utilisateur: any = friendsConnected.value[i];
-                    if (utilisateur.userID === from) {
-                        utilisateur.messages.push({
-                            message: content,
-                            fromSelf: false,
-                        });
-                        if (utilisateur !== selectedUser) {
-                            utilisateur.hasNewMessages = true;
+            socket.on("private message", ({ from, id, message, to }) => {
+                useChatStore().$patch((state: any) => {
+                    useChatStore().$state.friendsConnected.map((friend: any) => {
+                        console.log(friend.userID);
+                        if (friend.userID == from) {
+                            state.messages.push({
+                                from: friend.user,
+                                id,
+                                message,
+                                to: user.value.user_id,
+                            });
+                            friend.messages.push({
+                                from: friend.user,
+                                id,
+                                message,
+                                to: user.value.user_id,
+                            });
+                            if (friend !== selectedUser) {
+                                friend.hasNewMessages = true;
+                            }
+                            return friend;
                         }
-                        break;
-                    }
-                }
-            });
-            socket.on('like', (data) => {
-                console.log(data);
-                usePublicationsStore().$patch((state: any) => {
-                    state.publications.map((item: any) => {
-                        if (item.publication_id == data.publication_id) {
-                            item.likes.push(data.user_id);
-                        }
-                        return item;
                     })
                 })
             })
-            socket.on('remove like', (data) => {
-                console.log(data);
-                usePublicationsStore().$patch((state: any) => {
-                    state.publications.map((item: any) => {
-                        if (item.publication_id == data.publication_id) {
-                            item.likes = item.likes.filter((like: any) => like != data.user_id);
-                        }
-                        return item;
-                    });
-                });
-            })
-            socket.on('new publication', (data) => {
-                usePublicationsStore().$patch((state: any) => {
-                    state.publications.unshift(data._value);
-                });
-            });
-            socket.on('edit publication', (data) => {
-                usePublicationsStore().$patch((state: any) => {
-                    state.publications.map((item: any) => {
-                        if (item.publication_id == data.publication_id) {
-                            item.content = data.content;
-                            item.picture = data.picture;
-                            item.updated_at = data.updated_at;
-                        }
-                        return item;
-                    });
-                });
-            });
-
-            socket.on('delete publication', (data) => {
-                usePublicationsStore().$patch((state: any) => {
-                    state.publications.map((item: any) => {
-                        if (item.publication_id == data) {
-                            state.publications.splice(usePublicationsStore().$state.publications.indexOf(item), 1);
-                        }
-                    });
-                });
-            });
-            socket.on('has commented', (data: any) => {
-                usePublicationsStore().$patch((state: any) => {
-                    state.publications.map((item: any) => {
-                        if (item.publication_id == data._value.publication_id) {
-                            item.comments.push(data._value);
-                            item.numberOfComments = item.numberOfComments + 1;
-                        }
-                        return item;
-                    });
-                });
-            });
-
-            socket.on('delete comment', (data: any) => {
-                usePublicationsStore().$patch((state: any) => {
-                    state.publications.map((item: any) => {
-                        if (item.publication_id == data.publication_id) {
-                            item.comments = item.comments.filter((itemComment: any) => {
-                                return itemComment.comment_id != data.id;
-                            });
-                            console.log(item);
-                            item.numberOfComments = item.numberOfComments - 1;
-                        }
-                        return item;
-                    });
-                })
-            })
-        })
-    })
+        });
+    });
 });
-
 
 </script>
 <template>

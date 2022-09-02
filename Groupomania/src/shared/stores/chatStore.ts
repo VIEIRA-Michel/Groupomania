@@ -33,21 +33,24 @@ export const useChatStore = defineStore({
             useChatStore().$patch((state) => state.friendsConnected.push(friend));
         },
         sendMessage: (id: number, message: any, from: any) => {
-            axios({
-                method: 'post',
-                url: `http://localhost:3000/api/user/${id}/messages`,
-                headers: {
-                    authorization: `Bearer ${localStorage.getItem('token')}`
-                },
-                data: {
-                    message: message,
-                    from: from,
-                    to: id,
-                }
-            }).then(response => {
-            }).catch(error => {
-                error.response.status === 403 ? useAuthStore().logout() : "";
-                console.log(error);
+            return new Promise((resolve, reject) => {
+                axios({
+                    method: 'post',
+                    url: `http://localhost:3000/api/user/${id}/messages`,
+                    headers: {
+                        authorization: `Bearer ${localStorage.getItem('token')}`
+                    },
+                    data: {
+                        message: message,
+                        from: from,
+                        to: id,
+                    }
+                }).then(response => {
+                    resolve(response.data.message_sended_id);
+                }).catch(error => {
+                    console.log(error);
+                    reject(error);
+                })
             })
         },
         getAllMessages: () => {
@@ -58,9 +61,18 @@ export const useChatStore = defineStore({
                     authorization: `Bearer ${localStorage.getItem('token')}`
                 }
             }).then(response => {
+                response.data.map((item: any) => {
+                    if (item !== null) {
+                        useChatStore().$state.messages.map((message: any) => {
+                            if (item.id != message.id) {
+                                useChatStore().$patch((state) => state.messages.push(item));
+                            }
+                        })
+                    }
+                })
                 useChatStore().$patch((state) => state.messages = response.data);
             }).catch(error => {
-                error.response.status === 403 ? useAuthStore().logout() : "";
+                // error.response.status === 403 ? useAuthStore().logout() : "";
                 console.log(error);
             })
         },
@@ -86,7 +98,7 @@ export const useChatStore = defineStore({
                                         messages: [],
                                         hasNewMessages: false
                                     });
-                                    console.log(obj.value);
+                                    // console.log(obj.value);
                                 }
                             })
                         })

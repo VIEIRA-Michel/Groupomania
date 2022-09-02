@@ -14,6 +14,7 @@ exports.sendMessage = async (req, res, next) => {
             `conversation:${numConversation}`,
             JSON.stringify(
                 {
+                    id: 1,
                     message: req.body.message,
                     from: req.body.from,
                     to: req.body.to
@@ -33,22 +34,25 @@ exports.sendMessage = async (req, res, next) => {
             arr.push(JSON.stringify(user));
         };
         await redis.MSET(arr);
-        res.status(200).json({ message: "Message envoyé" });
+        res.status(200).json({ message: "Message envoyé", message_sended_id: 1 });
 
     } else {
+        const msgParse = `[${alreadyTexted}]`;
+        const idRefer = JSON.parse(msgParse).pop().id;
         await redis.append(
             `conversation:${numConversation}`, ',');
         await redis.append(
             `conversation:${numConversation}`,
             JSON.stringify(
                 {
+                    id: idRefer + 1,
                     message: req.body.message,
                     from: req.body.from,
                     to: req.body.to
                 }
             )
         );
-        res.status(200).json({ message: 'message envoyé' });
+        res.status(200).json({ message: 'message envoyé', message_sended_id: idRefer + 1 });
     }
 };
 
