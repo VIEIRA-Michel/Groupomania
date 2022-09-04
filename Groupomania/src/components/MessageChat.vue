@@ -169,9 +169,6 @@ const emit = defineEmits<{
                     class="container-center__body__chat__item"
                     v-bind:class="[message.from == useAuthStore().$state.user.user_id ? 'fromSelf' : 'fromUser']">
                     <div v-if="displaySender(message, index)" class="container-center__body__chat__item__left">
-                        <!-- <img v-if="message.from == useAuthStore().$state.user.user_id"
-                            :src="useAuthStore().$state.user.picture_url" alt="avatar" />
-                        <img v-else :src="props.user.picture" alt="avatar" /> -->
                     </div>
                     <div class="container-center__body__chat__item__right">
                         <div class="container-center__body__chat__item__right__message"

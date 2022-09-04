@@ -70,6 +70,7 @@ exports.getPublicationsOfOnePerson = (req, res, next) => {
 exports.createPublication = (req, res, next) => {
     let now = new Date();
     let today = date.format(now, 'YYYY-MM-DD HH:mm:ss');
+    console.log(today);
 
     let publication = {
         content: req.body.content,

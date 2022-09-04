@@ -30,24 +30,28 @@ export const useAuthStore = defineStore({
     },
     actions: {
         register(lastname: string, firstname: string, email: string, password: string, confirmPassword: string) {
-            if (lastname && firstname && email && password && confirmPassword) {
-                if (password === confirmPassword) {
-                    axios({
-                        method: 'post',
-                        url: 'http://localhost:3000/api/auth/signup',
-                        data: {
-                            lastname: lastname,
-                            firstname: firstname,
-                            email: email,
-                            password: password,
-                        }
-                    }).then(response => {
-                        useAuthStore().login(email, password);
-                    }).catch(error => {
-                        console.log(error);
-                    })
+            return new Promise((resolve, reject) => {
+                if (lastname && firstname && email && password && confirmPassword) {
+                    if (password === confirmPassword) {
+                        axios({
+                            method: 'post',
+                            url: 'http://localhost:3000/api/auth/signup',
+                            data: {
+                                lastname: lastname,
+                                firstname: firstname,
+                                email: email,
+                                password: password,
+                            }
+                        }).then(response => {
+                            // useAuthStore().login(email, password);
+                            resolve(response);
+                        }).catch(error => {
+                            console.log(error);
+                            reject(error);
+                        })
+                    }
                 }
-            }
+            })
         },
         login(username: string, password: string) {
             return new Promise((resolve, reject) => {

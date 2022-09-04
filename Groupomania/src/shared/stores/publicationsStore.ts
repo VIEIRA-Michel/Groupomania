@@ -5,6 +5,7 @@ import type { Publication } from '../interfaces/publication.interface';
 import { useAuthStore } from '../stores/authStore';
 import socket from "../../socket";
 import { ref } from 'vue';
+import moment from 'moment';
 
 
 interface PublicationState {
@@ -52,7 +53,7 @@ export const usePublicationsStore = defineStore({
                         content: response.data.data[0].content,
                         picture: response.data.data[0].picture,
                         created_at: response.data.data[0].publication_created,
-                        updated_at : null,
+                        updated_at: null,
                         likes: [],
                         comments: [],
                         menu: false,
@@ -64,6 +65,10 @@ export const usePublicationsStore = defineStore({
                         email: useAuthStore().$state.user.email,
                         picture_url: useAuthStore().$state.user.picture_url,
                     });
+                    let character = publication.value.content.split(" ");
+                    
+                    console.log(character);
+
                     usePublicationsStore().$reset();
                     usePublicationsStore().getAllPublications();
                     socket.emit('new publication', publication);
@@ -99,6 +104,8 @@ export const usePublicationsStore = defineStore({
                             likes: [],
                             comments: [],
                             numberOfComments: 0,
+                            oneWord: false,
+                            publication_date: (moment(publication.publication_created).format('DD/MM/YYYY à HH:mm')),
                             ...publication,
                         }
                     });

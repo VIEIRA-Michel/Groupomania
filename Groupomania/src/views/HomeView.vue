@@ -2,13 +2,12 @@
 import Loading from '../components/Loading.vue';
 import PublicationForm from '../components/PublicationForm.vue';
 import Comment from '../components/Comment.vue';
-import { computed, reactive, ref, onBeforeMount, onUnmounted, onMounted, watchEffect } from 'vue';
+import { computed, ref, onBeforeMount, onMounted, watchEffect } from 'vue';
 import { useAuthStore } from '../shared/stores/authStore';
 import { useChatStore } from '../shared/stores/chatStore';
 import { useFriendshipStore } from '../shared/stores/friendsStore';
 import { usePublicationsStore } from '../shared/stores/publicationsStore';
 import { useCommentsStore } from '../shared/stores/commentsStore';
-import NavigationBar from '../components/NavigationBar.vue';
 import socket from '../socket';
 
 const isConnected = computed(() => useAuthStore().$state.isConnected);
@@ -33,7 +32,13 @@ function onPickFile(event: any) {
     picture.value = event.target.files[0];
 }
 
-function createPublication() {
+function autoResize(event: any) {
+    event.path[0].style.height = 'auto';
+    event.path[0].style.height = event.path[0].scrollHeight + 'px';
+}
+
+function createPublication(event: any) {
+    event.preventDefault()
     if (picture.value && content.value) {
         usePublicationsStore().createPublication(content.value, picture.value);
         picture.value = '';
@@ -310,9 +315,9 @@ onMounted(() => {
             </div>
             <div class="create_post__content">
                 <div class="create_post__content__details">
-                    <form @submit.prevent="createPublication">
-                        <input type="text" v-model="content" placeholder="Quoi de neuf ?"
-                            class="create_post__content__details__input">
+                    <form @keyup.enter="createPublication">
+                        <textarea v-model="content" placeholder="Quoi de neuf ?"
+                            class="create_post__content__details__text" @input="autoResize"></textarea>
                         <div class="create_post__content__details">
                             <input type="file" ref="fileInput" accept="image/*" @change="onPickFile"
                                 @submit="picture = ''" class="create_post__content__details__file" id="file">
@@ -336,33 +341,34 @@ onMounted(() => {
                                     </div>
                                     <div class="post__top__details__info">
                                         <div class="post__top__details__info__name">
-                                            <span>{{  publication.firstname + ' ' + publication.lastname 
-                                                }}</span>
+                                            <span>{{ publication.firstname + ' ' + publication.lastname
+                                            }}</span>
                                         </div>
                                         <div class="post__top__details__info__date">
-                                            <span>{{  'Publiée ' + publication.created_at  }}</span>
+                                            <span>{{ publication.publication_date }}</span>
                                         </div>
                                     </div>
                                 </div>
                                 <div v-if="user.user_id == publication.user_id" class="post__top__menu">
                                     <div class="post__top__menu__button">
                                         <fa icon="fa-solid fa-ellipsis" @click="displayMenu(publication)" />
-                                    </div>
-                                    <div v-if="publication.menu" class="post__top__menu__content">
-                                        <div class="post__top__menu__content__diamond"></div>
-                                        <div class="post__top__menu__content__item">
-                                            <fa @click="publication.editMode = true" icon="fa-solid fa-pen-to-square" />
-                                        </div>
-                                        <div class="post__top__menu__content__item">
-                                            <fa @click="deletePublication(publication.publication_id)"
-                                                icon="fa-solid fa-trash-can" />
+                                        <div v-if="publication.menu" class="post__top__menu__content">
+                                            <div class="post__top__menu__content__diamond"></div>
+                                            <div class="post__top__menu__content__item">
+                                                <fa @click="publication.editMode = true"
+                                                    icon="fa-solid fa-pen-to-square" />
+                                            </div>
+                                            <div class="post__top__menu__content__item">
+                                                <fa @click="deletePublication(publication.publication_id)"
+                                                    icon="fa-solid fa-trash-can" />
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                             <div class="post__content">
                                 <div class="post__content__text">
-                                    <p v-if="publication.content">{{  publication.content  }}</p>
+                                    <p v-if="publication.content">{{ publication.content }} {{ publication.content.length}}</p>
                                 </div>
                                 <img v-if="publication.picture" :src="publication.picture" alt="">
                             </div>
@@ -372,18 +378,18 @@ onMounted(() => {
                                 <div class="post__interaction__like">
                                     <button v-if="!publication.iLike"
                                         @click.stop="likePublication(publication.publication_id)">
-                                        <span>{{  publication.likes.length + ' '  }}</span>
+                                        <span>{{ publication.likes.length + ' ' }}</span>
                                         <fa icon="fa-regular fa-heart" />
                                     </button>
                                     <button v-else class="like"
                                         @click.stop="likePublication(publication.publication_id)">
-                                        <span>{{  publication.likes.length + ' '  }}</span>
+                                        <span>{{ publication.likes.length + ' ' }}</span>
                                         <fa icon="fa-solid fa-heart" />
                                     </button>
                                 </div>
                                 <div class="post__interaction__comment">
                                     <button @click.stop="getComments(publication)" type="button">
-                                        <span>{{  publication.numberOfComments + ' '  }}</span>
+                                        <span>{{ publication.numberOfComments + ' ' }}</span>
                                         <fa icon="fa-regular fa-comment-dots" />
                                     </button>
                                 </div>
@@ -431,7 +437,6 @@ onMounted(() => {
     width: 470px;
     border-radius: 5px;
     margin: 60px auto auto auto;
-    backdrop-filter: blur(5px);
     background-color: #FFFFFF;
     border: 1px solid #FD2D01;
     -webkit-animation: slide-in-top 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.3s both;
@@ -481,11 +486,13 @@ onMounted(() => {
                 width: 100%;
             }
 
-            &__input {
+            &__text {
                 width: 94%;
-                height: 30px;
+                display: block;
+                overflow: hidden;
+                resize: none;
                 border: none;
-                border-radius: 15px;
+                border-radius: 5px;
                 padding: 0px 7px 0px 7px;
                 background-color: rgb(255, 255, 255);
                 color: rgb(0, 0, 0);
@@ -493,7 +500,6 @@ onMounted(() => {
                 @media (max-width: 768px) {
                     width: 90%;
                 }
-
             }
 
             &__file {
@@ -566,6 +572,8 @@ onMounted(() => {
             margin-right: 20px;
 
             &__button {
+                position: relative;
+
                 svg {
                     cursor: pointer;
                     color: #4E5166;
@@ -574,7 +582,7 @@ onMounted(() => {
 
             &__content {
                 position: absolute;
-                right: 10px;
+                right: -10px;
                 top: 30px;
                 -webkit-animation: scale-in-ver-top 0.2s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
                 animation: scale-in-ver-top 0.2s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
@@ -642,6 +650,11 @@ onMounted(() => {
 
             span {
                 font-weight: bold;
+            }
+
+            p {
+                // word-break: break-words;
+                overflow-wrap: break-word;
             }
         }
 

@@ -34,6 +34,16 @@ async function login() {
     }
 }
 
+async function register() {
+    try {
+        useAuthStore().register(userInput.lastname, userInput.firstname, userInput.email, userInput.password, userInput.confirmPassword).then((response) => {
+            hasAccount.value = true;
+        });
+    } catch (error) {
+        throw error;
+    }
+}
+
 </script>
 <template>
     <div class="home">
@@ -79,7 +89,7 @@ async function login() {
                 </div>
                 <div v-else class="container__content__form">
                     <form
-                        @submit.prevent="useAuthStore().register(userInput.lastname, userInput.firstname, userInput.email, userInput.password, userInput.confirmPassword)">
+                        @submit.prevent="register">
                         <div class="container__content__form__register">
                             <label for="lastname">Nom</label>
                             <input type="text" id="lastname" v-model="userInput.lastname" />

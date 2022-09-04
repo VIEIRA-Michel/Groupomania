@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { useCommentsStore } from '../shared/stores/commentsStore';
-import { ref, computed, onBeforeMount } from 'vue';
-import socket from '../socket';
-import { usePublicationsStore } from '@/shared/stores/publicationsStore';
+import { ref } from 'vue';
 let inputComment = ref("");
 
 const props = defineProps({
@@ -15,6 +13,11 @@ const props = defineProps({
 const emit = defineEmits<{
     (e: 'getMore'): any;
 }>();
+
+function autoResize(event: any) {
+    event.path[0].style.height = 'auto';
+    event.path[0].style.height = event.path[0].scrollHeight + 'px';
+}
 
 function createComment(event: any) {
     event.preventDefault();
@@ -61,14 +64,13 @@ function createComment(event: any) {
                     <div class="create_post__top__details__avatar">
                         <img :src="props.user.picture_url" alt="avatar" />
                     </div>
-
                 </div>
             </div>
             <div class="create_post_info">
                 <div class="create_post__info__content">
-                    <form @submit.prevent="createComment($event)">
-                        <input type="text" v-model="inputComment" class="create_post__info__content__input"
-                            placeholder="Écrivez un commentaire...">
+                    <form @keyup.enter="createComment($event)">
+                        <textarea v-model="inputComment" placeholder="Écrivez un commentaire..."
+                            class="create_post__info__content__input" @input="autoResize"></textarea>
                     </form>
                 </div>
 
@@ -101,7 +103,7 @@ function createComment(event: any) {
                 &__avatar {
                     overflow: hidden;
                     margin-right: 10px;
-                    
+
                     img {
                         width: 40px;
                         height: 40px;
@@ -143,6 +145,7 @@ function createComment(event: any) {
 .create_post {
     display: flex;
     align-items: center;
+    margin-top: 20px;
 
     &__top {
         &__details {
@@ -172,17 +175,32 @@ function createComment(event: any) {
             border-radius: 25px;
             padding: 10px 15px;
 
-            form {
-                input {
+            &__input {
+                border: none;
+                outline: none;
+                color: #4E5166;
+                width: 94%;
+                display: block;
+                overflow: hidden;
+                resize: none;
+                border: none;
+                border-radius: 5px;
+                padding: 0px 7px 0px 7px;
+                background-color: rgb(255, 255, 255);
+                color: rgb(0, 0, 0);
+
+                @media (max-width: 768px) {
+                    width: 90%;
+                }
+
+                :focus {
                     border: none;
                     outline: none;
-                    color: #4E5166;
-
-                    :focus {
-                        border: none;
-                        outline: none;
-                    }
                 }
+            }
+
+            form {
+
 
                 svg {
                     cursor: pointer;

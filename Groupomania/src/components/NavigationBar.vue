@@ -120,7 +120,7 @@ header {
     position: fixed;
     top: 0;
     left: 0;
-    z-index: 1;
+    z-index: 10;
 
     @media only screen and (max-width: 768px) {
         justify-content: space-between;

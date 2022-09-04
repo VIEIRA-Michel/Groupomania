@@ -26,6 +26,7 @@
     "luxon": "^3.0.1",
     "moment": "^2.29.4",
     "pinia": "^2.0.16",
+    "sass": "^1.54.8",
     "socket.io-client": "^4.5.1",
     "vue": "^3.2.37",
     "vue-router": "^4.1.4"
