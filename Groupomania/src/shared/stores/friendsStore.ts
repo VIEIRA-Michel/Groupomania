@@ -43,7 +43,6 @@ export const useFriendshipStore = defineStore({
                     Authorization: `Bearer ${localStorage.getItem('token')}`
                 },
             }).then(response => {
-                console.log(response);
                 if (response.data.results && response.data.results.length > 0) {
                     response.data.results.map((item: any) => {
                         if (useFriendshipStore().$state.requests.find((requests: any) => requests.sender == item.sender)) {
@@ -72,7 +71,7 @@ export const useFriendshipStore = defineStore({
                         Authorization: `Bearer ${localStorage.getItem('token')}`
                     },
                 }).then(response => {
-                    console.log('get all friends');
+                    // console.log('get all friends');
                     let userToCompare = 0;
                     let newFriend = ref({
                         user_id: 0,

@@ -65,10 +65,6 @@ export const usePublicationsStore = defineStore({
                         email: useAuthStore().$state.user.email,
                         picture_url: useAuthStore().$state.user.picture_url,
                     });
-                    let character = publication.value.content.split(" ");
-                    
-                    console.log(character);
-
                     usePublicationsStore().$reset();
                     usePublicationsStore().getAllPublications();
                     socket.emit('new publication', publication);
@@ -79,6 +75,9 @@ export const usePublicationsStore = defineStore({
             };
         },
         getAllPublications: (page?: number) => {
+            let date = new Date();
+            let newDate = moment(date).format('DD/MM/YYYY HH:mm:ss');
+            let newDateSplit = newDate.split(" ");            
             let BASE_URL = "";
             if (page) {
                 BASE_URL = `http://localhost:3000/api/publications/?page=${page}`;
@@ -97,6 +96,15 @@ export const usePublicationsStore = defineStore({
                     response.data.Publications = response.data.Publications.map((publication: any) => {
                         usePublicationsStore().getLikes(publication.publication_id);
                         useCommentsStore().getAllComments(publication.publication_id, 5, 0);
+                        let publicationDate = moment(publication.publication_created).format('DD/MM/YYYY à HH:mm').split(" ");
+                        if(publicationDate[0] == newDateSplit[0]) {
+                            publicationDate[0] = "Aujourd'hui";
+                        } else if (parseInt(publicationDate[0]) == parseInt(newDateSplit[0]) - 1) {
+                            publicationDate[0] = "Hier";
+                        } else if (parseInt(publicationDate[0]) == parseInt(newDateSplit[0]) - 2) {
+                            publicationDate[0] = "Avant-hier";
+                        }
+
                         return {
                             editMode: false,
                             menu: false,
@@ -105,7 +113,7 @@ export const usePublicationsStore = defineStore({
                             comments: [],
                             numberOfComments: 0,
                             oneWord: false,
-                            publication_date: (moment(publication.publication_created).format('DD/MM/YYYY à HH:mm')),
+                            publication_date: publicationDate.join(" "),
                             ...publication,
                         }
                     });

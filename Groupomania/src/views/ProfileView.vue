@@ -27,6 +27,7 @@ function updateProfile(userEdit?: any) {
 <template>
     <div v-if="isConnected" class="container">
         <div class="edit-profil">
+            <div class="edit-profil__notification"></div>
             <div class="edit-profil__title">
                 <h1>Editer mon profil</h1>
             </div>

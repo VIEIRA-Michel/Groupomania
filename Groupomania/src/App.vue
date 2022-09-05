@@ -18,21 +18,20 @@ async function logout() {
 }
 
 onUnmounted(() => {
-  useAuthStore().logout().then((response) => {
-      socket.disconnect();
-      socket.off("connect");
-      socket.off("disconnect");
-      socket.off("users");
-      socket.off("user connected");
-      socket.off("user disconnected");
-      socket.off("private message");
-      socket.off("friendRequest sended");
-      socket.off("friendRequest refused");
-      socket.off("friendRequest accepted");
-      socket.off("friend removed");
-      socket.off("friendRequest canceled");
-      console.log('unmounted');
-  });
+  useAuthStore().logout()
+  socket.off("connect");
+  socket.off("disconnect");
+  socket.off("users");
+  socket.off("user connected");
+  socket.off("user disconnected");
+  socket.off("private message");
+  socket.off("friendRequest sended");
+  socket.off("friendRequest refused");
+  socket.off("friendRequest accepted");
+  socket.off("friend removed");
+  socket.off("friendRequest canceled");
+  socket.disconnect();
+  console.log('unmounted');
 });
 </script>
 <template>

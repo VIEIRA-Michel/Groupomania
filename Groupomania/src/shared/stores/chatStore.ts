@@ -29,9 +29,17 @@ export const useChatStore = defineStore({
         userConnected: (user: any) => {
             useChatStore().$patch((state) => state.users.push(user));
         },
-        friendsConnected: (friend: any) => {
-            useChatStore().$patch((state) => state.friendsConnected.push(friend));
-        },
+        // ! Cette fonction déclanche une boucle infini
+        // friendsConnected: (friend: any) => {
+        //     console.log(friend);
+        //     useChatStore().$state.friendsConnected.map((item: any) => {
+        //         if (friend.user !== item.user) {
+        //             useChatStore().$patch((state) => state.friendsConnected.push(friend));
+        //         }
+        //         //    // console.log(friend.user);
+        //         //    // console.log(item.user);
+        //     })
+        // },
         sendMessage: (id: number, message: any, from: any) => {
             return new Promise((resolve, reject) => {
                 axios({

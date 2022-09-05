@@ -96,7 +96,7 @@ export const useAuthStore = defineStore({
                         authorization: `Bearer ${localStorage.getItem('token')}`
                     },
                     data: {
-                        userID: user.session_id
+                        userID: user.userID
                     }
                 }).then(response => {
                     localStorage.removeItem('user');

@@ -33,6 +33,7 @@ function onPickFile(event: any) {
 }
 
 function autoResize(event: any) {
+    console.log(event);
     event.path[0].style.height = 'auto';
     event.path[0].style.height = event.path[0].scrollHeight + 'px';
 }
@@ -121,8 +122,6 @@ function checkIsFriend(utilisateur: any) {
 }
 
 onBeforeMount(() => {
-    console.log('onBeforeMount');
-    console.log(isConnected.value);
     if (isConnected.value) {
         useFriendshipStore().getAllFriends().then((response) => {
             const session = JSON.parse(localStorage.getItem("user"));
@@ -294,11 +293,6 @@ onBeforeMount(() => {
     }
 });
 
-onMounted(() => {
-    console.log('onMounted');
-    console.log(isConnected.value);
-})
-
 </script>
 <template>
     <template v-if="isLoading">
@@ -321,9 +315,6 @@ onMounted(() => {
                         <div class="create_post__content__details">
                             <input type="file" ref="fileInput" accept="image/*" @change="onPickFile"
                                 @submit="picture = ''" class="create_post__content__details__file" id="file">
-                            <button class="create_post__content__details__button">
-                                <fa icon="fa-solid fa-paper-plane" />
-                            </button>
                         </div>
                     </form>
                 </div>
@@ -331,7 +322,8 @@ onMounted(() => {
         </div>
         <div v-if="publications.length > 0">
             <div class="publication" v-for="publication in publications">
-                <div v-if="!publication.editMode">
+                <div>
+                    <!-- <div v-if="!publication.editMode">-->
                     <div class="post" :data-id="publication.publication_id">
                         <div class="post__information">
                             <div class="post__top">
@@ -350,7 +342,7 @@ onMounted(() => {
                                     </div>
                                 </div>
                                 <div v-if="user.user_id == publication.user_id" class="post__top__menu">
-                                    <div class="post__top__menu__button">
+                                    <div v-if="!publication.editMode" class="post__top__menu__button">
                                         <fa icon="fa-solid fa-ellipsis" @click="displayMenu(publication)" />
                                         <div v-if="publication.menu" class="post__top__menu__content">
                                             <div class="post__top__menu__content__diamond"></div>
@@ -368,12 +360,28 @@ onMounted(() => {
                             </div>
                             <div class="post__content">
                                 <div class="post__content__text">
-                                    <p v-if="publication.content">{{ publication.content }} {{ publication.content.length}}</p>
+                                    <template v-if="publication.editMode">
+                                        <textarea ref="jedi" type="text" v-model="publication.content"
+                                            class="create_post__content__details__text post-edit" @click="autoResize"></textarea>
+                                        <input type="file" ref="fileInput" accept="image/*" @change="onPickFile"
+                                            class="create_post__content__details__file">
+                                    </template>
+                                    <template v-else>
+                                        <p v-if="publication.content">{{ publication.content }}</p>
+                                    </template>
                                 </div>
                                 <img v-if="publication.picture" :src="publication.picture" alt="">
                             </div>
                         </div>
-                        <div class="post__likeAndComment">
+                        <div v-if="publication.editMode" class="post__button">
+                            <div class="post__button__list">
+                                <button @click="publication.editMode = false" class="cancel">Annuler</button>
+                                <button
+                                    @click="usePublicationsStore().updatePublication(publication.publication_id, { editMode: false, post: $event })"
+                                    class="submit">Sauvegarder</button>
+                            </div>
+                        </div>
+                        <div v-else class="post__likeAndComment">
                             <div class="post__interaction">
                                 <div class="post__interaction__like">
                                     <button v-if="!publication.iLike"
@@ -404,11 +412,6 @@ onMounted(() => {
                         </div>
                     </div>
                 </div>
-                <template v-else>
-                    <PublicationForm :content="publication.content" :picture="publication.picture"
-                        :id="publication.publication_id" :user="user" @cancel="publication.editMode = false"
-                        @update="usePublicationsStore().updatePublication(publication.publication_id, { editMode: false, post: $event })" />
-                </template>
             </div>
             <div class="post__page">
                 <div v-if="page > 1" class="post__page__previous">
@@ -497,6 +500,10 @@ onMounted(() => {
                 background-color: rgb(255, 255, 255);
                 color: rgb(0, 0, 0);
 
+                &:focus-visible {
+                    outline-color: #FFFFFF;
+                }
+
                 @media (max-width: 768px) {
                     width: 90%;
                 }
@@ -559,6 +566,11 @@ onMounted(() => {
             &__info {
                 &__name {
                     font-weight: bold;
+                }
+
+                &__date {
+                    font-size: 12px;
+                    color: #4E5166;
                 }
             }
 
@@ -643,17 +655,18 @@ onMounted(() => {
         padding: 10px 0 0 0;
 
         &__text {
-            margin: 0 20px;
+            margin: 0 10px;
             display: flex;
-            flex-direction: row;
+            flex-direction: column;
             color: #4E5166;
+            width: 100%;
 
             span {
                 font-weight: bold;
             }
 
             p {
-                // word-break: break-words;
+                width: 95%;
                 overflow-wrap: break-word;
             }
         }
@@ -756,7 +769,16 @@ onMounted(() => {
                 }
             }
 
-            &__list {}
+            &__list {
+                width: 100%;
+            }
+        }
+    }
+
+    &__button {
+        &__list {
+            display: flex;
+            justify-content: flex-end;
         }
     }
 

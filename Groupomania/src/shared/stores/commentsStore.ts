@@ -4,6 +4,7 @@ import axios from 'axios';
 import { ref } from 'vue';
 import { useAuthStore } from '../stores/authStore';
 import socket from '../../socket';
+import moment from 'moment';
 
 interface CommentState {
     isLoading: boolean;
@@ -22,6 +23,9 @@ export const useCommentsStore = defineStore({
     },
     actions: {
         getAllComments: (id: number, limit: number, from: number) => {
+            let date = new Date();
+            let newDate = moment(date).format('DD/MM/YYYY HH:mm:ss');
+            let newDateSplit = newDate.split(" ");
             axios({
                 method: 'get',
                 url: `http://localhost:3000/api/publications/${id}/comments/?limit=${limit}&from=${from}`,
@@ -31,8 +35,17 @@ export const useCommentsStore = defineStore({
                 }
             }).then(response => {
                 for (let comment of response.data.comments) {
-                    usePublicationsStore().$state.publications.map((publication) => {
+                    usePublicationsStore().$state.publications.map((publication: any) => {
                         if (publication.publication_id === comment.publication_id) {
+                            let commentDate = moment(comment.comment_created_at).format('DD/MM/YYYY à HH:mm').split(" ");
+                            if (commentDate[0] == newDateSplit[0]) {
+                                commentDate[0] = "Aujourd'hui";
+                            } else if (parseInt(commentDate[0]) == parseInt(newDateSplit[0]) - 1) {
+                                commentDate[0] = "Hier";
+                            } else if (parseInt(commentDate[0]) == parseInt(newDateSplit[0]) - 2) {
+                                commentDate[0] = "Avant-hier";
+                            }
+                            comment.comment_created_at = commentDate.join(" ");
                             publication.comments!.push(comment);
                             publication.numberOfComments = response.data.numOfResults;
                         }
@@ -69,51 +82,69 @@ export const useCommentsStore = defineStore({
             })
         },
         createComment: (publication_id: number | undefined, comment: string) => {
-            axios({
-                method: 'post',
-                url: `http://localhost:3000/api/publications/${publication_id}/comments`,
-                headers: {
-                    'Content-Type': 'application/json',
-                    authorization: `Bearer ${localStorage.getItem('token')}`
-                },
-                data: {
-                    "content": comment
-                },
-            }).then(response => {
-                console.log(response);
-                let obj = ref({
-                    account_disabled: response.data.data[0].account_disabled,
-                    comment_content: response.data.data[0].comment_content,
-                    comment_created_at: response.data.data[0].comment_created_at,
-                    comment_id: response.data.data[0].comment_id,
-                    comment_publication_id: response.data.data[0].comment_publication_id,
-                    comment_user_id: response.data.data[0].comment_user_id,
-                    email: response.data.data[0].email,
-                    firstname: response.data.data[0].firstname,
-                    lastname: response.data.data[0].lastname,
-                    picture: response.data.data[0].picture,
-                    picture_url: response.data.data[0].picture_url,
-                    publication_content: response.data.data[0].publication_content,
-                    publication_created: response.data.data[0].publication_created,
-                    publication_id: response.data.data[0].publication_id,
-                    publication_updated_at: response.data.data[0].publication_updated_at,
-                    role_id: response.data.data[0].role_id,
-                    user_id: response.data.data[0].user_id,
-                });
-                socket.emit('has commented', obj);
-                usePublicationsStore().$state.publications.map((publication) => {
-                    if (publication.publication_id === publication_id) {
-                        if (publication.comments.find((comment) => comment.comment_id == response.data.data[0].comment_id)) {
-                            console.log('comment already exists');
-                        } else {
-                            publication.comments.push(obj.value)
-                            publication.numberOfComments = publication.numberOfComments! + 1;
-                        }
+            return new Promise((resolve, reject) => {
+                let date = new Date();
+                let newDate = moment(date).format('DD/MM/YYYY HH:mm:ss');
+                let newDateSplit = newDate.split(" ");
+                axios({
+                    method: 'post',
+                    url: `http://localhost:3000/api/publications/${publication_id}/comments`,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        authorization: `Bearer ${localStorage.getItem('token')}`
+                    },
+                    data: {
+                        "content": comment
+                    },
+                }).then(response => {
+                    console.log(response);
+
+                    let commentDate = moment(response.data.data[0].comment_created_at).format('DD/MM/YYYY à HH:mm').split(" ");
+                    if (commentDate[0] == newDateSplit[0]) {
+                        commentDate[0] = "Aujourd'hui";
+                    } else if (parseInt(commentDate[0]) == parseInt(newDateSplit[0]) - 1) {
+                        commentDate[0] = "Hier";
+                    } else if (parseInt(commentDate[0]) == parseInt(newDateSplit[0]) - 2) {
+                        commentDate[0] = "Avant-hier";
                     }
+                    commentDate.join(" ");
+
+                    let obj = ref({
+                        account_disabled: response.data.data[0].account_disabled,
+                        comment_content: response.data.data[0].comment_content,
+                        comment_created_at: commentDate.join(" "),
+                        comment_id: response.data.data[0].comment_id,
+                        comment_publication_id: response.data.data[0].comment_publication_id,
+                        comment_user_id: response.data.data[0].comment_user_id,
+                        email: response.data.data[0].email,
+                        firstname: response.data.data[0].firstname,
+                        lastname: response.data.data[0].lastname,
+                        picture: response.data.data[0].picture,
+                        picture_url: response.data.data[0].picture_url,
+                        publication_content: response.data.data[0].publication_content,
+                        publication_created: response.data.data[0].publication_created,
+                        publication_id: response.data.data[0].publication_id,
+                        publication_updated_at: response.data.data[0].publication_updated_at,
+                        role_id: response.data.data[0].role_id,
+                        user_id: response.data.data[0].user_id,
+                    });
+                    socket.emit('has commented', obj);
+                    usePublicationsStore().$state.publications.map((publication: any) => {
+                        if (publication.publication_id === publication_id) {
+                            if (publication.comments.find((comment: any) => comment.comment_id == response.data.data[0].comment_id)) {
+                                console.log('comment already exists');
+                            } else {
+                                publication.comments.push(obj.value)
+                                publication.numberOfComments = publication.numberOfComments! + 1;
+                            }
+                        }
+                    })
+                    resolve(response);
+                }).catch(error => {
+                    error.response.status === 403 ? useAuthStore().logout() : "";
+                    console.log(error);
+                    reject(error);
                 })
-            }).catch(error => {
-                error.response.status === 403 ? useAuthStore().logout() : "";
-                console.log(error);
             })
         }
     }

@@ -56,7 +56,7 @@ exports.login = (req, res, next) => {
     let user = {
         email: req.body.email
     };
-    let sql = `SELECT id, picture_url, firstname, lastname, email, password, session_id FROM users WHERE email = ?;`;
+    let sql = `SELECT id, picture_url, firstname, lastname, email, password, session_id, userID FROM users WHERE email = ?;`;
     connection.query(
         sql, [user.email], function (err, results) {
             if (err) {
@@ -98,6 +98,7 @@ exports.login = (req, res, next) => {
                                         }));
                                     }
                                 }
+                                console.log(results[0].userID);
                                 res.status(200).json({
                                     accessToken: jwt.sign(
                                         {
@@ -110,24 +111,14 @@ exports.login = (req, res, next) => {
                                         },
                                         process.env.ACCESS_TOKEN_SECRET,
                                         { expiresIn: '7d' }),
-                                    refreshToken: jwt.sign(
-                                        {
-                                            userId: results[0].id,
-                                            picture_url: results[0].picture_url,
-                                            firstname: results[0].firstname,
-                                            lastname: results[0].lastname,
-                                            role_id: results[0].role_id,
-                                            email: results[0].email
-                                        },
-                                        process.env.REFRESH_TOKEN_SECRET,
-                                        { expiresIn: '7d' }),
                                     user: {
                                         user_id: results[0].id,
                                         picture_url: results[0].picture_url,
                                         firstname: results[0].firstname,
                                         lastname: results[0].lastname,
                                         email: results[0].email,
-                                        session_id: results[0].session_id
+                                        session_id: results[0].session_id,
+                                        userID: results[0].userID
                                     },
                                     redis: JSON.parse(getStringResult)
                                 })
@@ -145,7 +136,9 @@ exports.login = (req, res, next) => {
 exports.logout = (req, res, next) => {
     try {
         (async () => {
+            console.log(req.body.userID);
             const connected = await redis.get(`connected`);
+            console.log(connected);
             const arr = `[${connected}]`;
             const userConnectedData = JSON.parse(arr);
             let userConnectedDataFiltered = "";

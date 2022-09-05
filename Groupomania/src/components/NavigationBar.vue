@@ -116,7 +116,7 @@ header {
     height: 30px;
     padding: 10px 0px;
     justify-content: start;
-    border-bottom: 1px solid #FD2D01;
+    box-shadow: grey 0px 1px 10px;
     position: fixed;
     top: 0;
     left: 0;

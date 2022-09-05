@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, ref, onBeforeMount, onMounted, onUnmounted, onActivated } from 'vue';
-import NavigationBar from '../components/NavigationBar.vue';
 import UserChat from '../components/UserChat.vue';
 import MessageChat from "../components/MessageChat.vue";
 import { useAuthStore } from '../shared/stores/authStore';
@@ -91,7 +90,7 @@ function isTyping(param: any) {
 onBeforeMount(() => {
     useFriendshipStore().getAllFriends().then((response: any) => {
         useChatStore().getUsersConnected().then((response2: any) => {
-            displayFriends(response2);
+            // displayFriends(response2);
             useChatStore().getAllMessages();
 
             socket.on('typing', (data) => {

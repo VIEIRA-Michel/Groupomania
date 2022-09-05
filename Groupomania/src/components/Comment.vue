@@ -22,8 +22,10 @@ function autoResize(event: any) {
 function createComment(event: any) {
     event.preventDefault();
     if (inputComment.value != "") {
-        useCommentsStore().createComment(props.publication_id, inputComment.value);
-        inputComment.value = "";
+        useCommentsStore().createComment(props.publication_id, inputComment.value).then((response) => {
+            inputComment.value = "";
+            event.path[0].style.height = 'auto';
+        });
     };
 }
 
@@ -39,6 +41,9 @@ function createComment(event: any) {
                     <div class="post__details__info__commentary">
                         <div class="post__details__info__commentary__name">
                             <span>{{ com.firstname + ' ' + com.lastname }}</span>
+                        </div>
+                        <div class="post__details__info__commentary__date">
+                            <span>{{ com.comment_created_at }}</span>
                         </div>
                         <div class="post__details__info__commentary__content">
                             <p>{{ com.comment_content }}</p>
@@ -66,7 +71,7 @@ function createComment(event: any) {
                     </div>
                 </div>
             </div>
-            <div class="create_post_info">
+            <div class="create_post__info">
                 <div class="create_post__info__content">
                     <form @keyup.enter="createComment($event)">
                         <textarea v-model="inputComment" placeholder="Écrivez un commentaire..."
@@ -85,18 +90,22 @@ function createComment(event: any) {
 .container-post {
     padding-top: 10px;
     border-top: 1px solid #b7b7b7;
+    width: 100%;
 
     .post {
         display: flex;
-        justify-content: space-between;
+        justify-content: flex-start;
         align-items: center;
         margin-top: 20px;
+        width: 100%;
 
         &__details {
             display: flex;
             flex-direction: column;
+            width: 95%;
 
             &__info {
+                width: 100%;
                 display: flex;
                 align-items: start;
 
@@ -117,6 +126,7 @@ function createComment(event: any) {
                     border-radius: 5px;
                     padding: 10px 15px;
                     box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.2), 0px 1px 1px 0px rgba(0, 0, 0, 0.14), 0px 2px 1px -1px rgba(0, 0, 0, 0.12);
+                    width: 70%;
 
                     &__name {
                         span {
@@ -124,8 +134,17 @@ function createComment(event: any) {
                         }
                     }
 
+                    &__date {
+                        font-size: 12px;
+                        color: #4E5166;
+                    }
+
                     &__content {
+                        margin-top: 10px;
+
                         p {
+                            width: 100%;
+                            overflow-wrap: break-word;
                             margin: 0;
                             color: #4E5166;
                         }
@@ -164,6 +183,8 @@ function createComment(event: any) {
     }
 
     &__info {
+        width: 100%;
+
         &__name {
             span {
                 font-weight: 700;
@@ -179,7 +200,7 @@ function createComment(event: any) {
                 border: none;
                 outline: none;
                 color: #4E5166;
-                width: 94%;
+                width: 100%;
                 display: block;
                 overflow: hidden;
                 resize: none;
