@@ -196,11 +196,8 @@ onBeforeMount(() => {
                         </div>
                         <div class="search-user__results__list__item__name">
                             <div class="search-user__results__list__item__name__text">
-                                <div class="search-user__results__list__item__name__text__firstname">
-                                    <span>{{ user.firstname }}</span>
-                                </div>
-                                <div class="search-user__results__list__item__name__text__lastname">
-                                    <span>{{ user.lastname }}</span>
+                                <div class="search-user__results__list__item__name__text__username">
+                                    <span>{{ user.firstname }} {{ user.lastname }}</span>
                                 </div>
                             </div>
                             <button v-if="!user.isFriend && !user.pending" @click="addToFriends(user.user_id)">
@@ -254,11 +251,8 @@ onBeforeMount(() => {
                     </div>
                     <div class="friends-request__list__item__name">
                         <div class="friends-request__list__item__name__text">
-                            <div class="friends-request__list__item__name__text__firstname">
-                                <span>{{ req.firstname }}</span>
-                            </div>
-                            <div class="friends-request__list__item__name__text__lastname">
-                                <span>{{ req.lastname }}</span>
+                            <div class="friends-request__list__item__name__text__username">
+                                <span>{{ req.firstname }} {{ req.lastname }}</span>
                             </div>
                         </div>
                         <div class="friends-request__list__item__name__button">
@@ -293,11 +287,8 @@ onBeforeMount(() => {
                     </div>
                     <div class="friends-list__list__item__name">
                         <div class="friends-list__list__item__name__text">
-                            <div class="friends-list__list__item__name__text__firstname">
-                                <span>{{ friend.firstname }}</span>
-                            </div>
-                            <div class="friends-list__list__item__name__text__lastname">
-                                <span>{{ friend.lastname }}</span>
+                            <div class="friends-list__list__item__name__text__username">
+                                <span>{{ friend.firstname }} {{ friend.lastname }}</span>
                             </div>
                         </div>
                     </div>
@@ -354,18 +345,24 @@ onBeforeMount(() => {
     margin-top: 50px;
 
     .search-user {
-        background: #FFFFFF;
+        background: floralwhite;
         border: 1px solid #FD2D01;
         width: 70%;
         margin: 10px auto 0px auto;
         border-radius: 5px;
+        padding: 20px;
         -webkit-animation: slide-in-top 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.3s both;
         animation: slide-in-top 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.3s both;
 
         &__title {
             text-align: center;
-            margin-top: 20px;
+            margin-bottom: 20px;
             font-weight: 700;
+            width: 100%;
+            border-radius: 5px;
+            padding: 10px 0;
+            background-color: #ffffff;
+            border: 1px solid #dbdbdb;
         }
 
         &__input {
@@ -374,8 +371,9 @@ onBeforeMount(() => {
             margin: 20px;
 
             input {
-                border: 1px solid #FD2D01;
+                border: 1px solid #dbdbdb;
                 border-radius: 5px;
+                outline: none;
             }
         }
 
@@ -394,10 +392,9 @@ onBeforeMount(() => {
 
                 &__item {
                     margin: 10px auto;
-                    width: 90px;
-                    padding: 15px;
-                    background: linear-gradient(180deg, #FFD7D7, transparent);
-                    border: 1px solid #FD2D01;
+                    width: 105px;
+                    background: #ffffff;
+                    border: 1px solid #dbdbdb;
                     border-radius: 5px;
 
                     &__avatar {
@@ -405,34 +402,24 @@ onBeforeMount(() => {
                         justify-content: center;
 
                         img {
-                            width: 50px;
-                            height: 50px;
+                            width: 100%;
+                            height: 80px;
                             object-fit: cover;
+                            border-radius: 5px 5px 0 0;
                         }
                     }
 
                     &__name {
                         &__text {
-                            margin-bottom: 5px;
+                            margin: 5px;
 
-                            &__firstname {
+                            &__username {
                                 display: flex;
                                 justify-content: center;
 
                                 span {
-                                    font-size: 20px;
-                                    font-weight: bold;
-                                }
-                            }
-
-                            &__lastname {
-                                display: flex;
-                                justify-content: center;
-
-                                span {
-
-                                    font-size: 20px;
-                                    font-weight: bold;
+                                    font-size: 12px;
+                                    font-weight: 300;
                                 }
                             }
                         }
@@ -441,7 +428,9 @@ onBeforeMount(() => {
                             background: #bcffcb;
                             width: 100%;
                             height: 30px;
-                            border-radius: 5px;
+                            border: none;
+                            border-top: 1px solid #dbdbdb;
+                            border-radius: 0 0 5px 5px;
                             font-weight: bold;
                             cursor: pointer;
                             border: 1px solid #DBDBDB;
@@ -465,16 +454,23 @@ onBeforeMount(() => {
         display: flex;
         flex-direction: column;
         align-items: center;
-        background: #FFFFFF;
+        background: floralwhite;
         border: 1px solid #FD2D01;
         width: 70%;
+        padding: 20px;
         margin: 10px auto 0px auto;
         border-radius: 5px;
         -webkit-animation: slide-in-bottom 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.6s both;
         animation: slide-in-bottom 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.6s both;
 
         &__title {
-            margin-top: 20px;
+            width: 100%;
+            border-radius: 5px;
+            padding: 10px 0;
+            background-color: #ffffff;
+            border: 1px solid #dbdbdb;
+            margin-bottom: 20px;
+            text-align: center;
 
             &__text {
                 font-weight: 700;
@@ -495,34 +491,22 @@ onBeforeMount(() => {
 
             &__item {
                 margin: 10px auto;
-                width: 90px;
-                padding: 15px;
-                background: linear-gradient(180deg, #FFD7D7, transparent);
-                border: 1px solid #FD2D01;
+                width: 105px;
+                background: #ffffff;
+                border: 1px solid #dbdbdb;
                 border-radius: 5px;
 
                 &__name {
                     &__text {
-                        margin-bottom: 5px;
+                        margin: 5px;
 
-                        &__firstname {
+                        &__username {
                             display: flex;
                             justify-content: center;
 
                             span {
-                                font-size: 20px;
-                                font-weight: bold;
-                            }
-                        }
-
-                        &__lastname {
-                            display: flex;
-                            justify-content: center;
-
-                            span {
-
-                                font-size: 20px;
-                                font-weight: bold;
+                                font-size: 12px;
+                                font-weight: 300;
                             }
                         }
                     }
@@ -536,22 +520,23 @@ onBeforeMount(() => {
 
                     button {
                         font-size: 1rem;
-                        width: 40px;
+                        width: 100%;
                         height: 30px;
-                        font-weight: bold;
                         cursor: pointer;
-                        border: 1px solid #DBDBDB;
-                        padding: 5px 10px;
-                        border-radius: 5px;
+                        border: none;
+                        border-top: 1px solid #DBDBDB;
+
                         transition: all 0.3s ease-in-out;
                     }
 
                     .refused {
                         background: #ff7a7a;
+                        border-radius: 0 0 0 5px;
                     }
 
                     .accepted {
                         background: #bcffcb;
+                        border-radius: 0 0 5px 0;
                     }
                 }
 
@@ -560,9 +545,10 @@ onBeforeMount(() => {
                     justify-content: center;
 
                     img {
-                        width: 50px;
-                        height: 50px;
+                        width: 100%;
+                        height: 80px;
                         object-fit: cover;
+                        border-radius: 5px 5px 0 0;
                     }
                 }
             }
@@ -576,17 +562,23 @@ onBeforeMount(() => {
     }
 
     .friends-list {
-        background: #FFFFFF;
+        background: floralwhite;
         border: 1px solid #FD2D01;
         width: 70%;
+        padding: 20px;
         margin: 10px auto 0px auto;
         border-radius: 5px;
         -webkit-animation: slide-in-bottom 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.9s both;
         animation: slide-in-bottom 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.9s both;
 
         &__title {
+            width: 100%;
+            border-radius: 5px;
+            padding: 10px 0;
+            background-color: #ffffff;
+            border: 1px solid #dbdbdb;
             text-align: center;
-            margin-top: 20px;
+            margin-bottom: 10px;
             font-weight: 700;
         }
 
@@ -605,10 +597,9 @@ onBeforeMount(() => {
             &__item {
 
                 margin: 10px auto;
-                width: 90px;
-                padding: 15px;
-                background: linear-gradient(180deg, #FFD7D7, transparent);
-                border: 1px solid #FD2D01;
+                width: 105px;
+                background: #ffffff;
+                border: 1px solid #dbdbdb;
                 border-radius: 5px;
 
 
@@ -618,15 +609,13 @@ onBeforeMount(() => {
                     justify-content: space-between;
 
                     button {
-                        background-color: #ff7a7a;
                         font-size: 1rem;
                         width: 100%;
                         height: 30px;
-                        font-weight: bold;
                         cursor: pointer;
-                        border: 1px solid #DBDBDB;
-                        padding: 5px 10px;
-                        border-radius: 5px;
+                        border: none;
+                        border-top: 1px solid #DBDBDB;
+                        border-radius: 0 0 5px 5px;
                         transition: all 0.3s ease-in-out;
 
                     }
@@ -642,34 +631,24 @@ onBeforeMount(() => {
                     justify-content: center;
 
                     img {
-                        width: 50px;
-                        height: 50px;
+                        width: 100%;
+                        height: 80px;
                         object-fit: cover;
+                        border-radius: 5px 5px 0 0;
                     }
                 }
 
                 &__name {
                     &__text {
-                        margin-bottom: 5px;
+                        margin: 5px;
 
-                        &__firstname {
+                        &__username {
                             display: flex;
                             justify-content: center;
 
                             span {
-                                font-size: 20px;
-                                font-weight: bold;
-                            }
-                        }
-
-                        &__lastname {
-                            display: flex;
-                            justify-content: center;
-
-                            span {
-
-                                font-size: 20px;
-                                font-weight: bold;
+                                font-size: 12px;
+                                font-weight: 300;
                             }
                         }
                     }

@@ -33,9 +33,8 @@ function onPickFile(event: any) {
 }
 
 function autoResize(event: any) {
-    console.log(event);
-    event.path[0].style.height = 'auto';
-    event.path[0].style.height = event.path[0].scrollHeight + 'px';
+    event.target.style.height = 'auto';
+    event.target.style.height = event.target.scrollHeight + 'px';
 }
 
 function createPublication(event: any) {
@@ -362,7 +361,8 @@ onBeforeMount(() => {
                                 <div class="post__content__text">
                                     <template v-if="publication.editMode">
                                         <textarea ref="jedi" type="text" v-model="publication.content"
-                                            class="create_post__content__details__text post-edit" @click="autoResize"></textarea>
+                                            class="create_post__content__details__text post-edit"
+                                            @click="autoResize"></textarea>
                                         <input type="file" ref="fileInput" accept="image/*" @change="onPickFile"
                                             class="create_post__content__details__file">
                                     </template>
@@ -440,7 +440,7 @@ onBeforeMount(() => {
     width: 470px;
     border-radius: 5px;
     margin: 60px auto auto auto;
-    background-color: #FFFFFF;
+    background-color: floralwhite;
     border: 1px solid #FD2D01;
     -webkit-animation: slide-in-top 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.3s both;
     animation: slide-in-top 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.3s both;
@@ -485,6 +485,16 @@ onBeforeMount(() => {
             width: 100%;
             justify-content: space-between;
 
+            svg {
+                color: #4E5166;
+                cursor: pointer;
+                position: absolute;
+                font-size: 20px;
+                position: absolute;
+                right: 17px;
+                top: 17px;
+            }
+
             form {
                 width: 100%;
             }
@@ -494,14 +504,14 @@ onBeforeMount(() => {
                 display: block;
                 overflow: hidden;
                 resize: none;
-                border: none;
+                border: 1px solid #DBDBDB;
                 border-radius: 5px;
                 padding: 0px 7px 0px 7px;
                 background-color: rgb(255, 255, 255);
                 color: rgb(0, 0, 0);
 
                 &:focus-visible {
-                    outline-color: #FFFFFF;
+                    outline: none;
                 }
 
                 @media (max-width: 768px) {
@@ -543,12 +553,16 @@ onBeforeMount(() => {
         width: 90%;
     }
 
+    &__information {
+        border-radius: 5px;
+        background-color: floralwhite;
+    }
     &__top {
         display: flex;
         padding: 10px 0 0 10px;
 
         &__details {
-            width: 50%;
+            width: 90%;
             display: flex;
             flex-direction: row;
 
@@ -570,7 +584,7 @@ onBeforeMount(() => {
 
                 &__date {
                     font-size: 12px;
-                    color: #4E5166;
+                    color: #FD2D01;
                 }
             }
 
@@ -578,7 +592,7 @@ onBeforeMount(() => {
         }
 
         &__menu {
-            width: 50%;
+            width: 10%;
             display: flex;
             justify-content: end;
             margin-right: 20px;
@@ -588,7 +602,7 @@ onBeforeMount(() => {
 
                 svg {
                     cursor: pointer;
-                    color: #4E5166;
+                    color: #FD2D01;
                 }
             }
 
@@ -655,11 +669,11 @@ onBeforeMount(() => {
         padding: 10px 0 0 0;
 
         &__text {
-            margin: 0 10px;
+            margin: 0px 10px 20px;
             display: flex;
             flex-direction: column;
             color: #4E5166;
-            width: 100%;
+            width: 96%;
 
             span {
                 font-weight: bold;
@@ -675,6 +689,7 @@ onBeforeMount(() => {
             width: 100%;
             height: 100%;
             object-fit: contain;
+            border-top: 1px solid #FD2D01;
             background: #FFFFFF;
         }
 
@@ -701,17 +716,17 @@ onBeforeMount(() => {
     }
 
     &__likeAndComment {
-        padding: 10px 20px;
+        border-top: 1px solid #dbdbdb;
     }
 
     &__interaction {
         display: flex;
         width: 100%;
         border-radius: 0px 0px 15px 15px;
-        padding: 5px 0px;
 
         &__like {
             width: 50%;
+            padding: 5px;
 
             button {
                 width: 100%;
@@ -747,6 +762,8 @@ onBeforeMount(() => {
 
         &__comment {
             width: 50%;
+            padding: 5px;
+            border-left: 1px solid #dbdbdb;
 
             button {
                 width: 100%;

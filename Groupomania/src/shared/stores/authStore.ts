@@ -140,23 +140,37 @@ export const useAuthStore = defineStore({
             })
         },
         updateProfile: (update: any) => {
-            let formData = new FormData();
-            update.picture_url !== undefined ? formData.append('picture', update.picture_url) : "";
-            update.email !== '' && update.email !== undefined ? formData.append('email', update.email) : "";
-            update.password !== '' && update.password !== undefined ? formData.append('password', update.password) : "";
-            axios({
-                method: 'put',
-                url: 'http://localhost:3000/api/user/profil',
-                headers: {
-                    authorization: `Bearer ${localStorage.getItem('token')}`
-                },
-                data: formData
-            }).then(response => {
-            }
-            ).catch(error => {
-                error.response.status === 403 ? useAuthStore().logout() : "";
-                console.log(error);
+            return new Promise((resolve, reject) => {
+                let formData = new FormData();
+                update.picture_url !== undefined ? formData.append('picture', update.picture_url) : "";
+                update.email !== '' && update.email !== undefined ? formData.append('email', update.email) : "";
+                update.password !== '' && update.password !== undefined ? formData.append('password', update.password) : "";
+                axios({
+                    method: 'put',
+                    url: 'http://localhost:3000/api/user/profil',
+                    headers: {
+                        authorization: `Bearer ${localStorage.getItem('token')}`
+                    },
+                    data: formData
+                }).then((response: any) => {
+                    if (update.picture_url) {
+                        useAuthStore().$patch((state: any) => {
+                            state.user.picture_url = response.data[0].picture_url
+                        })
+                    };
+                    if (update.email) {
+                        useAuthStore().$patch((state: any) => {
+                            state.user.email = response.data[0].email
+                        })
+                    };
+                    resolve(response);
+                }).catch(error => {
+                    error.response.status === 403 ? useAuthStore().logout() : "";
+                    console.log(error);
+                    reject(error);
+                })
             })
         }
+
     }
 });

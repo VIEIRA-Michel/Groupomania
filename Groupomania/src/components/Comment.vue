@@ -15,8 +15,8 @@ const emit = defineEmits<{
 }>();
 
 function autoResize(event: any) {
-    event.path[0].style.height = 'auto';
-    event.path[0].style.height = event.path[0].scrollHeight + 'px';
+    event.target.style.height = 'auto';
+    event.target.style.height = event.target.scrollHeight + 'px';
 }
 
 function createComment(event: any) {
@@ -49,12 +49,12 @@ function createComment(event: any) {
                             <p>{{ com.comment_content }}</p>
                         </div>
                     </div>
+                    <div class="post__button">
+                        <fa v-if="props.user.email == com.email"
+                            @click="useCommentsStore().deleteComment(com.publication_id, com.comment_id)"
+                            icon="fa-solid fa-trash-can" />
+                    </div>
                 </div>
-            </div>
-            <div class="post__button">
-                <fa v-if="props.user.email == com.email"
-                    @click="useCommentsStore().deleteComment(com.publication_id, com.comment_id)"
-                    icon="fa-solid fa-trash-can" />
             </div>
         </div>
         <div class="more-post">
@@ -66,16 +66,16 @@ function createComment(event: any) {
         <div class="create_post">
             <div class="create_post__top">
                 <div class="create_post__top__details">
-                    <div class="create_post__top__details__avatar">
+                    <!-- <div class="create_post__top__details__avatar">
                         <img :src="props.user.picture_url" alt="avatar" />
-                    </div>
+                    </div> -->
                 </div>
             </div>
             <div class="create_post__info">
                 <div class="create_post__info__content">
                     <form @keyup.enter="createComment($event)">
                         <textarea v-model="inputComment" placeholder="Écrivez un commentaire..."
-                            class="create_post__info__content__input" @input="autoResize"></textarea>
+                            class="create_post__info__content__input" @input="autoResize($event)"></textarea>
                     </form>
                 </div>
 
@@ -89,7 +89,7 @@ function createComment(event: any) {
 
 .container-post {
     padding-top: 10px;
-    border-top: 1px solid #b7b7b7;
+    border-top: 1px solid #dbdbdb;
     width: 100%;
 
     .post {
@@ -98,6 +98,10 @@ function createComment(event: any) {
         align-items: center;
         margin-top: 20px;
         width: 100%;
+
+        @media (max-width: 768px) {
+            justify-content: center;
+        }
 
         &__details {
             display: flex;
@@ -108,6 +112,7 @@ function createComment(event: any) {
                 width: 100%;
                 display: flex;
                 align-items: start;
+                justify-content: space-evenly;
 
                 &__avatar {
                     overflow: hidden;
@@ -122,10 +127,10 @@ function createComment(event: any) {
                 }
 
                 &__commentary {
-                    background: #FFFFFF;
+                    background: #dbdbdb;
                     border-radius: 5px;
-                    padding: 10px 15px;
-                    box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.2), 0px 1px 1px 0px rgba(0, 0, 0, 0.14), 0px 2px 1px -1px rgba(0, 0, 0, 0.12);
+                    padding: 5px;
+                    border: 1px solid #4E5166;
                     width: 70%;
 
                     &__name {
@@ -136,7 +141,7 @@ function createComment(event: any) {
 
                     &__date {
                         font-size: 12px;
-                        color: #4E5166;
+                        color: #FD2D01;
                     }
 
                     &__content {
@@ -164,9 +169,11 @@ function createComment(event: any) {
 .create_post {
     display: flex;
     align-items: center;
-    margin-top: 20px;
+    margin: 20px 0;
 
     &__top {
+        margin-left: 10px;
+
         &__details {
             &__avatar {
                 overflow: hidden;
@@ -183,7 +190,10 @@ function createComment(event: any) {
     }
 
     &__info {
-        width: 100%;
+        margin-left: 8px;
+        border: 1px solid #dbdbdb;
+        border-radius: 5px;
+        width: 90%;
 
         &__name {
             span {
@@ -194,19 +204,17 @@ function createComment(event: any) {
         &__content {
             background: #FFFFFF;
             border-radius: 25px;
-            padding: 10px 15px;
 
             &__input {
                 border: none;
                 outline: none;
                 color: #4E5166;
-                width: 100%;
                 display: block;
                 overflow: hidden;
                 resize: none;
                 border: none;
+                width: 98%;
                 border-radius: 5px;
-                padding: 0px 7px 0px 7px;
                 background-color: rgb(255, 255, 255);
                 color: rgb(0, 0, 0);
 

@@ -180,141 +180,59 @@ exports.updateProfil = (req, res, next) => {
                         } : {
                             ...req.body,
                         };
-                    if (profile.email && req.file && profile.password) {
-                        if (results[0].picture_url !== null) {
-                            const filename = results[0].picture_url.split('/images/')[1];
-                            fs.unlink(`images/${filename}`, () => {
-                                console.log('Image supprimée');
-                            });
-                        }
-                        bcrypt.hash(profile.password, 10)
-                            .then(hash => {
-                                sql = 'UPDATE users SET picture_url = ?, email = ?, password = ? WHERE id = ?;';
-                                connection.query(
-                                    sql, [profile.picture, profile.email, hash, req.user.userId], function (err, results) {
-                                        if (err) {
-                                            console.log(err)
-                                            res.status(500).json({ message: 'Erreur lors de la mise à jour du profil' });
-                                        }
-                                        if (!err) {
-                                            res.status(200).json({ message: 'Profil mis à jour ! ' })
-                                        }
-                                    }
-                                )
-                            })
-                            .catch(error => res.status(500).json({ message: error }));
 
-                    } else if (req.file && !profile.email && !profile.password) {
-                        if (results[0].picture_url !== null) {
-                            const filename = results[0].picture_url.split('/images/')[1];
-                            fs.unlink(`images/${filename}`, () => {
-                                console.log('Image supprimée');
-                            });
-                        }
-                        sql = 'UPDATE users SET picture_url = ? WHERE id = ?;';
-                        connection.query(
-                            sql, [profile.picture, req.user.userId], function (err, results) {
-                                if (err) {
-                                    console.log(err)
-                                    res.status(500).json({ message: 'Erreur lors de la mise à jour du profil' });
-                                }
-                                if (!err) {
-                                    res.status(200).json({ message: 'Profil mis à jour ! ' })
-                                }
-                            }
-                        )
-                    } else if (profile.email && !req.file && !profile.password) {
-                        sql = 'UPDATE users SET email = ? WHERE id = ?;';
-                        connection.query(
-                            sql, [profile.email, req.user.userId], function (err, results) {
-                                if (err) {
-                                    console.log(err)
-                                    res.status(500).json({ message: 'Erreur lors de la mise à jour du profil' });
-                                }
-                                if (!err) {
-                                    res.status(200).json({ message: 'Profil mis à jour ! ' })
-                                }
-                            }
-                        )
-                    } else if (profile.password && !req.file && !profile.email) {
-                        bcrypt.hash(profile.password, 10)
-                            .then(hash => {
-                                sql = 'UPDATE users SET password = ? WHERE id = ?;';
-                                connection.query(
-                                    sql, [hash, req.user.userId], function (err, results) {
-                                        if (err) {
-                                            console.log(err)
-                                            res.status(500).json({ message: 'Erreur lors de la mise à jour du profil' });
-                                        }
-                                        if (!err) {
-                                            res.status(200).json({ message: 'Profil mis à jour ! ' })
-                                        }
-                                    }
-                                )
-                            })
-                            .catch(error => res.status(500).json({ message: error }));
-
-                    } else if (req.file && profile.email && !profile.password) {
-                        if (results[0].picture_url !== null) {
-                            const filename = results[0].picture_url.split('/images/')[1];
-                            fs.unlink(`images/${filename}`, () => {
-                                console.log('Image supprimée');
-                            });
-                        }
-                        sql = 'UPDATE users SET picture_url = ?, email = ? WHERE id = ?;';
-                        connection.query(
-                            sql, [profile.picture, profile.email, req.user.userId], function (err, results) {
-                                if (err) {
-                                    console.log(err)
-                                    res.status(500).json({ message: 'Erreur lors de la mise à jour du profil' });
-                                }
-                                if (!err) {
-                                    res.status(200).json({ message: 'Profil mis à jour ! ' })
-                                }
-                            }
-                        )
-                    } else if (profile.email && profile.password && !req.file) {
-                        bcrypt.hash(profile.password, 10)
-                            .then(hash => {
-                                sql = 'UPDATE users SET email = ?, password = ? WHERE id = ?;';
-                                connection.query(
-                                    sql, [profile.email, hash, req.user.userId], function (err, results) {
-                                        if (err) {
-                                            console.log(err)
-                                            res.status(500).json({ message: 'Erreur lors de la mise à jour du profil' });
-                                        }
-                                        if (!err) {
-                                            res.status(200).json({ message: 'Profil mis à jour ! ' })
-                                        }
-                                    }
-                                )
-                            })
-                            .catch(error => res.status(500).json({ message: error }));
-
-                    } else if (profile.password && req.file && !profile.email) {
-                        if (results[0].picture_url !== null) {
-                            const filename = results[0].picture_url.split('/images/')[1];
-                            fs.unlink(`images/${filename}`, () => {
-                                console.log('Image supprimée');
-                            });
-                        }
-                        bcrypt.hash(profile.password, 10)
-                            .then(hash => {
-                                sql = 'UPDATE users SET password = ?, picture_url = ? WHERE id = ?;';
-                                connection.query(
-                                    sql, [hash, profile.picture, req.user.userId], function (err, results) {
-                                        if (err) {
-                                            console.log(err)
-                                            res.status(500).json({ message: 'Erreur lors de la mise à jour du profil' });
-                                        }
-                                        if (!err) {
-                                            res.status(200).json({ message: 'Profil mis à jour ! ' })
-                                        }
-                                    }
-                                )
-                            })
-                            .catch(error => res.status(500).json({ message: error }));
+                    let arrSql = [];
+                    let arrSqlValue = [];
+                    if (profile.email) {
+                        arrSql.push('email = ?');
+                        arrSqlValue.push(profile.email);
                     }
+                    if (req.file) {
+                        if (results[0].picture_url !== null) {
+                            const filename = results[0].picture_url.split('/images/')[1];
+                            fs.unlink(`images/${filename}`, () => {
+                                console.log('Image supprimée');
+                            });
+                        }
+                        arrSql.push('picture_url = ?');
+                        arrSqlValue.push(profile.picture);
+
+                    }
+
+                    if (profile.password) {
+                        bcrypt.hash(profile.password, 10)
+                            .then(hash => {
+                                arrSql.push('password = ?');
+                                arrSqlValue.push(hash);
+                            }).catch(error => res.status(500).json({ message: error }));
+                    }
+
+                    let reqSql = `UPDATE users SET ` + arrSql.join(', ') + ` WHERE id = ?;`;
+                    arrSqlValue.push(req.user.userId);
+                    connection.query(
+                        reqSql, arrSqlValue, function (err, results) {
+                            if (err) {
+                                console.log(err);
+                                res.status(500).json({ message: 'Erreur lors de la modification du profil' });
+                            } else {
+                                sql = `SELECT id, picture_url, firstname, lastname, email, session_id, userID FROM users WHERE id = ?;`;
+                                connection.query(
+                                    sql, [req.user.userId], function (err, results) {
+                                        if (err) {
+                                            console.log(err);
+                                            res.status(500).json({ message: 'Erreur lors de la récupération du profil' });
+                                        } else {
+                                            if (results.length === 0) {
+                                                res.status(404).json({ message: 'Utilisateur introuvable' });
+                                            } else {
+                                                res.status(200).json(results);
+                                            }
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    )
                 }
             }
         }

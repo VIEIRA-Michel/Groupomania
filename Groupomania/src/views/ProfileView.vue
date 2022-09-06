@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, reactive } from 'vue';
 import { useAuthStore } from '../shared/stores/authStore';
-import NavigationBar from '../components/NavigationBar.vue';
+import { useRouter } from 'vue-router';
+const router = useRouter();
 
 const isConnected = computed(() => useAuthStore().$state.isConnected);
 const user = computed(() => useAuthStore().$state.user);
@@ -14,22 +15,68 @@ let userEdit = reactive({
     confirmPassword: ''
 });
 
+let updatedProfil = ref(false);
+let inputError = ref(false);
+let errorMessage = ref('');
+let changed = ref(false);
+
 function previewPicture(e: any) {
     const image = document.getElementById('picture');
     userEdit.picture_url = e.target.files[0];
+    console.log(userEdit.picture_url);
     userEdit.picture_url ? image.src = URL.createObjectURL(userEdit.picture_url) : "";
 }
 
+function checkForm() {
+    if (userEdit.picture_url !== user.value.picture_url || userEdit.email || userEdit.password) {
+        changed.value = true;
+    } else {
+        changed.value = false;
+    }
+}
+
 function updateProfile(userEdit?: any) {
-    userEdit.password != userEdit.confirmPassword ? alert('Les mots de passe ne correspondent pas') : userEdit.email != userEdit.confirmEmail ? alert('Les emails ne correspondent pas') : useAuthStore().updateProfile(userEdit);
+    if (userEdit.password != userEdit.confirmPassword) {
+        errorMessage.value = 'Les mots de passe ne correspondent pas';
+        inputError.value = true;
+    } else if (userEdit.email != userEdit.confirmEmail) {
+        errorMessage.value = 'Les emails ne correspondent pas';
+        inputError.value = true;
+    } else {
+        console.log(userEdit);
+        if (userEdit.email == '' && userEdit.password == '' && userEdit.picture_url == user.value.picture_url) {
+            errorMessage.value = 'Aucune modification n\'a été apportée';
+            inputError.value = true;
+        } else {
+            useAuthStore().updateProfile(userEdit).then((response: any) => {
+                if (response.status == 200) {
+                    inputError ? inputError.value = false : "";
+                    updatedProfil.value = true;
+                    setTimeout(() => {
+                        updatedProfil.value = false;
+                        router.push('/');
+                    }, 2000);
+                } else {
+                    alert('Erreur lors de la mise à jour du profil');
+                }
+            });
+        }
+    }
 }
 </script>
 <template>
     <div v-if="isConnected" class="container">
         <div class="edit-profil">
-            <div class="edit-profil__notification"></div>
             <div class="edit-profil__title">
                 <h1>Editer mon profil</h1>
+            </div>
+            <div v-if="updatedProfil" class="edit-profil__notification success">
+                <fa icon="fa-solid fa-check" />
+                <p>Profil mis à jour !</p>
+            </div>
+            <div v-if="inputError" class="edit-profil__notification verifyInput">
+                <fa icon="fa-solid fa-triangle-exclamation" />
+                <p>{{ errorMessage }}</p>
             </div>
             <div class="edit-profil__body">
                 <div class="edit-profil__body__content">
@@ -37,7 +84,7 @@ function updateProfile(userEdit?: any) {
                         <img :src="user.picture_url" alt="profil picture" id="picture" />
                     </div>
                     <div class="edit-profil__body__content__form">
-                        <form @submit.prevent="updateProfile(userEdit)">
+                        <form @submit.prevent="updateProfile(userEdit)" @change="checkForm">
                             <div class="edit-profil__body__content__form__input">
                                 <label for="picture">Photo de profil</label>
                                 <input type="file" class="input-file" accept="image/*"
@@ -59,9 +106,9 @@ function updateProfile(userEdit?: any) {
                                 <label for="confirmPassword">Confirmation du mot de passe</label>
                                 <input type="password" id="confirmPassword" v-model="userEdit.confirmPassword" />
                             </div>
-                            <div class="edit-profil__body__content__form__button">
-                                <button>Annuler</button>
-                                <button>Confirmer</button>
+                            <div v-if="changed"
+                                v-bind:class="[changed ? 'edit-profil__body__content__form__button' : 'edit-profil__body__content__form__button disabled']">
+                                <button>Valider les modifications</button>
                             </div>
                         </form>
                     </div>
@@ -92,12 +139,37 @@ function updateProfile(userEdit?: any) {
         align-items: center;
         width: 70%;
         height: 100%;
-        background-color: #FFF;
+        background-color: floralwhite;
         padding: 20px;
         border-radius: 5px;
         margin: 40px auto auto auto;
         border: 1px solid #FD2D01;
         transition: all 0.3s ease-in-out;
+
+        &__notification {
+            height: 20px;
+            width: 100%;
+            border-radius: 5px;
+            display: flex;
+            justify-content: center;
+            font-weight: 300;
+
+            svg {
+                margin-right: 10px;
+            }
+
+            &.success {
+                color: black;
+                background: #BCFFCB;
+                border: 1px solid darkgreen;
+            }
+
+            &.verifyInput {
+                color: #FFFFFF;
+                background-color: #FF7A79;
+                border: 1px solid darkred;
+            }
+        }
 
         &__title {
             display: flex;
@@ -105,8 +177,10 @@ function updateProfile(userEdit?: any) {
             justify-content: center;
             width: 100%;
             height: 50px;
-            background-color: #FFF;
-            border-radius: 5px 5px 0 0;
+            background-color: #ffffff;
+            border-radius: 5px;
+            border: 1px solid #dbdbdb;
+            margin-bottom: 20px;
 
             h1 {
                 font-size: 20px;
@@ -130,7 +204,7 @@ function updateProfile(userEdit?: any) {
                 align-items: center;
                 width: 100%;
                 height: 100%;
-                background-color: #FFF;
+                background-color: floralwhite;
                 border-radius: 0 0 5px 5px;
 
                 &__picture {
@@ -138,7 +212,7 @@ function updateProfile(userEdit?: any) {
                     border-radius: 35px;
 
                     img {
-                        border: transparent 3px solid;
+                        border: 1px solid #dbdbdb;
                         width: 80px;
                         height: 80px;
                         border-radius: 45px;
@@ -152,7 +226,7 @@ function updateProfile(userEdit?: any) {
                     align-items: center;
                     width: 100%;
                     height: 100%;
-                    background-color: #FFF;
+                    background-color: floralwhite;
                     border-radius: 0 0 5px 5px;
                     margin-top: 20px;
                     transition: all 0.3s ease-in-out;
@@ -163,7 +237,7 @@ function updateProfile(userEdit?: any) {
                         align-items: center;
 
                         input {
-                            border: 1px solid #FD2D01;
+                            border: 1px solid #dbdbdb;
                             border-radius: 5px;
                         }
 
@@ -173,7 +247,7 @@ function updateProfile(userEdit?: any) {
 
                         label {
                             font-size: 20px;
-                            color: #4E5166;
+                            color: #FD2D01;
                             margin-top: 15px;
                             margin-bottom: 5px;
                         }
@@ -188,20 +262,25 @@ function updateProfile(userEdit?: any) {
                         justify-content: center;
                         width: 100%;
                         height: 50px;
-                        background-color: #FFF;
+                        background-color: floralwhite;
                         border-radius: 0 0 5px 5px;
                         transition: all 0.3s ease-in-out;
 
                         button {
                             margin-left: 5px;
                             background-color: #FFFFFF;
-                            border-color: #FD2D01;
-                            color: #FD2D01;
+                            border-color: #bcffcb;
+                            color: darkgreen;
                             padding: 10px;
-                            border: 1px solid #FD2D01;
+                            border: 1px solid darkgreen;
                             border-radius: 5px;
                             cursor: pointer;
                             transition: all 0.3s ease-in-out;
+
+                            &:hover {
+                                background-color: #bcffcb;
+                                border-color: darkgreen;
+                            }
                         }
 
                         button:nth-child(2) {
