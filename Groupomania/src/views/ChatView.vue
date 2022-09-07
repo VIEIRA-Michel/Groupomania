@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, onBeforeMount, onMounted, onUnmounted, onActivated } from 'vue';
+import { computed, ref, onBeforeMount, onBeforeUnmount, onMounted, onUnmounted, onActivated, onDeactivated, watchEffect } from 'vue';
 import UserChat from '../components/UserChat.vue';
 import MessageChat from "../components/MessageChat.vue";
 import { useAuthStore } from '../shared/stores/authStore';
@@ -7,13 +7,10 @@ import { useFriendshipStore } from '../shared/stores/friendsStore';
 import { useChatStore } from '../shared/stores/chatStore';
 import socket from "../socket";
 
-const isConnected = computed(() => useAuthStore().$state.isConnected);
+const messages = computed(() => useChatStore().$state.messages);
 const user = computed(() => useAuthStore().$state.user);
 const typing = computed(() => useChatStore().$state.typing);
 const users = computed(() => useChatStore().$state.users);
-const friendsConnected = computed(() => useChatStore().$state.friendsConnected);
-const messages = computed(() => useChatStore().$state.messages);
-const friends = computed(() => useFriendshipStore().$state.friends);
 const selectedUser = ref<any>(null);
 const change = ref(false);
 
@@ -60,29 +57,6 @@ function onMessage(content: any) {
     };
 };
 
-function displayFriends(usersOnline: any) {
-    // console.log(usersOnline)
-    usersOnline.forEach((userOnline: any) => {
-        // console.log(friendsConnected.value);
-        if (friendsConnected.value.length == 0) {
-            useChatStore().$patch((state: any) => {
-                state.friendsConnected.push(userOnline)
-            });
-        } else {
-            friendsConnected.value.map((friend: any) => {
-                // console.log(userOnline, friend);
-                if (friend.user != userOnline.user) {
-                    useChatStore().friendsConnected(userOnline)
-                }
-            });
-        }
-    });
-}
-
-function checkIsFriend(utilisateur: any) {
-    friendsConnected.value.find(friend => friend.user == utilisateur.user) ? "" : friends.value.length > 0 && friends.value.find(friend => friend.user_id === utilisateur.user) ? useChatStore().friendsConnected(utilisateur) : "";
-}
-
 function isTyping(param: any) {
     param ? socket.emit('typing', user.value.firstname + ' ' + user.value.lastname) : socket.emit('stoptyping', user.value.firstname + ' ' + user.value.lastname);
 };
@@ -90,9 +64,6 @@ function isTyping(param: any) {
 onBeforeMount(() => {
     useFriendshipStore().getAllFriends().then((response: any) => {
         useChatStore().getUsersConnected().then((response2: any) => {
-            // displayFriends(response2);
-            useChatStore().getAllMessages();
-
             socket.on('typing', (data) => {
                 useChatStore().$patch((state) => {
                     state.typing = data;
@@ -103,54 +74,28 @@ onBeforeMount(() => {
                     state.typing = false;
                 });
             });
-            const initReactiveProperties = (utilisateur: any) => {
-                utilisateur.connected = true;
-                utilisateur.messages = [];
-                utilisateur.hasNewMessages = false;
-            };
-            socket.on("user connected", (utilisateur: any) => {
-                console.log('user connected');
-                for (let i = 0; i < users.value.length; i++) {
-                    const existingUser: any = useChatStore().$state.users[i];
-                    if (existingUser.userID === utilisateur.userID) {
-                        existingUser.connected = true;
-                        return;
-                    }
-                }
-                initReactiveProperties(utilisateur);
-                useChatStore().userConnected(utilisateur);
-                checkIsFriend(utilisateur);
-            });
-            socket.on("user disconnected", (id) => {
-                console.log('user disconnected');
-                let newArray = ref(users.value.filter((utilisateur: any) => utilisateur.userID !== id));
-                let newArrayFriend = ref(friendsConnected.value.filter((utilisateur: any) => utilisateur.user !== id));
-                useChatStore().$patch((state: any) => {
-                    state.users = newArray.value;
-                    state.friendsConnected = newArrayFriend.value;
-                });
-            });
+
             socket.on("private message", ({ from, id, message, to }) => {
                 useChatStore().$patch((state: any) => {
-                    useChatStore().$state.friendsConnected.map((friend: any) => {
-                        console.log(friend.userID);
-                        if (friend.userID == from) {
+                    useChatStore().$state.users.map((utilisateur: any) => {
+                        console.log(utilisateur.userID);
+                        if (utilisateur.userID == from) {
                             state.messages.push({
-                                from: friend.user,
+                                from: utilisateur.user,
                                 id,
                                 message,
                                 to: user.value.user_id,
                             });
-                            friend.messages.push({
-                                from: friend.user,
+                            utilisateur.messages.push({
+                                from: utilisateur.user,
                                 id,
                                 message,
                                 to: user.value.user_id,
                             });
-                            if (friend !== selectedUser) {
-                                friend.hasNewMessages = true;
+                            if (utilisateur !== selectedUser) {
+                                utilisateur.hasNewMessages = true;
                             }
-                            return friend;
+                            return utilisateur;
                         }
                     })
                 })
@@ -164,12 +109,11 @@ onBeforeMount(() => {
     <div class="container">
         <div :class="[selectedUser ? 'container-left active' : 'container-left']">
             <div class="container-left__title">
-                <h1>Amis en ligne ({{ friendsConnected.length }})</h1>
+                <h1>Amis en ligne ({{ users.length }})</h1>
             </div>
             <div class="container-left__list">
-                <UserChat v-if="friendsConnected.length > 0" v-for="utilisateur in friendsConnected"
-                    :key="utilisateur.userID" :user="utilisateur" :selected="selectedUser === utilisateur"
-                    @select="onSelectUser(utilisateur)" />
+                <UserChat v-if="users.length > 0" v-for="utilisateur in users" :key="utilisateur.userID"
+                    :user="utilisateur" :selected="selectedUser === utilisateur" @select="onSelectUser(utilisateur)" />
                 <div v-else class="container-left__list__message">
                     <p>Aucun utilisateur en ligne actuellement</p>
                 </div>

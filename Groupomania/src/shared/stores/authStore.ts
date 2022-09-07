@@ -113,30 +113,33 @@ export const useAuthStore = defineStore({
             })
         },
         getMyInformations: () => {
-            let token = localStorage.getItem('token');
-            token ? useAuthStore().$patch({
-                isConnected: true,
-            }) : "";
-            axios({
-                method: 'get',
-                url: 'http://localhost:3000/api/user/me',
-                headers: {
-                    authorization: `Bearer ${localStorage.getItem('token')}`
-                },
-            }).then(response => {
-                useAuthStore().$patch({
-                    user: response.data,
+            return new Promise((resolve, reject) => {
+                let token = localStorage.getItem('token');
+                token ? useAuthStore().$patch({
                     isConnected: true,
-                });
-                const session = JSON.parse(localStorage.getItem("user"));
-                if (socket.connected == false) {
-                    socket.auth = { username: session.firstname + ' ' + session.lastname, picture: session.picture_url, user: session.user_id, sessionID: session.session_id };
-                    socket.connect();
-                }
-
-            }).catch(error => {
-                error.response.status === 403 ? useAuthStore().logout() : "";
-                console.log(error);
+                }) : "";
+                axios({
+                    method: 'get',
+                    url: 'http://localhost:3000/api/user/me',
+                    headers: {
+                        authorization: `Bearer ${localStorage.getItem('token')}`
+                    },
+                }).then(response => {
+                    useAuthStore().$patch({
+                        user: response.data,
+                        isConnected: true,
+                    });
+                    const session = JSON.parse(localStorage.getItem("user"));
+                    if (socket.connected == false) {
+                        socket.auth = { username: session.firstname + ' ' + session.lastname, picture: session.picture_url, user: session.user_id, sessionID: session.session_id };
+                        socket.connect();
+                    }
+                    resolve(response);
+                }).catch(error => {
+                    error.response.status === 403 ? useAuthStore().logout() : "";
+                    console.log(error);
+                    reject(error);
+                })
             })
         },
         updateProfile: (update: any) => {

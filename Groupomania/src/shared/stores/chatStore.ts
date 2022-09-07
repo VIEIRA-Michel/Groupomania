@@ -10,7 +10,6 @@ export interface chatState {
     messages: Message[];
     typing: boolean;
     users: [];
-    friendsConnected: []
 }
 
 export const useChatStore = defineStore({
@@ -19,8 +18,7 @@ export const useChatStore = defineStore({
         newmessage: null,
         messages: [] as Message[],
         typing: false,
-        users: [],
-        friendsConnected: []
+        users: []
     }),
     getters: {
         onlineList: (state: chatState) => state.users,
@@ -29,17 +27,6 @@ export const useChatStore = defineStore({
         userConnected: (user: any) => {
             useChatStore().$patch((state) => state.users.push(user));
         },
-        // ! Cette fonction déclanche une boucle infini
-        // friendsConnected: (friend: any) => {
-        //     console.log(friend);
-        //     useChatStore().$state.friendsConnected.map((item: any) => {
-        //         if (friend.user !== item.user) {
-        //             useChatStore().$patch((state) => state.friendsConnected.push(friend));
-        //         }
-        //         //    // console.log(friend.user);
-        //         //    // console.log(item.user);
-        //     })
-        // },
         sendMessage: (id: number, message: any, from: any) => {
             return new Promise((resolve, reject) => {
                 axios({
@@ -80,7 +67,6 @@ export const useChatStore = defineStore({
                 })
                 useChatStore().$patch((state) => state.messages = response.data);
             }).catch(error => {
-                // error.response.status === 403 ? useAuthStore().logout() : "";
                 console.log(error);
             })
         },

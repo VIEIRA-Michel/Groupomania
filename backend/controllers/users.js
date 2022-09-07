@@ -38,9 +38,29 @@ exports.signup = (req, res, next) => {
                                     picture: user.picture_url
                                 })
                             );
+                            const userConnected = await redis.get(`connected`);
+                            if (!userConnected) {
+                                await redis.set(`connected`,
+                                    JSON.stringify({
+                                        userID: user.userID,
+                                        user: results.insertId,
+                                        username: user.firstname + ' ' + user.lastname,
+                                        picture: user.picture_url,
+                                        connected: false,
+                                    })
+                                );
+                            } else {
+                                await redis.append(`connected`, ',');
+                                await redis.append(`connected`, JSON.stringify({
+                                    userID: user.userID,
+                                    user: results.insertId,
+                                    username: user.firstname + ' ' + user.lastname,
+                                    picture: user.picture_url,
+                                    connected: false,
+                                }));
+                            }
 
                             const getStringResult = await redis.get(`user:${results.insertId}`);
-                            console.log("Get string result: ", JSON.parse(getStringResult));
                             res.status(201).json({ message: 'Utilisateur enregistré ! ' })
                         })();
                     }
@@ -83,22 +103,17 @@ exports.login = (req, res, next) => {
                                         })
                                     );
                                 } else {
-                                    const arr = `[${userConnected}]`;
-                                    const userConnectedData = JSON.parse(arr);
-                                    if (userConnectedData.find(user => user.userID == userFound.userID)) {
-                                        console.log('lutilisateur est deja présent');
-                                    } else {
-                                        await redis.append(`connected`, ',');
-                                        await redis.append(`connected`, JSON.stringify({
-                                            userID: userFound.userID,
-                                            user: userFound.user,
-                                            username: userFound.username,
-                                            picture: userFound.picture,
-                                            connected: true,
-                                        }));
-                                    }
+                                    (async () => {
+                                        const arr = `[${userConnected}]`;
+                                        const userConnectedData = JSON.parse(arr);
+                                        for (let i = 0; i < userConnectedData.length; i++) {
+                                            if (userConnectedData[i].userID === userFound.userID) {
+                                                userConnectedData[i].connected = true;
+                                            }
+                                        }
+                                        await redis.set(`connected`, JSON.stringify(userConnectedData));
+                                    })();
                                 }
-                                console.log(results[0].userID);
                                 res.status(200).json({
                                     accessToken: jwt.sign(
                                         {

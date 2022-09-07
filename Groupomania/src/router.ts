@@ -4,35 +4,46 @@ import { isAuthenticatedGuard, isNotAuthenticatedGuard } from './shared/guards';
 export const router = createRouter({
     history: createWebHistory(),
     routes: [
-{
-    path: "/",
-    component: () => import('@/views/HomeView.vue'),
-},
-{
-    path: "/login",
-    beforeEnter: [isNotAuthenticatedGuard],
-    component: () => import('@/views/AuthView.vue'),
-},
-{
-    path: "/friends",
-    beforeEnter: [isAuthenticatedGuard],
-    component: () => import('@/views/FriendsView.vue'),
-},
-{
-    path: "/chat",
-    beforeEnter: [isAuthenticatedGuard],
-    component: () => import('@/views/ChatView.vue'),
-},
-{
-    path: "/profil",
-    beforeEnter: [isAuthenticatedGuard],
-    component: () => import('@/views/ProfileView.vue'),
-}
-],
+        {
+            path: '/app',
+            component: () => import('@/views/ContainerSocket.vue'),
+            children: [
+                {
+                    path: "/",
+                    beforeEnter: [isAuthenticatedGuard],
+                    component: () => import('@/views/HomeView.vue'),
+                },
+                {
+                    path: "/friends",
+                    beforeEnter: [isAuthenticatedGuard],
+                    component: () => import('@/views/FriendsView.vue'),
+                },
+                {
+                    path: "/chat",
+                    beforeEnter: [isAuthenticatedGuard],
+                    component: () => import('@/views/ChatView.vue'),
+                },
+                {
+                    path: "/profil",
+                    beforeEnter: [isAuthenticatedGuard],
+                    component: () => import('@/views/ProfileView.vue'),
+                }
+            ]
+        },
+        {
+            path: "/login",
+            beforeEnter: [isNotAuthenticatedGuard],
+            component: () => import('@/views/AuthView.vue'),
+        },
+    ],
 });
 
 router.beforeEach(async () => {
-  if (!useAuthStore().$state.isConnected) {
-    await useAuthStore().getMyInformations();
-  }
+    if (!useAuthStore().$state.isConnected) {
+        useAuthStore().getMyInformations().then((response: any) => {
+            if (response.status == 403) {
+                router.push('/login');
+            }
+        });
+    }
 });

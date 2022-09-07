@@ -104,6 +104,19 @@ io.on('connection', (socket) => {
     connected: true,
   });
 
+  (async () => {
+    const connected = await redis.get(`connected`);
+    const arr = `[${connected}]`;
+    const userConnectedData = JSON.parse(arr);
+    for (let i = 0; i < userConnectedData.length; i++) {
+      if (userConnectedData[i].userID === socket.userID) {
+        userConnectedData[i].connected = true;
+      }
+    }
+    console.log(userConnectedData);
+    await redis.set(`connected`, JSON.stringify(userConnectedData));
+  })();
+
   socket.on("private message", ({ id, message, to }) => {
     socket.to(to).to(socket.userID).emit("private message", {
       from: socket.userID,
@@ -118,6 +131,18 @@ io.on('connection', (socket) => {
     const isDisconnected = matchingSockets.size === 0;
     if (isDisconnected) {
       socket.broadcast.emit("user disconnected", socket.userID);
+      (async () => {
+        const connected = await redis.get(`connected`);
+        const arr = `[${connected}]`;
+        const userConnectedData = JSON.parse(arr);
+        for (let i = 0; i < userConnectedData.length; i++) {
+          if (userConnectedData[i].userID === socket.userID) {
+            userConnectedData[i].connected = false;
+          }
+        }
+        console.log(userConnectedData);
+        await redis.set(`connected`, JSON.stringify(userConnectedData));
+      })();
     }
   });
 
@@ -163,7 +188,6 @@ io.on('connection', (socket) => {
   socket.on('friendRequest canceled', (data) => {
     socket.broadcast.emit('friendRequest canceled', data)
   })
-
 });
 
 server.listen(port);
