@@ -9,22 +9,22 @@ export const router = createRouter({
             component: () => import('@/views/ContainerSocket.vue'),
             children: [
                 {
-                    path: "/",
+                    path: "home",
                     beforeEnter: [isAuthenticatedGuard],
                     component: () => import('@/views/HomeView.vue'),
                 },
                 {
-                    path: "/friends",
+                    path: "friends",
                     beforeEnter: [isAuthenticatedGuard],
                     component: () => import('@/views/FriendsView.vue'),
                 },
                 {
-                    path: "/chat",
+                    path: "chat",
                     beforeEnter: [isAuthenticatedGuard],
                     component: () => import('@/views/ChatView.vue'),
                 },
                 {
-                    path: "/profil",
+                    path: "profil",
                     beforeEnter: [isAuthenticatedGuard],
                     component: () => import('@/views/ProfileView.vue'),
                 }
@@ -34,6 +34,10 @@ export const router = createRouter({
             path: "/login",
             beforeEnter: [isNotAuthenticatedGuard],
             component: () => import('@/views/AuthView.vue'),
+        },
+        {
+            path: "/",
+            redirect: "/login",
         },
     ],
 });

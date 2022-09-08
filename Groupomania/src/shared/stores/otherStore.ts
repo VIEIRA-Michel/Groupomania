@@ -3,13 +3,15 @@ import { defineStore } from 'pinia';
 export interface otherStore {
     burgerMenu: boolean | null;
     information: boolean;
+    loading: boolean;
 }
 
 export const useOtherStore = defineStore({
     id: "otherStore",
     state: (): otherStore => ({
         burgerMenu: null,
-        information: false
+        information: false,
+        loading: true,
     }),
     getters: {},
     actions: {
@@ -23,6 +25,11 @@ export const useOtherStore = defineStore({
                     burgerMenu: !useOtherStore().$state.burgerMenu
                 })
             }
+        },
+        loadedResources: (): void => {
+            useOtherStore().$patch({
+                loading: false
+            })
         },
     }
 });

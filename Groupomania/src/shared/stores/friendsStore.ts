@@ -36,28 +36,32 @@ export const useFriendshipStore = defineStore({
     },
     actions: {
         getRequests: () => {
-            axios({
-                method: 'get',
-                url: 'http://localhost:3000/api/friends/requests',
-                headers: {
-                    Authorization: `Bearer ${localStorage.getItem('token')}`
-                },
-            }).then(response => {
-                if (response.data.results && response.data.results.length > 0) {
-                    response.data.results.map((item: any) => {
-                        if (useFriendshipStore().$state.requests.find((requests: any) => requests.sender == item.sender)) {
-                            return;
-                        } else {
-                            useFriendshipStore().$patch((state: FriendshipState) => {
-                                state.requests.push(item);
-                                state.isLoading = false;
-                            });
-                        }
-                    })
-                }
-            }).catch(error => {
-                error.response.status === 403 ? useAuthStore().logout() : "";
-                console.log(error);
+            return new Promise((resolve, reject) => {
+                axios({
+                    method: 'get',
+                    url: 'http://localhost:3000/api/friends/requests',
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem('token')}`
+                    },
+                }).then(response => {
+                    if (response.data.results && response.data.results.length > 0) {
+                        response.data.results.map((item: any) => {
+                            if (useFriendshipStore().$state.requests.find((requests: any) => requests.sender == item.sender)) {
+                                return;
+                            } else {
+                                useFriendshipStore().$patch((state: FriendshipState) => {
+                                    state.requests.push(item);
+                                    state.isLoading = false;
+                                });
+                            }
+                        })
+                    }
+                    resolve(response);
+                }).catch(error => {
+                    error.response.status === 403 ? useAuthStore().logout() : "";
+                    console.log(error);
+                    reject(error);
+                })
             })
         },
         getAllFriends: (id?: number) => {
@@ -313,33 +317,28 @@ export const useFriendshipStore = defineStore({
             })
         },
         checkRequestsSended: () => {
-            axios({
-                method: 'get',
-                url: `http://localhost:3000/api/friends/requests/sended`,
-                headers: {
-                    Authorization: `Bearer ${localStorage.getItem('token')}`
-                }
-            }).then(response => {
-                let state = ref([]);
-                response.data.results.map((item: never) => {
-                    state.value.push(item);
-                });
-                useFriendshipStore().$patch({
-                    invitSendedTo: response.data.results,
-                });
-            }).catch(error => {
-                error.response.status === 403 ? useAuthStore().logout() : "";
-                console.log(error);
+            return new Promise((resolve, reject) => {
+                axios({
+                    method: 'get',
+                    url: `http://localhost:3000/api/friends/requests/sended`,
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem('token')}`
+                    }
+                }).then(response => {
+                    let state = ref([]);
+                    response.data.results.map((item: never) => {
+                        state.value.push(item);
+                    });
+                    useFriendshipStore().$patch({
+                        invitSendedTo: response.data.results,
+                    });
+                    resolve(response);
+                }).catch(error => {
+                    error.response.status === 403 ? useAuthStore().logout() : "";
+                    console.log(error);
+                    reject(error);
+                })
             })
         }
     }
 });
-
-function resolve(response: AxiosResponse<any, any>) {
-throw new Error('Function not implemented.');
-}
-
-
-function reject(error: any) {
-throw new Error('Function not implemented.');
-}

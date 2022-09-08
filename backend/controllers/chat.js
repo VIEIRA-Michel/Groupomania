@@ -81,3 +81,15 @@ exports.getUsersConnected = async (req, res, next) => {
     const userConnectedData = JSON.parse(arr);
     res.status(200).json(userConnectedData);
 };
+
+exports.getMessageOfConversation = async (req, res, next) => {
+    console.log(req.params.id);
+    const msg = await redis.get(`conversation:${req.params.id}`);
+    if (msg != null) {
+        const arr = `[${msg}]`;
+        const conv = JSON.parse(arr);
+        res.status(200).json(conv);
+    } else {
+        res.status(200).json({ message: "Pas de messages" });
+    }
+}

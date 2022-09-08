@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeMount, ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useAuthStore } from '../shared/stores/authStore';
 import { useFriendshipStore } from '../shared/stores/friendsStore';
 import socket from '../socket';
@@ -76,109 +76,6 @@ function deleteModal(user: any) {
     userToBeDeleted.value = user;
 }
 
-onBeforeMount(() => {
-    useFriendshipStore().getAllFriends().then((response) => {
-        socket.on('friendRequest sended', (data) => {
-            useFriendshipStore().$patch((state: any) => {
-                if (state.requests.find((item: any) => item.sender == data.sender)) {
-                    return;
-                } else {
-                    state.requests.push(data);
-                }
-                state.isLoading = false;
-            });
-        });
-        socket.on('friendRequest refused', (data) => {
-            useFriendshipStore().$patch((state: any) => {
-                if (state.invitSendedTo.length > 0) {
-                    state.invitSendedTo.map((item: any) => {
-                        if (item.id == data) {
-                            state.invitSendedTo.splice(state.invitSendedTo.indexOf(item), 1);
-
-                        }
-                    })
-                }
-                if (state.searchResults.length > 0) {
-                    state.searchResults.map((item: any) => {
-                        console.log(item);
-                        if (item.user_id == data) {
-                            item.pending = false;
-                            item.isFriend = false;
-
-                        }
-                    })
-                }
-
-                state.isLoading = false;
-            })
-        })
-
-        socket.on('friendRequest accepted', (data) => {
-            useFriendshipStore().$patch((state: any) => {
-                if (state.invitSendedTo.length > 0) {
-                    state.invitSendedTo.map((item: any) => {
-                        if (item.id == data.data.results[0].user_id_recipient) {
-                            state.invitSendedTo.splice(state.invitSendedTo.indexOf(item), 1);
-
-                        }
-                    })
-                }
-                if (state.searchResults.length > 0) {
-                    state.searchResults.map((item: any) => {
-                        if (item.user_id == data.data.results[0].user_id_recipient) {
-                            item.pending = false;
-                            item.isFriend = true;
-
-                        }
-                    })
-                }
-                let newFriend = ref({
-                    user_id: data.data.results[0].id,
-                    firstname: data.data.results[0].firstname,
-                    lastname: data.data.results[0].lastname,
-                    picture_url: data.data.results[0].picture_url,
-                })
-                state.friends.push(newFriend.value);
-                state.isLoading = false;
-            })
-        })
-
-        socket.on('friend removed', (data) => {
-            useFriendshipStore().$patch((state: any) => {
-                if (state.friends.length > 0) {
-                    state.friends.map((item: any) => {
-                        console.log(item);
-                        if (item.user_id == data) {
-                            state.friends.splice(state.friends.indexOf(item), 1);
-                        }
-                    })
-                }
-                if (state.searchResults.length > 0) {
-                    state.searchResults.map((item: any) => {
-                        if (item.user_id == data) {
-                            item.isFriend = false;
-                        }
-                    })
-                }
-                state.isLoading = false;
-            })
-        })
-
-        socket.on('friendRequest canceled', (data) => {
-            useFriendshipStore().$patch((state: any) => {
-                if (state.requests.length > 0) {
-                    state.requests.map((item: any) => {
-                        if (item.sender == data) {
-                            state.requests.splice(state.requests.indexOf(item), 1);
-                        }
-                    })
-                }
-                state.isLoading = false;
-            })
-        })
-    })
-});
-
 </script>
 <template>
     <div v-if="isConnected" class="container">
@@ -219,7 +116,7 @@ onBeforeMount(() => {
                                                 <h5 class="modal-container__content__header__title">Êtes-vous
                                                     certains de
                                                     vouloir annuler votre demande d'amitié envers {{
-                                                            invitToBeCanceled.firstname
+                                                    invitToBeCanceled.firstname
                                                     }} ?
                                                 </h5>
                                             </div>

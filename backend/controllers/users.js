@@ -90,30 +90,6 @@ exports.login = (req, res, next) => {
                             }
                             (async () => {
                                 const getStringResult = await redis.get(`user:${results[0].id}`);
-                                let userFound = JSON.parse(getStringResult);
-                                const userConnected = await redis.get(`connected`);
-                                if (!userConnected) {
-                                    await redis.set(`connected`,
-                                        JSON.stringify({
-                                            userID: userFound.userID,
-                                            user: userFound.user,
-                                            username: userFound.username,
-                                            picture: userFound.picture,
-                                            connected: true,
-                                        })
-                                    );
-                                } else {
-                                    (async () => {
-                                        const arr = `[${userConnected}]`;
-                                        const userConnectedData = JSON.parse(arr);
-                                        for (let i = 0; i < userConnectedData.length; i++) {
-                                            if (userConnectedData[i].userID === userFound.userID) {
-                                                userConnectedData[i].connected = true;
-                                            }
-                                        }
-                                        await redis.set(`connected`, JSON.stringify(userConnectedData));
-                                    })();
-                                }
                                 res.status(200).json({
                                     accessToken: jwt.sign(
                                         {
@@ -147,35 +123,6 @@ exports.login = (req, res, next) => {
         }
     )
 }
-
-exports.logout = (req, res, next) => {
-    try {
-        (async () => {
-            console.log(req.body.userID);
-            const connected = await redis.get(`connected`);
-            console.log(connected);
-            const arr = `[${connected}]`;
-            const userConnectedData = JSON.parse(arr);
-            let userConnectedDataFiltered = "";
-            for (let i = 0; i < userConnectedData.length; i++) {
-                if (userConnectedData[i].userID != req.body.userID) {
-                    if (userConnectedDataFiltered != "") {
-                        userConnectedDataFiltered += ",";
-                    }
-                    userConnectedDataFiltered += JSON.stringify(userConnectedData[i]);
-                }
-            }
-            await redis.set(`connected`, userConnectedDataFiltered);
-            const result = await redis.get(`connected`);
-            res.status(200).json({ message: 'Utilisateur déconnecté !' });
-        })();
-    } catch (error) {
-        res.status(500).json({ message: error });
-    }
-
-}
-
-
 
 exports.updateProfil = (req, res, next) => {
     let sql = `SELECT * FROM users WHERE id = ?;`;
@@ -280,15 +227,19 @@ exports.me = (req, res, next) => {
                 console.log(err)
                 res.status(500).json({ message: 'Erreur lors de la récupération du profil' });
             } else {
-                res.status(200).json({
-                    user_id: results[0].id,
-                    picture_url: results[0].picture_url,
-                    lastname: results[0].lastname,
-                    firstname: results[0].firstname,
-                    email: results[0].email,
-                    session_id: results[0].session_id,
-                    userID: results[0].userID,
-                })
+                if (results.length === 0) {
+                    res.status(404).json({ message: 'Utilisateur introuvable' });
+                } else {
+                    res.status(200).json({
+                        user_id: results[0].id,
+                        picture_url: results[0].picture_url,
+                        lastname: results[0].lastname,
+                        firstname: results[0].firstname,
+                        email: results[0].email,
+                        session_id: results[0].session_id,
+                        userID: results[0].userID,
+                    });
+                }
             };
         })
 };

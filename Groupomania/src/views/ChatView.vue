@@ -1,13 +1,11 @@
 <script setup lang="ts">
-import { computed, ref, onBeforeMount, onBeforeUnmount, onMounted, onUnmounted, onActivated, onDeactivated, watchEffect } from 'vue';
+import { computed, ref, onBeforeMount } from 'vue';
 import UserChat from '../components/UserChat.vue';
 import MessageChat from "../components/MessageChat.vue";
 import { useAuthStore } from '../shared/stores/authStore';
-import { useFriendshipStore } from '../shared/stores/friendsStore';
 import { useChatStore } from '../shared/stores/chatStore';
 import socket from "../socket";
 
-const messages = computed(() => useChatStore().$state.messages);
 const user = computed(() => useAuthStore().$state.user);
 const typing = computed(() => useChatStore().$state.typing);
 const users = computed(() => useChatStore().$state.users);
@@ -15,21 +13,29 @@ const selectedUser = ref<any>(null);
 const change = ref(false);
 
 function onSelectUser(utilisateur: any) {
-    !selectedUser.value || selectedUser.value.user !== utilisateur.user ?
-        messages.value.forEach((message: any) => {
-            message.from == utilisateur.user || message.to == utilisateur.user ? utilisateur.messages.push(message) : "";
-        }) : "";
-    utilisateur.hasNewMessages = false;
-    change.value = true;
-    setTimeout(() => {
-        change.value = false;
-        selectedUser.value = utilisateur;
-    }, 200);
+    let numConversation = ref<any>();
+    if (utilisateur.user > user.value.user_id) {
+        numConversation.value = `${user.value.user_id}${utilisateur.user}`
+    } else {
+        numConversation.value = `${utilisateur.user}${user.value.user_id}`
+    }
+    useChatStore().getMessagesOfConversation(numConversation.value).then((response: any) => {
+        !selectedUser.value || selectedUser.value.user !== utilisateur.user ?
+            response.data.forEach((message: any) => {
+                message.from == utilisateur.user || message.to == utilisateur.user ? utilisateur.messages.push(message) : "";
+            }) : "";
+        utilisateur.hasNewMessages = false;
+        change.value = true;
+        setTimeout(() => {
+            change.value = false;
+            selectedUser.value = utilisateur;
+        }, 200);
+
+    })
 }
 function unselect() {
     selectedUser.value = null;
 }
-
 
 function onMessage(content: any) {
     if (selectedUser.value) {
@@ -62,44 +68,14 @@ function isTyping(param: any) {
 };
 
 onBeforeMount(() => {
-    useFriendshipStore().getAllFriends().then((response: any) => {
-        useChatStore().getUsersConnected().then((response2: any) => {
-            socket.on('typing', (data) => {
-                useChatStore().$patch((state) => {
-                    state.typing = data;
-                });
-            });
-            socket.on('stoptyping', (data) => {
-                useChatStore().$patch((state) => {
-                    state.typing = false;
-                });
-            });
-
-            socket.on("private message", ({ from, id, message, to }) => {
-                useChatStore().$patch((state: any) => {
-                    useChatStore().$state.users.map((utilisateur: any) => {
-                        console.log(utilisateur.userID);
-                        if (utilisateur.userID == from) {
-                            state.messages.push({
-                                from: utilisateur.user,
-                                id,
-                                message,
-                                to: user.value.user_id,
-                            });
-                            utilisateur.messages.push({
-                                from: utilisateur.user,
-                                id,
-                                message,
-                                to: user.value.user_id,
-                            });
-                            if (utilisateur !== selectedUser) {
-                                utilisateur.hasNewMessages = true;
-                            }
-                            return utilisateur;
-                        }
-                    })
-                })
-            })
+    socket.on('typing', (data) => {
+        useChatStore().$patch((state) => {
+            state.typing = data;
+        });
+    });
+    socket.on('stoptyping', (data) => {
+        useChatStore().$patch((state) => {
+            state.typing = false;
         });
     });
 });

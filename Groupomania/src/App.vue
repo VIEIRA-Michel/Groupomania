@@ -1,38 +1,16 @@
 <script setup lang="ts">
-import { onUnmounted, computed } from 'vue';
+import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from './shared/stores/authStore';
 import NavigationBar from './components/NavigationBar.vue';
-import socket from "./socket";
 const router = useRouter();
 
 const isConnected = computed(() => useAuthStore().isConnected);
-async function logout() {
-  try {
-    useAuthStore().logout().then((response) => {
-      router.push("/login");
-    })
-  } catch (error) {
-    throw error;
-  }
-}
-
-onUnmounted(() => {
+function logout() {
   useAuthStore().logout()
-  socket.off("connect");
-  socket.off("disconnect");
-  socket.off("users");
-  socket.off("user connected");
-  socket.off("user disconnected");
-  socket.off("private message");
-  socket.off("friendRequest sended");
-  socket.off("friendRequest refused");
-  socket.off("friendRequest accepted");
-  socket.off("friend removed");
-  socket.off("friendRequest canceled");
-  socket.disconnect();
-  console.log('unmounted');
-});
+  router.push("/login");
+
+}
 </script>
 <template>
   <NavigationBar :isConnected="isConnected" @logout="logout" />

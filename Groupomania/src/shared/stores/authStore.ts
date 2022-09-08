@@ -87,30 +87,12 @@ export const useAuthStore = defineStore({
             })
         },
         logout() {
-            return new Promise((resolve, reject) => {
-                let user = JSON.parse(localStorage.getItem('user'));
-                axios({
-                    method: 'post',
-                    url: 'http://localhost:3000/api/auth/logout',
-                    headers: {
-                        authorization: `Bearer ${localStorage.getItem('token')}`
-                    },
-                    data: {
-                        userID: user.userID
-                    }
-                }).then(response => {
-                    localStorage.removeItem('user');
-                    localStorage.removeItem('token');
-                    useAuthStore().$patch((state: IAuthStore) => {
-                        state.isConnected = false;
-                        state.user = null;
-                    });
-                    resolve(response);
-                }).catch(error => {
-                    console.log(error);
-                    reject(error);
-                })
-            })
+            localStorage.removeItem('user');
+            localStorage.removeItem('token');
+            useAuthStore().$patch((state: IAuthStore) => {
+                state.isConnected = false;
+                state.user = null;
+            });
         },
         getMyInformations: () => {
             return new Promise((resolve, reject) => {

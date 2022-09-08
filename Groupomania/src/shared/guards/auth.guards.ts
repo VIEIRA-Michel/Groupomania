@@ -7,6 +7,6 @@ export function isAuthenticatedGuard() {
 
 export function isNotAuthenticatedGuard() {
     if (useAuthStore().$state.isConnected) {
-        return '/';
+        return '/app/home';
     }
 }

@@ -108,13 +108,17 @@ io.on('connection', (socket) => {
     const connected = await redis.get(`connected`);
     const arr = `[${connected}]`;
     const userConnectedData = JSON.parse(arr);
+    let userConnectedDataFiltered = "";
     for (let i = 0; i < userConnectedData.length; i++) {
-      if (userConnectedData[i].userID === socket.userID) {
+      if (userConnectedData[i].userID == socket.userID) {
         userConnectedData[i].connected = true;
       }
+      if (userConnectedDataFiltered != "") {
+        userConnectedDataFiltered += ",";
+      }
+      userConnectedDataFiltered += JSON.stringify(userConnectedData[i]);
     }
-    console.log(userConnectedData);
-    await redis.set(`connected`, JSON.stringify(userConnectedData));
+    await redis.set(`connected`, userConnectedDataFiltered);
   })();
 
   socket.on("private message", ({ id, message, to }) => {
@@ -135,13 +139,17 @@ io.on('connection', (socket) => {
         const connected = await redis.get(`connected`);
         const arr = `[${connected}]`;
         const userConnectedData = JSON.parse(arr);
+        let userConnectedDataFiltered = "";
         for (let i = 0; i < userConnectedData.length; i++) {
-          if (userConnectedData[i].userID === socket.userID) {
+          if (userConnectedData[i].userID == socket.userID) {
             userConnectedData[i].connected = false;
           }
+          if (userConnectedDataFiltered != "") {
+            userConnectedDataFiltered += ",";
+          }
+          userConnectedDataFiltered += JSON.stringify(userConnectedData[i]);
         }
-        console.log(userConnectedData);
-        await redis.set(`connected`, JSON.stringify(userConnectedData));
+        await redis.set(`connected`, userConnectedDataFiltered);
       })();
     }
   });

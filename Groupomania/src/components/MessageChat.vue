@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { ref, watchEffect, computed } from 'vue';
+import { ref, watchEffect, computed, onBeforeMount } from 'vue';
 import { useAuthStore } from '@/shared/stores/authStore';
 import { useFriendshipStore } from '@/shared/stores/friendsStore';
+import { useChatStore } from '@/shared/stores/chatStore';
+
 
 const display = ref(false);
 const allow = ref(false);
@@ -14,6 +16,10 @@ const props = defineProps<{
     user: any,
     typing: any
 }>();
+console.log(props.user.user);
+console.log(user.value.user_id);
+
+
 
 function displaySender(message: any, index: number) {
     return (
@@ -65,7 +71,6 @@ function send() {
 
 watchEffect(() => {
     newMessage.value.length >= 1 ? emit('typing', true) : emit('typing', false);
-    console.log(props.user.hasNewMessages);
     setTimeout(() => {
         msgDom.value[0].scrollTop = msgDom.value[0].scrollHeight;
     }, 1);
@@ -83,6 +88,16 @@ const emit = defineEmits<{
     (e: 'read'): any;
     (e: 'return'): any
 }>();
+
+onBeforeMount(() => {
+    // let numConversation = ref<any>();
+    // if (props.user.user > user.value.user_id) {
+    //     numConversation.value = `${user.value.user_id}${props.user.user}`
+    // } else {
+    //     numConversation.value = `${props.user.user}${user.value.user_id}`
+    // }
+    // useChatStore().getMessagesOfConversation(numConversation.value)
+})
 
 </script>
 <template>

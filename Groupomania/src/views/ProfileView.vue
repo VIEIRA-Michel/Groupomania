@@ -54,7 +54,7 @@ function updateProfile(userEdit?: any) {
                     updatedProfil.value = true;
                     setTimeout(() => {
                         updatedProfil.value = false;
-                        router.push('/');
+                        router.push('/app/home');
                     }, 2000);
                 } else {
                     alert('Erreur lors de la mise à jour du profil');

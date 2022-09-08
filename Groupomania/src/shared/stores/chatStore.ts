@@ -3,7 +3,6 @@ import axios from 'axios';
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import type { Message } from '../interfaces/message.interface';
-import { useAuthStore } from './authStore';
 
 export interface chatState {
     newmessage: null;
@@ -25,7 +24,13 @@ export const useChatStore = defineStore({
     },
     actions: {
         userConnected: (user: any) => {
-            useChatStore().$patch((state) => state.users.push(user));
+            useFriendshipStore().$state.friends.map((friend: any) => {
+                if (user.user == friend.user_id) {
+                    useChatStore().$patch((state: any) => {
+                        state.users.push(user);
+                    })
+                }
+            })
         },
         sendMessage: (id: number, message: any, from: any) => {
             return new Promise((resolve, reject) => {
@@ -48,26 +53,21 @@ export const useChatStore = defineStore({
                 })
             })
         },
-        getAllMessages: () => {
-            axios({
-                method: 'get',
-                url: 'http://localhost:3000/api/user/inbox',
-                headers: {
-                    authorization: `Bearer ${localStorage.getItem('token')}`
-                }
-            }).then(response => {
-                response.data.map((item: any) => {
-                    if (item !== null) {
-                        useChatStore().$state.messages.map((message: any) => {
-                            if (item.id != message.id) {
-                                useChatStore().$patch((state) => state.messages.push(item));
-                            }
-                        })
-                    }
+        getMessagesOfConversation: (conversation_id: number) => {
+            return new Promise((resolve, reject) => {
+                axios({
+                    method: 'get',
+                    url: `http://localhost:3000/api/user/${conversation_id}/messages`,
+                    headers: {
+                        authorization: `Bearer ${localStorage.getItem('token')}`
+                    },
+                }).then(response => {
+                    console.log(response)
+                    resolve(response);
+                }).catch(error => {
+                    console.log(error);
+                    reject(error)
                 })
-                useChatStore().$patch((state) => state.messages = response.data);
-            }).catch(error => {
-                console.log(error);
             })
         },
         getUsersConnected() {
@@ -80,6 +80,7 @@ export const useChatStore = defineStore({
                     }
                 }).then(response => {
                     let obj = ref([]);
+                    console.log(response);
                     if (response.data?.length > 0) {
                         const session: any = JSON.parse(localStorage.getItem("user")!);
                         let currentUserConnected = response.data.filter((user: any) => user.userID !== session.userID);
@@ -88,7 +89,6 @@ export const useChatStore = defineStore({
                                 if (item.user_id == user.user) {
                                     obj.value.push({
                                         ...user,
-                                        connected: true,
                                         messages: [],
                                         hasNewMessages: false
                                     });
@@ -96,7 +96,9 @@ export const useChatStore = defineStore({
                                 }
                             })
                         })
-
+                        useChatStore().$patch((state: any) => {
+                            state.users = obj.value
+                        });
                     }
                     resolve(obj.value);
                 }).catch(error => {

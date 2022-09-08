@@ -3,7 +3,6 @@ import Loading from '../components/Loading.vue';
 import Comment from '../components/Comment.vue';
 import { computed, ref, watchEffect } from 'vue';
 import { useAuthStore } from '../shared/stores/authStore';
-import { useFriendshipStore } from '../shared/stores/friendsStore';
 import { usePublicationsStore } from '../shared/stores/publicationsStore';
 import { useCommentsStore } from '../shared/stores/commentsStore';
 import socket from '../socket';
@@ -13,11 +12,6 @@ const publications = computed(() => usePublicationsStore().$state.publications);
 const isLoading = computed(() => usePublicationsStore().$state.isLoading);
 const numberOfPages = computed(() => usePublicationsStore().$state.numberOfPages);
 
-useFriendshipStore().getRequests();
-useFriendshipStore().checkRequestsSended();
-useFriendshipStore().getAllFriends();
-
-const selectedUser = ref<any>(null);
 let page = ref(1);
 let content = ref('');
 let picture = ref();

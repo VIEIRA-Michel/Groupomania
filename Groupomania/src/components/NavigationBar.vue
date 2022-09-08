@@ -14,27 +14,27 @@ const emit = defineEmits<{
 <template>
     <header>
         <div class="logo">
-            <router-link to="/">
+            <router-link to="/app/home">
                 <img src="../assets/logo-header-svg.svg" alt="logo-groupomania">
             </router-link>
         </div>
         <div v-if="props.isConnected" class="menu">
-            <router-link to="/">
+            <router-link to="/app/home">
                 <div class="menu__navigate">
                     <fa icon="home" />
                 </div>
             </router-link>
-            <router-link to="/friends">
+            <router-link to="/app/friends">
                 <div class="menu__navigate">
                     <fa icon="user-group" />
                 </div>
             </router-link>
-            <router-link to="/chat">
+            <router-link to="/app/chat">
                 <div class="menu__navigate">
                     <fa icon="fa-solid fa-comments" />
                 </div>
             </router-link>
-            <router-link to="/profil">
+            <router-link to="/app/profil">
                 <div class="menu__navigate">
                     <fa icon="circle-user" />
                 </div>
@@ -60,7 +60,7 @@ const emit = defineEmits<{
         </div>
         <div :class="[burgerMenu == null ? 'burger__menu disabled' : !burgerMenu ? 'burger__menu hidden' : 'burger__menu']">
             <div class="burger__menu__item" @click="useOtherStore().toggleBurgerMenu">
-                <router-link to="/">
+                <router-link to="/app/home">
                     <div class="burger__menu__item__navigate">
                         <fa icon="home" />
                         <span>Accueil</span>
@@ -68,7 +68,7 @@ const emit = defineEmits<{
                 </router-link>
             </div>
             <div class="burger__menu__item" @click="useOtherStore().toggleBurgerMenu">
-                <router-link to="/friends">
+                <router-link to="/app/friends">
                     <div class="burger__menu__item__navigate">
                         <fa icon="user-group" />
                         <span>Amis</span>
@@ -76,7 +76,7 @@ const emit = defineEmits<{
                 </router-link>
             </div>
             <div class="burger__menu__item" @click="useOtherStore().toggleBurgerMenu">
-                <router-link to="/chat">
+                <router-link to="/app/chat">
                     <div class="burger__menu__item__navigate">
                         <fa icon="fa-solid fa-comments" />
                         <span>Messagerie</span>
@@ -84,7 +84,7 @@ const emit = defineEmits<{
                 </router-link>
             </div>
             <div class="burger__menu__item" @click="useOtherStore().toggleBurgerMenu">
-                <router-link to="/profil">
+                <router-link to="/app/profil">
                     <div class="burger__menu__item__navigate">
                         <fa icon="circle-user" />
                         <span>Profil</span>

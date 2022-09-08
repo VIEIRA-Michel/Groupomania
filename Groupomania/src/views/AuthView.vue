@@ -2,12 +2,8 @@
 import { computed, reactive, ref } from 'vue';
 import { useAuthStore } from '../shared/stores/authStore';
 import { useRouter } from 'vue-router';
-import NavigationBar from '../components/NavigationBar.vue';
-import socket from '../socket';
 const router = useRouter();
 
-const isConnected = computed(() => useAuthStore().$state.isConnected);
-const user = computed(() => useAuthStore().$state.user);
 const invalidEmail = computed(() => useAuthStore().$state.invalidEmail);
 const invalidPassword = computed(() => useAuthStore().$state.invalidPassword);
 
@@ -27,7 +23,7 @@ let loginInput = reactive({
 async function login() {
     try {
         useAuthStore().login(loginInput.email, loginInput.password).then((response) => {
-            router.push('/');
+            router.push('/app/home');
         });
     } catch (error) {
         throw error;
