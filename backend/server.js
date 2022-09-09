@@ -196,6 +196,9 @@ io.on('connection', (socket) => {
   socket.on('friendRequest canceled', (data) => {
     socket.broadcast.emit('friendRequest canceled', data)
   })
+  socket.on('update profil', (data) => {
+    socket.broadcast.emit('update profil', data)
+  })
 });
 
 server.listen(port);

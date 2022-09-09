@@ -2,6 +2,7 @@
 import { computed, ref, reactive } from 'vue';
 import { useAuthStore } from '../shared/stores/authStore';
 import { useRouter } from 'vue-router';
+import socket from '@/socket';
 const router = useRouter();
 
 const isConnected = computed(() => useAuthStore().$state.isConnected);
@@ -53,6 +54,7 @@ function updateProfile(userEdit?: any) {
                     inputError ? inputError.value = false : "";
                     updatedProfil.value = true;
                     setTimeout(() => {
+                        socket.emit('update profil', response);
                         updatedProfil.value = false;
                         router.push('/app/home');
                     }, 2000);

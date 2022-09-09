@@ -95,7 +95,9 @@ export const usePublicationsStore = defineStore({
                 if (response.data.Publications) {
                     response.data.Publications = response.data.Publications.map((publication: any) => {
                         usePublicationsStore().getLikes(publication.publication_id);
-                        useCommentsStore().getAllComments(publication.publication_id, 5, 0);
+                        useCommentsStore().getnumberOfComments(publication.publication_id);
+                        // useCommentsStore().getAllComments(publication.publication_id, 5, 0);
+                        // useCommentsStore().getCommentOfPublication(publication.publication_id);
                         let publicationDate = moment(publication.publication_created).format('DD/MM/YYYY à HH:mm').split(" ");
                         if(publicationDate[0] == newDateSplit[0]) {
                             publicationDate[0] = "Aujourd'hui";

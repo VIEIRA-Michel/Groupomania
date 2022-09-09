@@ -52,28 +52,69 @@ function deletePublication(id: number) {
     });
 }
 
-function getComments(publication: any, more?: boolean) {
-    usePublicationsStore().publicationList.map((item: any) => {
-        if (item.publication_id == publication.publication_id) {
-            item.displayComments = true;
-        } else {
-            item.displayComments = false;
-            useCommentsStore().$reset();
-        }
-        return item;
-    })
-
-    if (more) {
-        useCommentsStore().$patch((state) => {
-            state.from = state.from + state.limit;
-            state.limit = state.limit + state.limit;
-        });
-        usePublicationsStore().publicationList.map((item: any) => {
+function getComments(publication: any) {
+    usePublicationsStore().$patch((state: any) => {
+        state.publications.map((item: any) => {
             if (item.publication_id == publication.publication_id) {
-                item.comments.length >= useCommentsStore().$state.from ? useCommentsStore().getAllComments(publication.publication_id, useCommentsStore().$state.limit, useCommentsStore().$state.from) : null;
+                item.displayComments = !item.displayComments;
             }
+            if (item.displayComments) {
+                useCommentsStore().getAllComments(publication.publication_id, useCommentsStore().$state.limit, useCommentsStore().$state.from).then((response) => {
+                    if (item.publication_id == publication.publication_id) {
+                        item.displayComments = true;
+                    } else {
+                        item.displayComments = false;
+                        useCommentsStore().$reset();
+                    }
+                    return item;
+                })
+            };
         });
-    }
+    })
+}
+// useCommentsStore().getAllComments(publication.publication_id, useCommentsStore().$state.limit, useCommentsStore().$state.from).then((response) => {
+//     usePublicationsStore().$state.publications.map((item: any) => {
+//         if (item.publication_id == publication.publication_id) {
+//             item.displayComments = true;
+//         } else {
+//             item.displayComments = false;
+//             useCommentsStore().$reset();
+//         }
+//         return item;
+//     })
+// });
+// usePublicationsStore().publicationList.map((item: any) => {
+//     if (item.publication_id == publication.publication_id) {
+//         item.displayComments = true;
+//     } else {
+//         item.displayComments = false;
+//         useCommentsStore().$reset();
+//     }
+//     return item;
+// })
+
+// if (more) {
+//     useCommentsStore().$patch((state) => {
+//         state.from = state.from + state.limit;
+//         state.limit = state.limit + state.limit;
+//     });
+//     usePublicationsStore().$state.publications.map((item: any) => {
+//         if (item.publication_id == publication.publication_id) {
+//             item.comments.length >= useCommentsStore().$state.from ? useCommentsStore().getAllComments(publication.publication_id, useCommentsStore().$state.limit, useCommentsStore().$state.from) : null;
+//         }
+//     });
+// }
+
+function getMoreComments(publication: any) {
+    useCommentsStore().$patch((state) => {
+        state.from = state.from + state.limit;
+        state.limit = state.limit + state.limit;
+    });
+    usePublicationsStore().$state.publications.map((item: any) => {
+        if (item.publication_id == publication.publication_id) {
+            item.comments.length >= useCommentsStore().$state.from ? useCommentsStore().getAllComments(publication.publication_id, useCommentsStore().$state.limit, useCommentsStore().$state.from) : null;
+        }
+    });
 }
 
 function displayMenu(menu: any) {
@@ -209,7 +250,7 @@ watchEffect(() => {
                                 <template v-if="publication.displayComments">
                                     <Comment :publication_id="publication.publication_id" :user="user"
                                         :numberOfComments="publication.numberOfComments"
-                                        :comments="publication.comments" @getMore="getComments(publication, true)" />
+                                        :comments="publication.comments" @getMore="getMoreComments(publication)" />
                                 </template>
                             </div>
                         </div>
@@ -360,6 +401,7 @@ watchEffect(() => {
         border-radius: 5px;
         background-color: floralwhite;
     }
+
     &__top {
         display: flex;
         padding: 10px 0 0 10px;

@@ -24,10 +24,11 @@ function createComment(event: any) {
     if (inputComment.value != "") {
         useCommentsStore().createComment(props.publication_id, inputComment.value).then((response) => {
             inputComment.value = "";
-            event.path[0].style.height = 'auto';
+            event.target.style.height = 'auto';
         });
     };
 }
+console.log(props.comments);
 
 </script>
 <template>
