@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import Loading from '../components/Loading.vue';
 import Comment from '../components/Comment.vue';
-import { computed, ref, watchEffect } from 'vue';
+import { computed, ref, watchEffect, watch } from 'vue';
 import { useAuthStore } from '../shared/stores/authStore';
 import { usePublicationsStore } from '../shared/stores/publicationsStore';
 import { useCommentsStore } from '../shared/stores/commentsStore';
@@ -72,38 +72,6 @@ function getComments(publication: any) {
         });
     })
 }
-// useCommentsStore().getAllComments(publication.publication_id, useCommentsStore().$state.limit, useCommentsStore().$state.from).then((response) => {
-//     usePublicationsStore().$state.publications.map((item: any) => {
-//         if (item.publication_id == publication.publication_id) {
-//             item.displayComments = true;
-//         } else {
-//             item.displayComments = false;
-//             useCommentsStore().$reset();
-//         }
-//         return item;
-//     })
-// });
-// usePublicationsStore().publicationList.map((item: any) => {
-//     if (item.publication_id == publication.publication_id) {
-//         item.displayComments = true;
-//     } else {
-//         item.displayComments = false;
-//         useCommentsStore().$reset();
-//     }
-//     return item;
-// })
-
-// if (more) {
-//     useCommentsStore().$patch((state) => {
-//         state.from = state.from + state.limit;
-//         state.limit = state.limit + state.limit;
-//     });
-//     usePublicationsStore().$state.publications.map((item: any) => {
-//         if (item.publication_id == publication.publication_id) {
-//             item.comments.length >= useCommentsStore().$state.from ? useCommentsStore().getAllComments(publication.publication_id, useCommentsStore().$state.limit, useCommentsStore().$state.from) : null;
-//         }
-//     });
-// }
 
 function getMoreComments(publication: any) {
     useCommentsStore().$patch((state) => {

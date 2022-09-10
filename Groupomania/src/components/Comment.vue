@@ -28,7 +28,6 @@ function createComment(event: any) {
         });
     };
 }
-console.log(props.comments);
 
 </script>
 <template>

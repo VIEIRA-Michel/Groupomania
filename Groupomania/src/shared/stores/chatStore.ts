@@ -9,6 +9,7 @@ export interface chatState {
     messages: Message[];
     typing: boolean;
     users: [];
+    selectedUser: any;
 }
 
 export const useChatStore = defineStore({
@@ -17,10 +18,13 @@ export const useChatStore = defineStore({
         newmessage: null,
         messages: [] as Message[],
         typing: false,
-        users: []
+        users: [],
+        selectedUser: null,
     }),
     getters: {
-        onlineList: (state: chatState) => state.users,
+        onlineList: (state: chatState) => {
+            return state.users.filter((user: any) => user.connected);
+        },
     },
     actions: {
         userConnected: (user: any) => {

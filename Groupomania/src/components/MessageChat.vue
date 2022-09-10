@@ -1,31 +1,28 @@
 <script setup lang="ts">
-import { ref, watchEffect, computed, onBeforeMount } from 'vue';
+import { ref, watchEffect, computed, onBeforeMount, watch } from 'vue';
 import { useAuthStore } from '@/shared/stores/authStore';
 import { useFriendshipStore } from '@/shared/stores/friendsStore';
 import { useChatStore } from '@/shared/stores/chatStore';
+import socket from "@/socket";
 
 
 const display = ref(false);
 const allow = ref(false);
 const user = computed(() => useAuthStore().user);
 const friendsOfUser = computed(() => useFriendshipStore().$state.friendsOfUser);
+const selectedUser = computed(() => useChatStore().$state.selectedUser);
 const newMessage = ref('');
 const obj = ref({});
 let msgDom: any = ref(document.getElementsByClassName('container-center__body'));
 const props = defineProps<{
-    user: any,
     typing: any
 }>();
-console.log(props.user.user);
-console.log(user.value.user_id);
-
-
 
 function displaySender(message: any, index: number) {
     return (
         index === 0 ||
-        props.user.messages[index - 1].from !==
-        props.user.messages[index].from
+        selectedUser.value.messages[index - 1].from !==
+        selectedUser.value.messages[index].from
     );
 };
 
@@ -33,7 +30,7 @@ function displayInformation() {
     allow.value = !allow.value;
 
     if (allow.value == true) {
-        useFriendshipStore().getAllFriends(props.user.user).then((response: any) => {
+        useFriendshipStore().getAllFriends(selectedUser.value.user).then((response: any) => {
             display.value = true;
             response.data.results.map((friend: any) => {
                 if (friend.sender_user_id == user.value.user_id) {
@@ -60,26 +57,50 @@ function displayInformation() {
         display.value = false;
     }
 }
-function send() {
-    emit('input', newMessage.value);
-    newMessage.value = '';
-    setTimeout(() => {
-        msgDom.value[0].scrollTop = msgDom.value[0].scrollHeight;
-    }, 200);
+function send(event: any) {
+    event?.preventDefault();
+    if (selectedUser.value) {
+        useChatStore().sendMessage(selectedUser.value.user, newMessage.value, user.value.user_id).then((response) => {
+            useChatStore().$patch((state: any) => {
+                state.messages.push({
+                    from: user.value.user_id,
+                    id: response,
+                    message: newMessage.value,
+                    to: selectedUser.value.user,
+                });
+            })
+            socket.emit("private message", {
+                id: response,
+                message: newMessage.value,
+                to: selectedUser.value.userID,
+            });
+            selectedUser.value.messages.push({
+                from: user.value.user_id,
+                id: response,
+                message: newMessage.value,
+                to: selectedUser.value.user,
+            });
+            newMessage.value = '';
+            event.target.style.height = 'auto';
+        })
+    };
+}
+
+function autoResize(event: any) {
+    event.target.style.height = 'auto';
+    event.target.style.height = event.target.scrollHeight + 'px';
 }
 
 
 watchEffect(() => {
     newMessage.value.length >= 1 ? emit('typing', true) : emit('typing', false);
+})
+
+watch(selectedUser.value.messages, (nouvelleVal: any) => {
     setTimeout(() => {
         msgDom.value[0].scrollTop = msgDom.value[0].scrollHeight;
-    }, 1);
-    if (props.user.hasNewMessages) {
-        msgDom.value[0].scrollTop = msgDom.value[0].scrollHeight;
-        setTimeout(() => {
-        }, 200);
         emit('read');
-    }
+    }, 1);
 })
 
 const emit = defineEmits<{
@@ -109,15 +130,15 @@ onBeforeMount(() => {
         </div>
         <div class="container-center__top__details">
             <div class="container-center__top__details__left">
-                <img :src="props.user.picture" alt="avatar" />
+                <img :src="selectedUser.picture" alt="avatar" />
             </div>
             <div class="container-center__top__details__right">
                 <div class="container-center__top__details__right__name">
-                    {{ props.user.username }}
+                    {{ selectedUser.username }}
                 </div>
                 <div class="container-center__top__details__right__status">
                     <div class="container-center__top__details__right__status__online">
-                        <div v-if="props.user.connected" class="status-online">
+                        <div v-if="selectedUser.connected" class="status-online">
                             <div class="online"></div>
                             <span class="online-message">En Ligne</span>
                         </div>
@@ -180,7 +201,7 @@ onBeforeMount(() => {
     <div class="container-center__body">
         <div class="container-center__body__chat">
             <ul>
-                <li v-for="(message, index) in props.user.messages" :key="index"
+                <li v-for="(message, index) in selectedUser.messages" :key="index"
                     class="container-center__body__chat__item"
                     v-bind:class="[message.from == useAuthStore().$state.user.user_id ? 'fromSelf' : 'fromUser']">
                     <div v-if="displaySender(message, index)" class="container-center__body__chat__item__left">
@@ -201,11 +222,9 @@ onBeforeMount(() => {
         </div>
     </div>
     <div class="container-center__bottom">
-        <form class="container-center__bottom__input" @submit.prevent="send()">
-            <input type="text" placeholder="Ecrivez votre message..." v-model="newMessage" />
-            <button type="submit">
-                <fa icon="fa-solid fa-paper-plane" />
-            </button>
+        <form class="container-center__bottom__input" @keyup.enter="send($event)">
+            <textarea class="container-center__bottom__input__text" v-model="newMessage"
+                placeholder="Ecrivez votre message..." @input="autoResize"></textarea>
         </form>
     </div>
 </template>
@@ -523,16 +542,6 @@ onBeforeMount(() => {
                 display: flex;
                 align-items: center;
 
-                &__left {
-                    img {
-                        width: 30px;
-                        height: 30px;
-                        border-radius: 50px;
-                        object-fit: cover;
-                        background-color: black;
-                    }
-                }
-
                 &__right {
                     margin: 10px;
 
@@ -547,6 +556,9 @@ onBeforeMount(() => {
                         border-radius: 10px;
                         -webkit-animation: slide-in-right-message 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
                         animation: slide-in-right-message 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+                        max-width: 200px;
+                        overflow-wrap: break-word;
+                        margin: 0;
                     }
 
                     &__message.fromUser {
@@ -556,6 +568,9 @@ onBeforeMount(() => {
                         border-radius: 10px;
                         -webkit-animation: slide-in-left-message 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
                         animation: slide-in-left-message 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+                        max-width: 200px;
+                        overflow-wrap: break-word;
+                        margin: 0;
                     }
                 }
             }
@@ -579,12 +594,21 @@ onBeforeMount(() => {
             border-radius: 0 0 5px 5px;
             background-color: #FFFFFF;
 
-            input {
-                width: 90%;
-                border: none;
-                padding: 5px;
-                border-radius: 5px;
+            &__text {
                 background-color: #FFFFFF;
+                // width: 94%;
+                width: 100%;
+                display: block;
+                overflow: hidden;
+                resize: none;
+                border: 1px solid #DBDBDB;
+                border-radius: 5px;
+                padding: 0px 7px 0px 7px;
+                color: rgb(0, 0, 0);
+
+                &:focus-visible {
+                    outline: none;
+                }
 
                 &::placeholder {
                     color: #DBDBDB;

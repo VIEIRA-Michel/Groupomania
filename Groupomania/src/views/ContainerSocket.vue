@@ -11,7 +11,7 @@ import { useOtherStore } from '@/shared/stores/otherStore';
 const user = computed(() => useAuthStore().$state.user);
 const isConnected = computed(() => useAuthStore().isConnected);
 const users = computed(() => useChatStore().$state.users);
-const selectedUser = ref<any>(null);
+const selectedUser = computed(() => useChatStore().$state.selectedUser);
 const loading = computed(() => useOtherStore().$state.loading);
 
 onBeforeMount(() => {
@@ -87,10 +87,12 @@ onBeforeMount(() => {
                             useChatStore().userConnected(utilisateur);
                         });
                         socket.on("user disconnected", (id) => {
-                            console.log('user disconnected');
-                            let newArray = ref(users.value.filter((utilisateur: any) => utilisateur.userID !== id));
                             useChatStore().$patch((state: any) => {
-                                state.users = newArray.value
+                                state.users.forEach((utilisateur: any) => {
+                                    if (utilisateur.userID === id) {
+                                        utilisateur.connected = false;
+                                    }
+                                });
                             });
                         });
                         socket.on("private message", ({ from, id, message, to }) => {
@@ -110,7 +112,9 @@ onBeforeMount(() => {
                                             message,
                                             to: user.value.user_id,
                                         });
+                                        // selectedUser.value ?
                                         if (utilisateur !== selectedUser) {
+                                            // 
                                             utilisateur.hasNewMessages = true;
                                         }
                                         return utilisateur;

@@ -39,6 +39,10 @@ export const router = createRouter({
             path: "/",
             redirect: "/login",
         },
+        {
+            path: "/:pathMatch(.*)*",
+            component: () => import('@/views/NotFoundView.vue'),
+        }
     ],
 });
 

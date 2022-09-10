@@ -155,6 +155,7 @@ function updateProfile(userEdit?: any) {
             display: flex;
             justify-content: center;
             font-weight: 300;
+            margin-bottom: 20px;
 
             svg {
                 margin-right: 10px;

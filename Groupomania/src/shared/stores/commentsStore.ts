@@ -35,10 +35,8 @@ export const useCommentsStore = defineStore({
                         authorization: `Bearer ${localStorage.getItem('token')}`
                     }
                 }).then(response => {
-                    console.log('requete state');
                     usePublicationsStore().$patch((state: any) => {
                         for (let comment of response.data.comments) {
-                            console.log('1');
                             state.publications.map((publication: any) => {
                                 if (publication.publication_id === comment.publication_id) {
                                     let commentDate = moment(comment.comment_created_at).format('DD/MM/YYYY à HH:mm').split(" ");
@@ -49,24 +47,23 @@ export const useCommentsStore = defineStore({
                                     } else if (parseInt(commentDate[0]) == parseInt(newDateSplit[0]) - 2) {
                                         commentDate[0] = "Avant-hier";
                                     }
-                                    console.log('2');
                                     comment.comment_created_at = commentDate.join(" ");
                                     publication.numberOfComments = response.data.numOfResults;
-                                }
-                                console.log('3');
-                                if (publication.comments.length > 0) {
-                                    console.log(publication);
-                                    publication.comments.map((commentPublication: any) => {
-                                        console.log(commentPublication);
-                                        if (commentPublication.comment_id !== comment.comment_id) {
-                                            console.log(commentPublication.comment_id, comment.comment_id);
-                                            publication.comments!.push(comment);
-                                        }
-                                    });
+                                    if (publication.comments.length > 0) {
+                                        console.log(publication);
+                                        publication.comments.map((commentPublication: any) => {
+                                            console.log(commentPublication);
+                                            if (commentPublication.comment_id !== comment.comment_id) {
+                                                console.log(commentPublication.comment_id, comment.comment_id);
+                                                publication.comments!.push(comment);
+                                            }
+                                        });
+                                    } else {
+                                        publication.comments!.push(comment);
+                                    }
                                 }
                             })
                         }
-                        console.log('4');
                     });
                     resolve(response);
                 }).catch(error => {

@@ -197,7 +197,27 @@ io.on('connection', (socket) => {
     socket.broadcast.emit('friendRequest canceled', data)
   })
   socket.on('update profil', (data) => {
-    socket.broadcast.emit('update profil', data)
+    (async () => {
+      const user = await redis.get(`user:${data.data[0].id}`);
+      const userData = JSON.parse(user);
+      userData.picture = data.data[0].picture_url;
+      const connected = await redis.get(`connected`);
+      const arr = `[${connected}]`;
+      const userConnectedData = JSON.parse(arr);
+      let userConnectedDataFiltered = "";
+      for (let i = 0; i < userConnectedData.length; i++) {
+        if (userConnectedData[i].userID == data.data[0].userID) {
+          userConnectedData[i].picture = data.data[0].picture_url;
+        }
+        if (userConnectedDataFiltered != "") {
+          userConnectedDataFiltered += ",";
+        }
+        userConnectedDataFiltered += JSON.stringify(userConnectedData[i]);
+      }
+      await redis.set(`connected`, userConnectedDataFiltered);
+      await redis.set(`user:${data.data[0].id}`, JSON.stringify(userData));
+      socket.broadcast.emit('update profil', data);
+    })();
   })
 });
 
