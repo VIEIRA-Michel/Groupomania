@@ -147,6 +147,7 @@ onBeforeMount(() => {
                         socket.on('new publication', (data) => {
                             usePublicationsStore().$patch((state: any) => {
                                 state.publications.unshift(data._value);
+                                state.publications.pop();
                             });
                         });
                         socket.on('edit publication', (data) => {
@@ -175,7 +176,8 @@ onBeforeMount(() => {
                             usePublicationsStore().$patch((state: any) => {
                                 state.publications.map((item: any) => {
                                     if (item.publication_id == data._value.publication_id) {
-                                        item.comments.push(data._value);
+                                        item.comments.unshift(data._value);
+                                        item.comments.pop();
                                         item.numberOfComments = item.numberOfComments + 1;
                                     }
                                     return item;

@@ -12,7 +12,9 @@ interface PublicationState {
     publications: Publication[];
     isLoading: boolean;
     numOfResults: number;
-    numberOfPages: number
+    numberOfPages: number;
+    page: number;
+    cache: Publication[];
 }
 
 export const usePublicationsStore = defineStore({
@@ -21,125 +23,152 @@ export const usePublicationsStore = defineStore({
         publications: [] as Publication[],
         isLoading: true,
         numOfResults: 0,
-        numberOfPages: 1
+        numberOfPages: 1,
+        page: 1,
+        cache: [] as Publication[],
     }),
     getters: {
-        publicationList: (state: PublicationState) => state.publications,
-        likeList: (state: PublicationState) => state.publications.map(publication => publication.likes),
+        publicationList: (state: PublicationState) => state.publications
+        // likeList: (state: PublicationState) => state.publications.map(publication => publication.likes),
     },
     actions: {
         createPublication: (content?: any, picture?: any) => {
-            let formData = new FormData();
-            if (content != null && picture != null) {
-                formData.append('content', content);
-                formData.append('picture', picture);
-            } else if (picture != null && content == null) {
-                formData.append('picture', picture);
-            } else if (content != null && picture == null) {
-                formData.append('content', content);
-            }
-            if (content || picture) {
-                axios({
-                    method: 'post',
-                    url: 'http://localhost:3000/api/publications',
-                    headers: {
-                        Authorization: `Bearer ${localStorage.getItem('token')}`
-                    },
-                    data: formData,
-                }).then(response => {
-                    let publication = ref({
-                        publication_id: response.data.data[0].publication_id,
-                        user_id: response.data.data[0].user_id,
-                        content: response.data.data[0].content,
-                        picture: response.data.data[0].picture,
-                        created_at: response.data.data[0].publication_created,
-                        updated_at: null,
-                        likes: [],
-                        comments: [],
-                        menu: false,
-                        displayComments: false,
-                        editMode: false,
-                        numberOfComments: 0,
-                        firstname: useAuthStore().$state.user.firstname,
-                        lastname: useAuthStore().$state.user.lastname,
-                        email: useAuthStore().$state.user.email,
-                        picture_url: useAuthStore().$state.user.picture_url,
-                    });
-                    usePublicationsStore().$reset();
-                    usePublicationsStore().getAllPublications();
-                    socket.emit('new publication', publication);
-                }).catch(error => {
-                    console.log(error);
-                    error.response.status === 403 ? useAuthStore().logout() : "";
-                })
-            };
-        },
-        getAllPublications: (page?: number) => {
-            let date = new Date();
-            let newDate = moment(date).format('DD/MM/YYYY HH:mm:ss');
-            let newDateSplit = newDate.split(" ");            
-            let BASE_URL = "";
-            if (page) {
-                BASE_URL = `http://localhost:3000/api/publications/?page=${page}`;
-            } else {
-                BASE_URL = 'http://localhost:3000/api/publications';
-            }
-            axios({
-                method: 'get',
-                url: BASE_URL,
-                headers: {
-                    'Content-Type': 'application/json',
-                    authorization: `Bearer ${localStorage.getItem('token')}`
+            return new Promise((resolve, reject) => {
+                let date = new Date();
+                let newDate = moment(date).format('DD/MM/YYYY HH:mm:ss');
+                let newDateSplit = newDate.split(" ");
+                let formData = new FormData();
+                if (content != null && picture != null) {
+                    formData.append('content', content);
+                    formData.append('picture', picture);
+                } else if (picture != null && content == null) {
+                    formData.append('picture', picture);
+                } else if (content != null && picture == null) {
+                    formData.append('content', content);
                 }
-            }).then(response => {
-                if (response.data.Publications) {
-                    response.data.Publications = response.data.Publications.map((publication: any) => {
-                        usePublicationsStore().getLikes(publication.publication_id);
-                        useCommentsStore().getnumberOfComments(publication.publication_id);
-                        // useCommentsStore().getAllComments(publication.publication_id, 5, 0);
-                        // useCommentsStore().getCommentOfPublication(publication.publication_id);
-                        let publicationDate = moment(publication.publication_created).format('DD/MM/YYYY à HH:mm').split(" ");
-                        if(publicationDate[0] == newDateSplit[0]) {
+                if (content || picture) {
+                    axios({
+                        method: 'post',
+                        url: 'http://localhost:3000/api/publications',
+                        headers: {
+                            Authorization: `Bearer ${localStorage.getItem('token')}`
+                        },
+                        data: formData,
+                    }).then((response: any) => {
+                        console.log(response);
+                        let publicationDate = moment(response.data.data[0].publication_created).format('DD/MM/YYYY à HH:mm').split(" ");
+                        if (publicationDate[0] == newDateSplit[0]) {
                             publicationDate[0] = "Aujourd'hui";
                         } else if (parseInt(publicationDate[0]) == parseInt(newDateSplit[0]) - 1) {
                             publicationDate[0] = "Hier";
                         } else if (parseInt(publicationDate[0]) == parseInt(newDateSplit[0]) - 2) {
                             publicationDate[0] = "Avant-hier";
                         }
-
-                        return {
-                            editMode: false,
-                            menu: false,
-                            displayComments: false,
+                        let publication = ref({
+                            publication_id: response.data.data[0].publication_id,
+                            user_id: response.data.data[0].user_id,
+                            content: response.data.data[0].content,
+                            picture: response.data.data[0].picture,
+                            created_at: response.data.data[0].publication_created,
+                            updated_at: null,
+                            publication_date: publicationDate.join(" "),
                             likes: [],
                             comments: [],
+                            menu: false,
+                            displayComments: false,
+                            editMode: false,
                             numberOfComments: 0,
-                            oneWord: false,
-                            publication_date: publicationDate.join(" "),
-                            ...publication,
-                        }
-                    });
-                    response.data.Publications.sort((a: { publication_id: number; }, b: { publication_id: number; }) => {
-                        return b.publication_id - a.publication_id;
+                            firstname: useAuthStore().$state.user.firstname,
+                            lastname: useAuthStore().$state.user.lastname,
+                            email: useAuthStore().$state.user.email,
+                            picture_url: useAuthStore().$state.user.picture_url,
+                        });
+                        // usePublicationsStore().$patch((state: any) => {
+                        //     if (state.publications.length == 5) {
+                        //         state.cache = state.publications.pop();
+                        //     }
+                        //     state.numOfResults += 1;
+                        //     state.publications.unshift(publication.value);
+                        // })
+                        socket.emit('new publication', publication);
+                        resolve(publication);
+                    }).catch(error => {
+                        console.log(error);
+                        reject(error);
                     })
-                    usePublicationsStore().$patch({
-                        publications: response.data.Publications,
-                        numberOfPages: response.data.numOfPages,
-                        isLoading: false,
-                        numOfResults: response.data.numOfResults,
-                    });
+                };
+            })
+        },
+        getAllPublications: (page?: number) => {
+            console.log(page);
+            return new Promise((resolve, reject) => {
+                let date = new Date();
+                let newDate = moment(date).format('DD/MM/YYYY HH:mm:ss');
+                let newDateSplit = newDate.split(" ");
+                let BASE_URL = "";
+                if (page) {
+                    BASE_URL = `http://localhost:3000/api/publications/?page=${page}`;
+                } else {
+                    BASE_URL = 'http://localhost:3000/api/publications';
                 }
-                else {
-                    usePublicationsStore().$patch({
-                        publications: [],
-                        numberOfPages: 1,
-                        isLoading: false,
-                        numOfResults: 0,
-                    });
-                }
-            }).catch(error => {
-                console.log(error);
-                error.response.status === 403 ? useAuthStore().logout() : "";
+                axios({
+                    method: 'get',
+                    url: BASE_URL,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        authorization: `Bearer ${localStorage.getItem('token')}`
+                    }
+                }).then(response => {
+                    console.log(response);
+                    if (response.data.Publications) {
+                        response.data.Publications = response.data.Publications.map((publication: any) => {
+                            usePublicationsStore().getLikes(publication.publication_id);
+                            useCommentsStore().getnumberOfComments(publication.publication_id);
+                            let publicationDate = moment(publication.publication_created).format('DD/MM/YYYY à HH:mm').split(" ");
+                            if (publicationDate[0] == newDateSplit[0]) {
+                                publicationDate[0] = "Aujourd'hui";
+                            } else if (parseInt(publicationDate[0]) == parseInt(newDateSplit[0]) - 1) {
+                                publicationDate[0] = "Hier";
+                            } else if (parseInt(publicationDate[0]) == parseInt(newDateSplit[0]) - 2) {
+                                publicationDate[0] = "Avant-hier";
+                            }
+
+                            return {
+                                editMode: false,
+                                menu: false,
+                                displayComments: false,
+                                likes: [],
+                                comments: [],
+                                numberOfComments: 0,
+                                publication_date: publicationDate.join(" "),
+                                limit: 5,
+                                from: 0,
+                                ...publication,
+                            }
+                        });
+                    }
+                    resolve(response);
+                }).catch(error => {
+                    console.log(error);
+                    reject(error);
+                })
+            })
+        },
+        getNumberOfPublications: (id: number) => {
+            return new Promise((resolve, reject) => {
+                axios({
+                    method: 'get',
+                    url: `http://localhost:3000/api/publications/count/${id}`,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        authorization: `Bearer ${localStorage.getItem('token')}`
+                    }
+                }).then(response => {
+                    resolve(response);
+                }).catch(error => {
+                    console.log(error);
+                    reject(error);
+                })
             })
         },
         updatePublication: (id: number, update: any) => {
@@ -159,7 +188,6 @@ export const usePublicationsStore = defineStore({
                 usePublicationsStore().getAllPublications();
             }).catch(error => {
                 console.log(error);
-                error.response.status === 403 ? useAuthStore().logout() : "";
             })
         },
         deletePublication: (id: number) => {
@@ -175,13 +203,13 @@ export const usePublicationsStore = defineStore({
                     let updatePublications = usePublicationsStore().$state.publications.filter(item => {
                         return item.publication_id !== id;
                     });
-                    usePublicationsStore().$patch({
-                        publications: updatePublications
+                    usePublicationsStore().$patch((state: any) => {
+                        state.publications = updatePublications;
+                        state.numOfResults -= 1;
                     });
                     resolve(response);
                 }).catch(error => {
                     console.log(error);
-                    error.response.status === 403 ? useAuthStore().logout() : "";
                     reject(error);
                 })
             })
@@ -195,6 +223,7 @@ export const usePublicationsStore = defineStore({
                     authorization: `Bearer ${localStorage.getItem('token')}`
                 }
             }).then(response => {
+                // console.log(response)
                 const user_id: any = useAuthStore().$state.user.user_id;
                 response.data.data = response.data.data.map((publication: any) => {
                     return {
@@ -229,7 +258,6 @@ export const usePublicationsStore = defineStore({
                 });
             }).catch(error => {
                 console.log(error);
-                error.response.status === 403 ? useAuthStore().logout() : "";
             })
         },
         likePublication: (id: number) => {
@@ -265,7 +293,6 @@ export const usePublicationsStore = defineStore({
                 });
             }).catch(error => {
                 console.log(error);
-                error.response.status === 403 ? useAuthStore().logout() : "";
             })
         }
     }

@@ -84,7 +84,6 @@ export const useChatStore = defineStore({
                     }
                 }).then(response => {
                     let obj = ref([]);
-                    console.log(response);
                     if (response.data?.length > 0) {
                         const session: any = JSON.parse(localStorage.getItem("user")!);
                         let currentUserConnected = response.data.filter((user: any) => user.userID !== session.userID);

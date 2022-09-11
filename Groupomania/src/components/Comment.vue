@@ -162,6 +162,19 @@ function createComment(event: any) {
             cursor: pointer;
         }
     }
+
+    .more-post {
+        &__button {
+            margin: 20px auto;
+            display: flex;
+            border: none;
+            padding: 5px;
+            color: floralwhite;
+            background-color: #4E5166;
+            border-radius: 5px;
+
+        }
+    }
 }
 
 

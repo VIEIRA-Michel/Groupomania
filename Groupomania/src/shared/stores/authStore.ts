@@ -118,7 +118,6 @@ export const useAuthStore = defineStore({
                     }
                     resolve(response);
                 }).catch(error => {
-                    error.response.status === 403 ? useAuthStore().logout() : "";
                     console.log(error);
                     reject(error);
                 })
@@ -150,7 +149,6 @@ export const useAuthStore = defineStore({
                     };
                     resolve(response);
                 }).catch(error => {
-                    error.response.status === 403 ? useAuthStore().logout() : "";
                     console.log(error);
                     reject(error);
                 })

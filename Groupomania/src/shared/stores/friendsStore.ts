@@ -58,7 +58,6 @@ export const useFriendshipStore = defineStore({
                     }
                     resolve(response);
                 }).catch(error => {
-                    error.response.status === 403 ? useAuthStore().logout() : "";
                     console.log(error);
                     reject(error);
                 })
@@ -123,7 +122,6 @@ export const useFriendshipStore = defineStore({
                     resolve(response);
                 }).catch(error => {
                     console.log(error);
-                    error.response.status === 403 ? useAuthStore().logout() : "";
                     reject(error);
                 })
             })
@@ -169,7 +167,6 @@ export const useFriendshipStore = defineStore({
                     }
                     resolve(response);
                 }).catch(error => {
-                    error.response.status === 403 ? useAuthStore().logout() : "";
                     console.log(error);
                     reject(error);
                 })
@@ -201,7 +198,6 @@ export const useFriendshipStore = defineStore({
                     resolve(response);
 
                 }).catch(error => {
-                    // error.response.status === 403 ? useAuthStore().logout() : "";
                     reject(error);
                     console.log(error);
                 })
@@ -248,7 +244,6 @@ export const useFriendshipStore = defineStore({
                     });
                 }
             }).catch(error => {
-                error.response.status === 403 ? useAuthStore().logout() : "";
                 console.log(error);
             })
         },
@@ -310,7 +305,6 @@ export const useFriendshipStore = defineStore({
                     })
                     resolve(response);
                 }).catch(error => {
-                    error.response.status === 403 ? useAuthStore().logout() : "";
                     console.log(error);
                     reject(error);
                 })
@@ -334,7 +328,6 @@ export const useFriendshipStore = defineStore({
                     });
                     resolve(response);
                 }).catch(error => {
-                    error.response.status === 403 ? useAuthStore().logout() : "";
                     console.log(error);
                     reject(error);
                 })

@@ -12,6 +12,7 @@ router.delete('/:id', publicationsController.deletePublication);
 router.get('/', publicationsController.getAllPublications);
 router.post('/:id', publicationsController.likePublication);
 router.get('/:id', publicationsController.getLikes);
+// router.get('/count/:id', publicationsController.getQtyOfPublications);
 // router.get('/:id', publicationsController.getOnePublication);
 
 

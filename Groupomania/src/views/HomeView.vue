@@ -11,6 +11,8 @@ const user = computed(() => useAuthStore().$state.user);
 const publications = computed(() => usePublicationsStore().$state.publications);
 const isLoading = computed(() => usePublicationsStore().$state.isLoading);
 const numberOfPages = computed(() => usePublicationsStore().$state.numberOfPages);
+const numOfResults = computed(() => usePublicationsStore().$state.numOfResults);
+const publicationsCache = computed(() => usePublicationsStore().$state.cache);
 
 let page = ref(1);
 let content = ref('');
@@ -28,61 +30,111 @@ function autoResize(event: any) {
 function createPublication(event: any) {
     event.preventDefault()
     if (picture.value && content.value) {
-        usePublicationsStore().createPublication(content.value, picture.value);
-        picture.value = '';
-        content.value = '';
+        usePublicationsStore().createPublication(content.value, picture.value).then((response: any) => {
+            usePublicationsStore().$patch((state: any) => {
+                if (state.publications.length == 5) {
+                    state.cache = state.publications.pop();
+                }
+                state.numOfResults += 1;
+                state.publications.unshift(response.value);
+            })
+            picture.value = '';
+            content.value = '';
+        });
     } else if (content.value) {
-        usePublicationsStore().createPublication(content.value, null);
-        content.value = '';
+        usePublicationsStore().createPublication(content.value, null).then((response: any) => {
+            usePublicationsStore().$patch((state: any) => {
+                if (state.publications.length == 5) {
+                    state.cache = state.publications.pop();
+                }
+                state.numOfResults += 1;
+                state.publications.unshift(response.value);
+            })
+            content.value = '';
+        });
     } else if (picture.value) {
-        usePublicationsStore().createPublication(null, picture.value);
-        picture.value = '';
+        usePublicationsStore().createPublication(null, picture.value).then((response: any) => {
+            usePublicationsStore().$patch((state: any) => {
+                if (state.publications.length == 5) {
+                    state.cache = state.publications.pop();
+                }
+                state.numOfResults += 1;
+                state.publications.unshift(response.value);
+            })
+            picture.value = '';
+        });
     }
 }
 
 function deletePublication(id: number) {
-    usePublicationsStore().deletePublication(id).then((response) => {
+    if (page.value < numberOfPages.value && usePublicationsStore().$state.cache.length == 0 && publications.value.length < numOfResults.value) {
+        usePublicationsStore().getAllPublications(page.value + 1).then((response: any) => {
+            usePublicationsStore().$patch((state: any) => {
+                state.cache = response.data.Publications;
+            })
+        })
+    }
+    usePublicationsStore().deletePublication(id).then((response: any) => {
         if (numberOfPages.value != 1 && usePublicationsStore().$state.publications.length == 0) {
             page.value = page.value - 1;
         } else if (numberOfPages.value != 1 && usePublicationsStore().$state.publications.length != 5) {
-            page.value = 1;
-            usePublicationsStore().getAllPublications(page.value);
+            // page.value = 1;
+            usePublicationsStore().$patch((state: any) => {
+                state.publications.push(state.cache[0]);
+                state.cache.shift();
+            })
+            // usePublicationsStore().getAllPublications(page.value);
         }
         socket.emit('delete publication', id);
     });
 }
 
 function getComments(publication: any) {
+    console.log(publication);
+    if (!publication.displayComments) {
+        usePublicationsStore().$state.publications.map((item: any) => {
+            if (item.publication_id == publication.publication_id) {
+                useCommentsStore().getAllComments(publication.publication_id, item.limit, item.from).then((response) => {
+                    usePublicationsStore().$patch((state: any) => {
+                        state.publications.map((post: any) => {
+                            if (post.publication_id == publication.publication_id) {
+                                post.displayComments = true;
+                            }
+                            return post;
+                        })
+                    })
+                })
+
+            }
+        })
+    } else {
+        usePublicationsStore().$patch((state: any) => {
+            state.publications.map((item: any) => {
+                if (item.publication_id == publication.publication_id) {
+                    item.displayComments = false;
+                    item.comments = [];
+                    item.limit = 5;
+                    item.from = 0;
+                    return item;
+                }
+            })
+        })
+    }
+}
+
+
+function getMoreComments(publication: any) {
+    console.log(publication);
     usePublicationsStore().$patch((state: any) => {
         state.publications.map((item: any) => {
             if (item.publication_id == publication.publication_id) {
-                item.displayComments = !item.displayComments;
+                item.from = item.from + item.limit;
+                item.limit = item.limit + item.limit;
+                item.comments.length >= item.from ? useCommentsStore().getAllComments(publication.publication_id, item.limit, item.from) : null;
             }
-            if (item.displayComments) {
-                useCommentsStore().getAllComments(publication.publication_id, useCommentsStore().$state.limit, useCommentsStore().$state.from).then((response) => {
-                    if (item.publication_id == publication.publication_id) {
-                        item.displayComments = true;
-                    } else {
-                        item.displayComments = false;
-                        useCommentsStore().$reset();
-                    }
-                    return item;
-                })
-            };
-        });
+            return item;
+        })
     })
-}
-
-function getMoreComments(publication: any) {
-    useCommentsStore().$patch((state) => {
-        state.from = state.from + state.limit;
-        state.limit = state.limit + state.limit;
-    });
-    usePublicationsStore().$state.publications.map((item: any) => {
-        if (item.publication_id == publication.publication_id) {
-            item.comments.length >= useCommentsStore().$state.from ? useCommentsStore().getAllComments(publication.publication_id, useCommentsStore().$state.limit, useCommentsStore().$state.from) : null;
-        }
-    });
 }
 
 function displayMenu(menu: any) {
@@ -100,10 +152,59 @@ function likePublication(publication_id: any) {
 }
 
 watchEffect(() => {
-    usePublicationsStore().$reset();
-    usePublicationsStore().getAllPublications(page.value);
+    usePublicationsStore().getAllPublications(page.value).then((response: any) => {
+        if (response.data.Publications) {
+            usePublicationsStore().$patch({
+                publications: response.data.Publications,
+                numberOfPages: response.data.numOfPages,
+                isLoading: false,
+                numOfResults: response.data.numOfResults,
+                page: response.data.page,
+                cache: []
+            });
+        } else {
+            usePublicationsStore().$patch({
+                publications: [],
+                numberOfPages: 1,
+                isLoading: false,
+                numOfResults: 0,
+                cache: []
+            });
+        }
+    });
 })
 
+
+
+// usePublicationsStore().getAllPublications(page.value).then((response: any) => {
+//     if (response.data.Publications) {
+//         usePublicationsStore().$patch({
+//             publications: response.data.Publications,
+//             numberOfPages: response.data.numOfPages,
+//             isLoading: false,
+//             numOfResults: response.data.numOfResults,
+//         });
+//     } else {
+//         usePublicationsStore().$patch({
+//             publications: [],
+//             numberOfPages: 1,
+//             isLoading: false,
+//             numOfResults: 0,
+//         });
+//     }
+// });
+
+function changePage(operation: string) {
+    usePublicationsStore().$patch((state: any) => {
+        state.publications = [];
+    });
+
+    if (operation == 'next') {
+        page.value++
+    } else if (operation == 'previous') {
+        page.value--
+    }
+}
 </script>
 <template>
     <template v-if="isLoading">
@@ -227,10 +328,11 @@ watchEffect(() => {
             </div>
             <div class="post__page">
                 <div v-if="page > 1" class="post__page__previous">
-                    <button @click="page--" type="button">Page Précédente</button>
+                    <button @click="changePage('previous')" type="button">Page Précédente</button>
                 </div>
-                <div v-if="page < numberOfPages" class="post__page__next">
-                    <button @click="page++" type="button">Page Suivante</button>
+                <div v-if="publications.length < numOfResults && page < numberOfPages || publicationsCache.length > 0"
+                    class="post__page__next">
+                    <button @click="changePage('next')" type="button">Page Suivante</button>
                 </div>
             </div>
         </div>
