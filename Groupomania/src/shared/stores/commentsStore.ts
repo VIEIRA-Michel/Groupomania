@@ -18,13 +18,42 @@ export const useCommentsStore = defineStore({
     getters: {
     },
     actions: {
+        beforeGetComments: (publication: any) => {
+            if (!publication.displayComments) {
+                usePublicationsStore().$state.publications.map((item: any) => {
+                    if (item.publication_id == publication.publication_id) {
+                        useCommentsStore().getAllComments(publication.publication_id, item.limit, item.from).then((response) => {
+                            usePublicationsStore().$patch((state: any) => {
+                                state.publications.map((post: any) => {
+                                    if (post.publication_id == publication.publication_id) {
+                                        post.displayComments = true;
+                                    }
+                                    return post;
+                                })
+                            })
+                        })
+
+                    }
+                })
+            } else {
+                usePublicationsStore().$patch((state: any) => {
+                    state.publications.map((item: any) => {
+                        if (item.publication_id == publication.publication_id) {
+                            item.displayComments = false;
+                            item.comments.splice(0, item.comments.length);
+                            item.limit = 5;
+                            item.from = 0;
+                            return item;
+                        }
+                    })
+                })
+            }
+        },
         getAllComments: (id: number, limit: number, from: number) => {
             return new Promise((resolve, reject) => {
                 let date = new Date();
                 let newDate = moment(date).format('DD/MM/YYYY HH:mm:ss');
                 let newDateSplit = newDate.split(" ");
-                console.log(limit);
-                console.log(from);
                 axios({
                     method: 'get',
                     url: `http://localhost:3000/api/publications/${id}/comments/?limit=${limit}&from=${from}`,
@@ -171,6 +200,18 @@ export const useCommentsStore = defineStore({
                     reject(error);
                 })
             })
-        }
+        },
+        getMoreComments: (publication: any) => {
+            usePublicationsStore().$patch((state: any) => {
+                state.publications.map((item: any) => {
+                    if (item.publication_id == publication.publication_id) {
+                        item.from = item.from + item.limit;
+                        item.limit = item.limit + item.limit;
+                        item.comments.length >= item.from ? useCommentsStore().getAllComments(publication.publication_id, item.limit, item.from) : null;
+                    }
+                    return item;
+                })
+            })
+        },
     }
 });

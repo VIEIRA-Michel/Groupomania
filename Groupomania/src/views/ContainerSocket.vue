@@ -13,6 +13,11 @@ const isConnected = computed(() => useAuthStore().isConnected);
 const users = computed(() => useChatStore().$state.users);
 const selectedUser = computed(() => useChatStore().$state.selectedUser);
 const loading = computed(() => useOtherStore().$state.loading);
+const numberOfPages = computed(() => usePublicationsStore().$state.numberOfPages);
+const numOfResults = computed(() => usePublicationsStore().$state.numOfResults);
+const publications = computed(() => usePublicationsStore().$state.publications);
+
+let page = ref(1);
 
 onBeforeMount(() => {
     if (isConnected.value) {
@@ -145,9 +150,20 @@ onBeforeMount(() => {
                             });
                         })
                         socket.on('new publication', (data) => {
+                            console.log(data._value);
                             usePublicationsStore().$patch((state: any) => {
+                                // state.publications.unshift(data._value);
+                                // if(state.publications.length == 5) {
+                                //     state.publications.pop();
+                                // }
+                                if (state.publications.length == 5) {
+                                    state.cache.unshift(state.publications.pop());
+                                }
+                                state.numOfResults += 1;
                                 state.publications.unshift(data._value);
-                                state.publications.pop();
+                                if (state.page * state.publications.length < state.numOfResults) {
+                                    state.numberOfPages += 1;
+                                }
                             });
                         });
                         socket.on('edit publication', (data) => {
@@ -164,13 +180,35 @@ onBeforeMount(() => {
                         });
 
                         socket.on('delete publication', (data) => {
-                            usePublicationsStore().$patch((state: any) => {
-                                state.publications.map((item: any) => {
-                                    if (item.publication_id == data) {
-                                        state.publications.splice(usePublicationsStore().$state.publications.indexOf(item), 1);
-                                    }
+                            // state.publications.map((item: any) => {
+                            //     if (item.publication_id == data) {
+                            //         state.publications.splice(usePublicationsStore().$state.publications.indexOf(item), 1);
+                            //     }
+                            // });
+                            if (page.value < numberOfPages.value && usePublicationsStore().$state.cache.length == 0 && publications.value.length < numOfResults.value) {
+                                usePublicationsStore().fetchAllPublication(page.value + 1, true).then((response: any) => {
+                                    usePublicationsStore().$patch((state: any) => {
+                                        state.publications.map((item: any) => {
+                                            if (item.publication_id == data) {
+                                                state.publications.splice(state.publications.indexOf(item), 1);
+                                            }
+                                        });
+                                        state.numOfResults = state.numOfResults - 1;
+                                        if (state.numberOfPages != 1 && state.publications.length == 0) {
+                                            state.page -= 1;
+                                        } else if (state.numberOfPages != 1 && state.publications.length != 5) {
+                                            let tmp = ref(state.cache.shift());
+                                            console.log(tmp);
+                                            state.publications.push(tmp.value);
+                                            if (state.publications.length == state.numOfResults) {
+                                                state.numberOfPages -= 1;
+                                            }
+                                        };
+                                    });
+
                                 });
-                            });
+
+                            }
                         });
                         socket.on('has commented', (data: any) => {
                             usePublicationsStore().$patch((state: any) => {

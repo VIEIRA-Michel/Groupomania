@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import Loading from '../components/Loading.vue';
 import Comment from '../components/Comment.vue';
-import { computed, ref, watchEffect, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useAuthStore } from '../shared/stores/authStore';
 import { usePublicationsStore } from '../shared/stores/publicationsStore';
 import { useCommentsStore } from '../shared/stores/commentsStore';
@@ -12,7 +12,6 @@ const publications = computed(() => usePublicationsStore().$state.publications);
 const isLoading = computed(() => usePublicationsStore().$state.isLoading);
 const numberOfPages = computed(() => usePublicationsStore().$state.numberOfPages);
 const numOfResults = computed(() => usePublicationsStore().$state.numOfResults);
-const publicationsCache = computed(() => usePublicationsStore().$state.cache);
 
 let page = ref(1);
 let content = ref('');
@@ -31,36 +30,15 @@ function createPublication(event: any) {
     event.preventDefault()
     if (picture.value && content.value) {
         usePublicationsStore().createPublication(content.value, picture.value).then((response: any) => {
-            usePublicationsStore().$patch((state: any) => {
-                if (state.publications.length == 5) {
-                    state.cache = state.publications.pop();
-                }
-                state.numOfResults += 1;
-                state.publications.unshift(response.value);
-            })
             picture.value = '';
             content.value = '';
         });
     } else if (content.value) {
         usePublicationsStore().createPublication(content.value, null).then((response: any) => {
-            usePublicationsStore().$patch((state: any) => {
-                if (state.publications.length == 5) {
-                    state.cache = state.publications.pop();
-                }
-                state.numOfResults += 1;
-                state.publications.unshift(response.value);
-            })
             content.value = '';
         });
     } else if (picture.value) {
         usePublicationsStore().createPublication(null, picture.value).then((response: any) => {
-            usePublicationsStore().$patch((state: any) => {
-                if (state.publications.length == 5) {
-                    state.cache = state.publications.pop();
-                }
-                state.numOfResults += 1;
-                state.publications.unshift(response.value);
-            })
             picture.value = '';
         });
     }
@@ -68,143 +46,95 @@ function createPublication(event: any) {
 
 function deletePublication(id: number) {
     if (page.value < numberOfPages.value && usePublicationsStore().$state.cache.length == 0 && publications.value.length < numOfResults.value) {
-        usePublicationsStore().getAllPublications(page.value + 1).then((response: any) => {
-            usePublicationsStore().$patch((state: any) => {
-                state.cache = response.data.Publications;
-            })
+        usePublicationsStore().fetchAllPublication(page.value + 1, true).then((response: any) => {
+            usePublicationsStore().deletePublication(id).then((response: any) => {
+                socket.emit('delete publication', id);
+            });
         })
+    } else {
+        usePublicationsStore().deletePublication(id).then((response: any) => {
+            socket.emit('delete publication', id);
+        });
     }
-    usePublicationsStore().deletePublication(id).then((response: any) => {
-        if (numberOfPages.value != 1 && usePublicationsStore().$state.publications.length == 0) {
-            page.value = page.value - 1;
-        } else if (numberOfPages.value != 1 && usePublicationsStore().$state.publications.length != 5) {
-            // page.value = 1;
-            usePublicationsStore().$patch((state: any) => {
-                state.publications.push(state.cache[0]);
-                state.cache.shift();
-            })
-            // usePublicationsStore().getAllPublications(page.value);
-        }
-        socket.emit('delete publication', id);
-    });
 }
 
 function getComments(publication: any) {
-    console.log(publication);
-    if (!publication.displayComments) {
-        usePublicationsStore().$state.publications.map((item: any) => {
-            if (item.publication_id == publication.publication_id) {
-                useCommentsStore().getAllComments(publication.publication_id, item.limit, item.from).then((response) => {
-                    usePublicationsStore().$patch((state: any) => {
-                        state.publications.map((post: any) => {
-                            if (post.publication_id == publication.publication_id) {
-                                post.displayComments = true;
-                            }
-                            return post;
-                        })
-                    })
-                })
+    // if (!publication.displayComments) {
+    //     usePublicationsStore().$state.publications.map((item: any) => {
+    //         if (item.publication_id == publication.publication_id) {
+    //             useCommentsStore().getAllComments(publication.publication_id, item.limit, item.from).then((response) => {
+    //                 usePublicationsStore().$patch((state: any) => {
+    //                     state.publications.map((post: any) => {
+    //                         if (post.publication_id == publication.publication_id) {
+    //                             post.displayComments = true;
+    //                         }
+    //                         return post;
+    //                     })
+    //                 })
+    //             })
 
-            }
-        })
-    } else {
-        usePublicationsStore().$patch((state: any) => {
-            state.publications.map((item: any) => {
-                if (item.publication_id == publication.publication_id) {
-                    item.displayComments = false;
-                    item.comments = [];
-                    item.limit = 5;
-                    item.from = 0;
-                    return item;
-                }
-            })
-        })
-    }
+    //         }
+    //     })
+    // } else {
+    //     usePublicationsStore().$patch((state: any) => {
+    //         state.publications.map((item: any) => {
+    //             if (item.publication_id == publication.publication_id) {
+    //                 item.displayComments = false;
+    //                 item.comments.splice(0, item.comments.length);
+    //                 item.limit = 5;
+    //                 item.from = 0;
+    //                 return item;
+    //             }
+    //         })
+    //     })
+    // }
+    useCommentsStore().beforeGetComments(publication);
 }
 
 
 function getMoreComments(publication: any) {
-    console.log(publication);
-    usePublicationsStore().$patch((state: any) => {
-        state.publications.map((item: any) => {
-            if (item.publication_id == publication.publication_id) {
-                item.from = item.from + item.limit;
-                item.limit = item.limit + item.limit;
-                item.comments.length >= item.from ? useCommentsStore().getAllComments(publication.publication_id, item.limit, item.from) : null;
-            }
-            return item;
-        })
-    })
+    useCommentsStore().getMoreComments(publication);
+    // usePublicationsStore().$patch((state: any) => {
+    //     state.publications.map((item: any) => {
+    //         if (item.publication_id == publication.publication_id) {
+    //             item.from = item.from + item.limit;
+    //             item.limit = item.limit + item.limit;
+    //             item.comments.length >= item.from ? useCommentsStore().getAllComments(publication.publication_id, item.limit, item.from) : null;
+    //         }
+    //         return item;
+    //     })
+    // })
 }
 
-function displayMenu(menu: any) {
-    usePublicationsStore().publicationList.map((item: any) => {
-        if (item.publication_id == menu.publication_id) {
-            item.menu = !item.menu;
-        } else {
-            item.menu = false;
-        }
-        return item;
-    });
+function displayMenu(publication: any) {
+    usePublicationsStore().displayMenu(publication);
 }
 function likePublication(publication_id: any) {
     usePublicationsStore().likePublication(publication_id);
 }
 
-watchEffect(() => {
-    usePublicationsStore().getAllPublications(page.value).then((response: any) => {
-        if (response.data.Publications) {
-            usePublicationsStore().$patch({
-                publications: response.data.Publications,
-                numberOfPages: response.data.numOfPages,
-                isLoading: false,
-                numOfResults: response.data.numOfResults,
-                page: response.data.page,
-                cache: []
-            });
-        } else {
-            usePublicationsStore().$patch({
-                publications: [],
-                numberOfPages: 1,
-                isLoading: false,
-                numOfResults: 0,
-                cache: []
-            });
-        }
-    });
-})
-
-
-
-// usePublicationsStore().getAllPublications(page.value).then((response: any) => {
-//     if (response.data.Publications) {
-//         usePublicationsStore().$patch({
-//             publications: response.data.Publications,
-//             numberOfPages: response.data.numOfPages,
-//             isLoading: false,
-//             numOfResults: response.data.numOfResults,
-//         });
-//     } else {
-//         usePublicationsStore().$patch({
-//             publications: [],
-//             numberOfPages: 1,
-//             isLoading: false,
-//             numOfResults: 0,
-//         });
-//     }
-// });
-
 function changePage(operation: string) {
-    usePublicationsStore().$patch((state: any) => {
-        state.publications = [];
-    });
-
+    usePublicationsStore().resetPublicationsAndCache();
     if (operation == 'next') {
         page.value++
     } else if (operation == 'previous') {
         page.value--
     }
 }
+
+function init() {
+    usePublicationsStore().resetPublicationsAndCache();
+    // usePublicationsStore().getAllPublications(page.value, false);
+    usePublicationsStore().fetchAllPublication(page.value, false);
+}
+
+watch(page, (newPageValue) => {
+    usePublicationsStore().fetchAllPublication(newPageValue, false).then((response: any) => {
+    });
+})
+
+init();
+
 </script>
 <template>
     <template v-if="isLoading">
@@ -330,8 +260,7 @@ function changePage(operation: string) {
                 <div v-if="page > 1" class="post__page__previous">
                     <button @click="changePage('previous')" type="button">Page Précédente</button>
                 </div>
-                <div v-if="publications.length < numOfResults && page < numberOfPages || publicationsCache.length > 0"
-                    class="post__page__next">
+                <div v-if="page < numberOfPages" class="post__page__next">
                     <button @click="changePage('next')" type="button">Page Suivante</button>
                 </div>
             </div>

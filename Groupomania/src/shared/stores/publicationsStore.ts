@@ -1,6 +1,7 @@
 import { useCommentsStore } from './commentsStore';
 import { defineStore } from 'pinia';
 import axios from 'axios';
+import { fetchPublications } from '../services/publications.service';
 import type { Publication } from '../interfaces/publication.interface';
 import { useAuthStore } from '../stores/authStore';
 import socket from "../../socket";
@@ -29,7 +30,6 @@ export const usePublicationsStore = defineStore({
     }),
     getters: {
         publicationList: (state: PublicationState) => state.publications
-        // likeList: (state: PublicationState) => state.publications.map(publication => publication.likes),
     },
     actions: {
         createPublication: (content?: any, picture?: any) => {
@@ -83,13 +83,16 @@ export const usePublicationsStore = defineStore({
                             email: useAuthStore().$state.user.email,
                             picture_url: useAuthStore().$state.user.picture_url,
                         });
-                        // usePublicationsStore().$patch((state: any) => {
-                        //     if (state.publications.length == 5) {
-                        //         state.cache = state.publications.pop();
-                        //     }
-                        //     state.numOfResults += 1;
-                        //     state.publications.unshift(publication.value);
-                        // })
+                        usePublicationsStore().$patch((state: any) => {
+                            if (state.publications.length == 5) {
+                                state.cache.unshift(state.publications.pop());
+                            }
+                            state.numOfResults += 1;
+                            state.publications.unshift(publication.value);
+                            if (state.page * state.publications.length < state.numOfResults) {
+                                state.numberOfPages += 1;
+                            }
+                        })
                         socket.emit('new publication', publication);
                         resolve(publication);
                     }).catch(error => {
@@ -99,29 +102,14 @@ export const usePublicationsStore = defineStore({
                 };
             })
         },
-        getAllPublications: (page?: number) => {
-            console.log(page);
+        fetchAllPublication: (page?: number, cache?: boolean) => {
             return new Promise((resolve, reject) => {
-                let date = new Date();
-                let newDate = moment(date).format('DD/MM/YYYY HH:mm:ss');
-                let newDateSplit = newDate.split(" ");
-                let BASE_URL = "";
-                if (page) {
-                    BASE_URL = `http://localhost:3000/api/publications/?page=${page}`;
-                } else {
-                    BASE_URL = 'http://localhost:3000/api/publications';
-                }
-                axios({
-                    method: 'get',
-                    url: BASE_URL,
-                    headers: {
-                        'Content-Type': 'application/json',
-                        authorization: `Bearer ${localStorage.getItem('token')}`
-                    }
-                }).then(response => {
-                    console.log(response);
-                    if (response.data.Publications) {
-                        response.data.Publications = response.data.Publications.map((publication: any) => {
+                fetchPublications(page).then((response: any) => {
+                    let date = new Date();
+                    let newDate = moment(date).format('DD/MM/YYYY HH:mm:ss');
+                    let newDateSplit = newDate.split(" ");
+                    if (response.Publications) {
+                        response.Publications.map((publication: any) => {
                             usePublicationsStore().getLikes(publication.publication_id);
                             useCommentsStore().getnumberOfComments(publication.publication_id);
                             let publicationDate = moment(publication.publication_created).format('DD/MM/YYYY à HH:mm').split(" ");
@@ -131,27 +119,67 @@ export const usePublicationsStore = defineStore({
                                 publicationDate[0] = "Hier";
                             } else if (parseInt(publicationDate[0]) == parseInt(newDateSplit[0]) - 2) {
                                 publicationDate[0] = "Avant-hier";
-                            }
-
-                            return {
-                                editMode: false,
-                                menu: false,
-                                displayComments: false,
-                                likes: [],
-                                comments: [],
-                                numberOfComments: 0,
-                                publication_date: publicationDate.join(" "),
-                                limit: 5,
-                                from: 0,
-                                ...publication,
+                            };
+                            if (!cache) {
+                                usePublicationsStore().$patch((state: any) => {
+                                    state.publications.push({
+                                        ...publication,
+                                        editMode: false,
+                                        menu: false,
+                                        displayComments: false,
+                                        likes: [],
+                                        comments: [],
+                                        numberOfComments: 0,
+                                        publication_date: publicationDate.join(" "),
+                                        limit: 5,
+                                        from: 0,
+                                    })
+                                })
+                            } else {
+                                usePublicationsStore().$patch((state: any) => {
+                                    state.cache.push({
+                                        ...publication,
+                                        editMode: false,
+                                        menu: false,
+                                        displayComments: false,
+                                        likes: [],
+                                        comments: [],
+                                        numberOfComments: 0,
+                                        publication_date: publicationDate.join(" "),
+                                        limit: 5,
+                                        from: 0,
+                                    });
+                                    state.isLoading = false;
+                                })
                             }
                         });
+                    } else {
+                        usePublicationsStore().$patch((state: any) => {
+                            state.publications.splice(0, state.publications.length);
+                            state.numberOfPages = 1;
+                            state.isLoading = false;
+                            state.numOfResults = 0;
+                            if (state.cache.length > 0) {
+                                state.cache.splice(0, state.cache.length)
+                            }
+                        })
                     }
+                    usePublicationsStore().$patch((state: any) => {
+                        state.isLoading = false;
+                        if (!cache) {
+                            state.numberOfPages = response.numOfPages;
+                            state.numOfResults = response.numOfResults;
+                            state.page = response.page;
+                            if (state.cache.length > 0) {
+                                state.cache.splice(0, state.cache.length)
+                            }
+                        }
+                    })
                     resolve(response);
                 }).catch(error => {
                     console.log(error);
                     reject(error);
-                })
+                });
             })
         },
         getNumberOfPublications: (id: number) => {
@@ -185,7 +213,7 @@ export const usePublicationsStore = defineStore({
                 data: formData,
             }).then(response => {
                 socket.emit('edit publication', response.data.data[0]);
-                usePublicationsStore().getAllPublications();
+                usePublicationsStore().fetchAllPublication();
             }).catch(error => {
                 console.log(error);
             })
@@ -200,13 +228,23 @@ export const usePublicationsStore = defineStore({
                         authorization: `Bearer ${localStorage.getItem('token')}`
                     }
                 }).then(response => {
-                    let updatePublications = usePublicationsStore().$state.publications.filter(item => {
-                        return item.publication_id !== id;
-                    });
                     usePublicationsStore().$patch((state: any) => {
-                        state.publications = updatePublications;
-                        state.numOfResults -= 1;
-                    });
+                        state.publications.map((item: any) => {
+                            if (item.publication_id == id) {
+                                state.publications.splice(state.publications.indexOf(item), 1);
+                            }
+                        });
+                        state.numOfResults = state.numOfResults - 1;
+                        if (state.numberOfPages != 1 && state.publications.length == 0) {
+                            state.page -= 1;
+                        } else if (state.numberOfPages != 1 && state.publications.length != 5) {
+                            let tmp = ref(state.cache.shift());
+                            state.publications.push(tmp.value);
+                            if (state.publications.length == state.numOfResults) {
+                                state.numberOfPages -= 1;
+                            }
+                        };
+                    })
                     resolve(response);
                 }).catch(error => {
                     console.log(error);
@@ -294,6 +332,24 @@ export const usePublicationsStore = defineStore({
             }).catch(error => {
                 console.log(error);
             })
-        }
+        },
+        resetPublicationsAndCache: () => {
+            usePublicationsStore().$patch((state: any) => {
+                state.publications.splice(0, state.publications.length);
+                state.cache.splice(0, state.cache.length);
+            })
+        },
+        displayMenu: (publication: any) => {
+            usePublicationsStore().$patch((state: any) => {
+                state.publications.map((item: any) => {
+                    if (item.publication_id == publication.publication_id) {
+                        item.menu = !item.menu;
+                    } else {
+                        item.menu = false;
+                    }
+                    return item;
+                })
+            })
+        },
     }
 });
