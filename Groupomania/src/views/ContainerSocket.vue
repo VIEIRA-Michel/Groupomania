@@ -150,19 +150,21 @@ onBeforeMount(() => {
                             });
                         })
                         socket.on('new publication', (data) => {
-                            console.log(data._value);
                             usePublicationsStore().$patch((state: any) => {
-                                // state.publications.unshift(data._value);
-                                // if(state.publications.length == 5) {
-                                //     state.publications.pop();
-                                // }
                                 if (state.publications.length == 5) {
                                     state.cache.unshift(state.publications.pop());
                                 }
+                                if (state.numOfResults == undefined || state.numOfResults == NaN) {
+                                    state.numOfResults = 0;
+                                }
                                 state.numOfResults += 1;
                                 state.publications.unshift(data._value);
-                                if (state.page * state.publications.length < state.numOfResults) {
-                                    state.numberOfPages += 1;
+                                if (state.numberOfPages == undefined || state.numberOfPages == NaN) {
+                                    state.numberOfPages = 1;
+                                }
+                                state.numberOfPages = Math.floor(state.numOfResults / 5 - 0.2) + 1;
+                                if (state.page == undefined || state.page == NaN) {
+                                    state.page = 1;
                                 }
                             });
                         });
@@ -180,35 +182,45 @@ onBeforeMount(() => {
                         });
 
                         socket.on('delete publication', (data) => {
-                            // state.publications.map((item: any) => {
-                            //     if (item.publication_id == data) {
-                            //         state.publications.splice(usePublicationsStore().$state.publications.indexOf(item), 1);
-                            //     }
-                            // });
-                            if (page.value < numberOfPages.value && usePublicationsStore().$state.cache.length == 0 && publications.value.length < numOfResults.value) {
-                                usePublicationsStore().fetchAllPublication(page.value + 1, true).then((response: any) => {
+                            usePublicationsStore().getNumberOfPublications(user.value.user_id).then((response: any) => {
+                                usePublicationsStore().$patch((state: any) => {
+                                    state.numOfResults = response.data.qty;
+                                    state.numberOfPages = Math.floor(state.numOfResults / 5 - 0.2) + 1;
+                                })
+                                let newValue = ref(0);
+                                page.value < usePublicationsStore().$state.numberOfPages ? newValue.value = page.value + 1 : newValue.value = page.value;
+                                if (usePublicationsStore().$state.cache.length > 0) {
                                     usePublicationsStore().$patch((state: any) => {
                                         state.publications.map((item: any) => {
                                             if (item.publication_id == data) {
                                                 state.publications.splice(state.publications.indexOf(item), 1);
+                                                let tmp = ref(state.cache.shift());
+                                                state.publications.find((item: any) => item.publication_id == tmp._value.publication_id) ? "" : state.publications.push(tmp._value);
                                             }
+                                        })
+                                    })
+                                } else {
+                                    usePublicationsStore().fetchAllPublication(newValue.value, true).then((response: any) => {
+                                        usePublicationsStore().$patch((state: any) => {
+                                            state.publications.map((item: any) => {
+                                                if (item.publication_id == data) {
+                                                    state.publications.splice(state.publications.indexOf(item), 1);
+                                                }
+                                            });
+                                            state.cache.map((item: any) => {
+                                                if (item.publication_id == data) {
+                                                    state.cache.splice(state.cache.indexOf(item), 1);
+                                                }
+                                            })
+                                            if (state.numberOfPages != 1 && state.publications.length == 0) {
+                                                state.page -= 1;
+                                            } else if (state.numberOfPages != 1 && state.publications.length != 5) {
+                                                state.publications.push(state.cache.shift());
+                                            };
                                         });
-                                        state.numOfResults = state.numOfResults - 1;
-                                        if (state.numberOfPages != 1 && state.publications.length == 0) {
-                                            state.page -= 1;
-                                        } else if (state.numberOfPages != 1 && state.publications.length != 5) {
-                                            let tmp = ref(state.cache.shift());
-                                            console.log(tmp);
-                                            state.publications.push(tmp.value);
-                                            if (state.publications.length == state.numOfResults) {
-                                                state.numberOfPages -= 1;
-                                            }
-                                        };
                                     });
-
-                                });
-
-                            }
+                                }
+                            });
                         });
                         socket.on('has commented', (data: any) => {
                             usePublicationsStore().$patch((state: any) => {

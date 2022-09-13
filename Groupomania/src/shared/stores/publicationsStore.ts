@@ -87,10 +87,17 @@ export const usePublicationsStore = defineStore({
                             if (state.publications.length == 5) {
                                 state.cache.unshift(state.publications.pop());
                             }
+                            if (state.numOfResults == undefined || state.numOfResults == NaN) {
+                                state.numOfResults = 0;
+                            }
                             state.numOfResults += 1;
                             state.publications.unshift(publication.value);
-                            if (state.page * state.publications.length < state.numOfResults) {
-                                state.numberOfPages += 1;
+                            if (state.numberOfPages == undefined || state.numberOfPages == NaN) {
+                                state.numberOfPages = 1;
+                            }
+                            state.numberOfPages = Math.floor(state.numOfResults / 5 - 0.2) + 1;
+                            if (state.page == undefined || state.page == NaN) {
+                                state.page = 1;
                             }
                         })
                         socket.emit('new publication', publication);
@@ -186,7 +193,7 @@ export const usePublicationsStore = defineStore({
             return new Promise((resolve, reject) => {
                 axios({
                     method: 'get',
-                    url: `http://localhost:3000/api/publications/count/${id}`,
+                    url: 'http://localhost:3000/api/publications/count',
                     headers: {
                         'Content-Type': 'application/json',
                         authorization: `Bearer ${localStorage.getItem('token')}`
@@ -238,11 +245,8 @@ export const usePublicationsStore = defineStore({
                         if (state.numberOfPages != 1 && state.publications.length == 0) {
                             state.page -= 1;
                         } else if (state.numberOfPages != 1 && state.publications.length != 5) {
-                            let tmp = ref(state.cache.shift());
-                            state.publications.push(tmp.value);
-                            if (state.publications.length == state.numOfResults) {
-                                state.numberOfPages -= 1;
-                            }
+                            state.publications.push(state.cache.shift());
+                            state.numberOfPages = Math.floor(state.numOfResults / 5 - 0.2) + 1;
                         };
                     })
                     resolve(response);
