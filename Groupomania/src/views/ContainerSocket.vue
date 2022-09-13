@@ -182,9 +182,10 @@ onBeforeMount(() => {
                         });
 
                         socket.on('delete publication', (data) => {
-                            usePublicationsStore().getNumberOfPublications(user.value.user_id).then((response: any) => {
+                            // usePublicationsStore().getNumberOfPublications(user.value.user_id).then((response: any) => {
+                            usePublicationsStore().fetchCount().then((response: any) => {
                                 usePublicationsStore().$patch((state: any) => {
-                                    state.numOfResults = response.data.qty;
+                                    state.numOfResults = response.qty;
                                     state.numberOfPages = Math.floor(state.numOfResults / 5 - 0.2) + 1;
                                 })
                                 let newValue = ref(0);

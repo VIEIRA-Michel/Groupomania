@@ -1,7 +1,7 @@
 import { useCommentsStore } from './commentsStore';
 import { defineStore } from 'pinia';
 import axios from 'axios';
-import { fetchPublications } from '../services/publications.service';
+import { fetchPublications, addPublication, fetchCountOfPublication, editPublication } from '../services/publications.service';
 import type { Publication } from '../interfaces/publication.interface';
 import { useAuthStore } from '../stores/authStore';
 import socket from "../../socket";
@@ -32,7 +32,7 @@ export const usePublicationsStore = defineStore({
         publicationList: (state: PublicationState) => state.publications
     },
     actions: {
-        createPublication: (content?: any, picture?: any) => {
+        addNewPublication: (content?: any, picture?: any) => {
             return new Promise((resolve, reject) => {
                 let date = new Date();
                 let newDate = moment(date).format('DD/MM/YYYY HH:mm:ss');
@@ -47,14 +47,7 @@ export const usePublicationsStore = defineStore({
                     formData.append('content', content);
                 }
                 if (content || picture) {
-                    axios({
-                        method: 'post',
-                        url: 'http://localhost:3000/api/publications',
-                        headers: {
-                            Authorization: `Bearer ${localStorage.getItem('token')}`
-                        },
-                        data: formData,
-                    }).then((response: any) => {
+                    addPublication(formData).then((response: any) => {
                         console.log(response);
                         let publicationDate = moment(response.data.data[0].publication_created).format('DD/MM/YYYY à HH:mm').split(" ");
                         if (publicationDate[0] == newDateSplit[0]) {
@@ -101,12 +94,12 @@ export const usePublicationsStore = defineStore({
                             }
                         })
                         socket.emit('new publication', publication);
-                        resolve(publication);
+                        resolve(response);
                     }).catch(error => {
                         console.log(error);
                         reject(error);
                     })
-                };
+                }
             })
         },
         fetchAllPublication: (page?: number, cache?: boolean) => {
@@ -189,38 +182,40 @@ export const usePublicationsStore = defineStore({
                 });
             })
         },
-        getNumberOfPublications: (id: number) => {
+        fetchCount: () => {
             return new Promise((resolve, reject) => {
-                axios({
-                    method: 'get',
-                    url: 'http://localhost:3000/api/publications/count',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        authorization: `Bearer ${localStorage.getItem('token')}`
-                    }
-                }).then(response => {
+                fetchCountOfPublication().then((response: any) => {
                     resolve(response);
                 }).catch(error => {
                     console.log(error);
-                    reject(error);
+                    reject(error)
+                })
+            })
+        },
+        activateEditMode: (publication_id: number) => {
+            usePublicationsStore().$patch((state: any) => {
+                state.publications.map((publication: any) => {
+                    if (publication.publication_id == publication_id) {
+                        publication.editMode = true;
+                    }
                 })
             })
         },
         updatePublication: (id: number, update: any) => {
             let formData = new FormData();
-            update.post.content ? formData.append('content', update.post.content) : "";
-            update.post.picture ? formData.append('picture', update.post.picture) : "";
-            axios({
-                method: 'put',
-                url: `http://localhost:3000/api/publications/${id}`,
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${localStorage.getItem('token')}`
-                },
-                data: formData,
-            }).then(response => {
+            update.content ? formData.append('content', update.content) : "";
+            update.picture ? formData.append('picture', update.picture) : "";
+            editPublication(id, formData).then(response => {
+                usePublicationsStore().$patch((state: any) => {
+                    state.publications.map((item: any) => {
+                        if (item.publication_id == id) {
+                            item.content = response.data.data[0].content;
+                            item.picture = response.data.data[0].picture;
+                            item.editMode = false;
+                        }
+                    })
+                })
                 socket.emit('edit publication', response.data.data[0]);
-                usePublicationsStore().fetchAllPublication();
             }).catch(error => {
                 console.log(error);
             })

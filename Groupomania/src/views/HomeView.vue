@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import Loading from '../components/Loading.vue';
 import Comment from '../components/Comment.vue';
-import { computed, ref, watch } from 'vue';
+import { computed, ref, watch, reactive } from 'vue';
 import { useAuthStore } from '../shared/stores/authStore';
 import { usePublicationsStore } from '../shared/stores/publicationsStore';
 import { useCommentsStore } from '../shared/stores/commentsStore';
@@ -16,6 +16,13 @@ const numOfResults = computed(() => usePublicationsStore().$state.numOfResults);
 let page = ref(1);
 let content = ref('');
 let picture = ref();
+let updateInput = ref('');
+let updatePicture = ref();
+
+let editPost = reactive({
+    content: '',
+    picture: ''
+});
 
 function onPickFile(event: any) {
     picture.value = event.target.files[0];
@@ -29,19 +36,32 @@ function autoResize(event: any) {
 function createPublication(event: any) {
     event.preventDefault()
     if (picture.value && content.value) {
-        usePublicationsStore().createPublication(content.value, picture.value).then((response: any) => {
+        usePublicationsStore().addNewPublication(content.value, picture.value).then((response: any) => {
             picture.value = '';
             content.value = '';
         });
     } else if (content.value) {
-        usePublicationsStore().createPublication(content.value, null).then((response: any) => {
+        usePublicationsStore().addNewPublication(content.value, null).then((response: any) => {
             content.value = '';
         });
     } else if (picture.value) {
-        usePublicationsStore().createPublication(null, picture.value).then((response: any) => {
+        usePublicationsStore().addNewPublication(null, picture.value).then((response: any) => {
             picture.value = '';
         });
     }
+}
+
+function activeEditMode(publication: any) {
+    editPost.content = publication.content;
+    usePublicationsStore().activateEditMode(publication.publication_id);
+}
+
+function editPickFile(event: any) {
+    editPost.picture = event.target.files[0];
+}
+
+function updatePublication(publication: any) {
+    usePublicationsStore().updatePublication(publication.publication_id, editPost);
 }
 
 function deletePublication(id: number) {
@@ -189,7 +209,7 @@ init();
                                         <div v-if="publication.menu" class="post__top__menu__content">
                                             <div class="post__top__menu__content__diamond"></div>
                                             <div class="post__top__menu__content__item">
-                                                <fa @click="publication.editMode = true"
+                                                <fa @click="activeEditMode(publication)"
                                                     icon="fa-solid fa-pen-to-square" />
                                             </div>
                                             <div class="post__top__menu__content__item">
@@ -203,10 +223,10 @@ init();
                             <div class="post__content">
                                 <div class="post__content__text">
                                     <template v-if="publication.editMode">
-                                        <textarea ref="jedi" type="text" v-model="publication.content"
+                                        <textarea ref="jedi" type="text" v-model="editPost.content"
                                             class="create_post__content__details__text post-edit"
                                             @click="autoResize"></textarea>
-                                        <input type="file" ref="fileInput" accept="image/*" @change="onPickFile"
+                                        <input type="file" ref="fileInput" accept="image/*" @change="editPickFile"
                                             class="create_post__content__details__file">
                                     </template>
                                     <template v-else>
@@ -219,9 +239,7 @@ init();
                         <div v-if="publication.editMode" class="post__button">
                             <div class="post__button__list">
                                 <button @click="publication.editMode = false" class="cancel">Annuler</button>
-                                <button
-                                    @click="usePublicationsStore().updatePublication(publication.publication_id, { editMode: false, post: $event })"
-                                    class="submit">Sauvegarder</button>
+                                <button @click="updatePublication(publication)" class="submit">Sauvegarder</button>
                             </div>
                         </div>
                         <div v-else class="post__likeAndComment">

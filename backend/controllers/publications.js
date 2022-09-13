@@ -89,6 +89,8 @@ exports.createPublication = (req, res, next) => {
         user_id: req.user.userId,
         created_at: today,
     };
+    console.log('req file', req.file);
+    console.log('req body', req.body);
     if (req.file) {
         publication.picture = `${req.protocol}://${req.get('host')}/images/${req.file.filename}`;
     };
