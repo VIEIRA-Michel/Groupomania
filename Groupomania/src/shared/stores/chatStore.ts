@@ -3,6 +3,7 @@ import axios from 'axios';
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import type { Message } from '../interfaces/message.interface';
+import { sendMsg, fetchMessages, fetchUsers } from '../services/chat.service';
 
 export interface chatState {
     newmessage: null;
@@ -38,18 +39,7 @@ export const useChatStore = defineStore({
         },
         sendMessage: (id: number, message: any, from: any) => {
             return new Promise((resolve, reject) => {
-                axios({
-                    method: 'post',
-                    url: `http://localhost:3000/api/user/${id}/messages`,
-                    headers: {
-                        authorization: `Bearer ${localStorage.getItem('token')}`
-                    },
-                    data: {
-                        message: message,
-                        from: from,
-                        to: id,
-                    }
-                }).then(response => {
+                sendMsg(id, message, from).then((response: any) => {
                     resolve(response.data.message_sended_id);
                 }).catch(error => {
                     console.log(error);
@@ -59,13 +49,7 @@ export const useChatStore = defineStore({
         },
         getMessagesOfConversation: (conversation_id: number) => {
             return new Promise((resolve, reject) => {
-                axios({
-                    method: 'get',
-                    url: `http://localhost:3000/api/user/${conversation_id}/messages`,
-                    headers: {
-                        authorization: `Bearer ${localStorage.getItem('token')}`
-                    },
-                }).then(response => {
+                fetchMessages(conversation_id).then((response: any) => {
                     console.log(response)
                     resolve(response);
                 }).catch(error => {
@@ -76,13 +60,7 @@ export const useChatStore = defineStore({
         },
         getUsersConnected() {
             return new Promise((resolve, reject) => {
-                axios({
-                    method: 'get',
-                    url: 'http://localhost:3000/api/user/connected',
-                    headers: {
-                        authorization: `Bearer ${localStorage.getItem('token')}`
-                    }
-                }).then(response => {
+                fetchUsers().then((response: any) => {
                     let obj = ref([]);
                     if (response.data?.length > 0) {
                         const session: any = JSON.parse(localStorage.getItem("user")!);
@@ -95,7 +73,6 @@ export const useChatStore = defineStore({
                                         messages: [],
                                         hasNewMessages: false
                                     });
-                                    // console.log(obj.value);
                                 }
                             })
                         })

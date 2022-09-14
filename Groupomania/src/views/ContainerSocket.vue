@@ -13,9 +13,9 @@ const isConnected = computed(() => useAuthStore().isConnected);
 const users = computed(() => useChatStore().$state.users);
 const selectedUser = computed(() => useChatStore().$state.selectedUser);
 const loading = computed(() => useOtherStore().$state.loading);
-const numberOfPages = computed(() => usePublicationsStore().$state.numberOfPages);
-const numOfResults = computed(() => usePublicationsStore().$state.numOfResults);
-const publications = computed(() => usePublicationsStore().$state.publications);
+// const numberOfPages = computed(() => usePublicationsStore().$state.numberOfPages);
+// const numOfResults = computed(() => usePublicationsStore().$state.numOfResults);
+// const publications = computed(() => usePublicationsStore().$state.publications);
 
 let page = ref(1);
 
@@ -154,16 +154,16 @@ onBeforeMount(() => {
                                 if (state.publications.length == 5) {
                                     state.cache.unshift(state.publications.pop());
                                 }
-                                if (state.numOfResults == undefined || state.numOfResults == NaN) {
+                                if (state.numOfResults == undefined) {
                                     state.numOfResults = 0;
                                 }
                                 state.numOfResults += 1;
                                 state.publications.unshift(data._value);
-                                if (state.numberOfPages == undefined || state.numberOfPages == NaN) {
+                                if (state.numberOfPages == undefined) {
                                     state.numberOfPages = 1;
                                 }
                                 state.numberOfPages = Math.floor(state.numOfResults / 5 - 0.2) + 1;
-                                if (state.page == undefined || state.page == NaN) {
+                                if (state.page == undefined) {
                                     state.page = 1;
                                 }
                             });
@@ -228,7 +228,7 @@ onBeforeMount(() => {
                                 state.publications.map((item: any) => {
                                     if (item.publication_id == data._value.publication_id) {
                                         item.comments.unshift(data._value);
-                                        item.comments.pop();
+                                        // item.comments.pop();
                                         item.numberOfComments = item.numberOfComments + 1;
                                     }
                                     return item;

@@ -1,8 +1,7 @@
 import { usePublicationsStore } from './publicationsStore';
 import { defineStore } from 'pinia';
-import axios from 'axios';
+import { fetchComments, fetchCountOfComments, removeComment, addComment } from '../services/comments.service';
 import { ref } from 'vue';
-import { useAuthStore } from '../stores/authStore';
 import socket from '../../socket';
 import moment from 'moment';
 
@@ -22,7 +21,7 @@ export const useCommentsStore = defineStore({
             if (!publication.displayComments) {
                 usePublicationsStore().$state.publications.map((item: any) => {
                     if (item.publication_id == publication.publication_id) {
-                        useCommentsStore().getAllComments(publication.publication_id, item.limit, item.from).then((response) => {
+                        useCommentsStore().getAllComments(publication.publication_id, item.limit, item.from).then((response: any) => {
                             usePublicationsStore().$patch((state: any) => {
                                 state.publications.map((post: any) => {
                                     if (post.publication_id == publication.publication_id) {
@@ -54,16 +53,10 @@ export const useCommentsStore = defineStore({
                 let date = new Date();
                 let newDate = moment(date).format('DD/MM/YYYY HH:mm:ss');
                 let newDateSplit = newDate.split(" ");
-                axios({
-                    method: 'get',
-                    url: `http://localhost:3000/api/publications/${id}/comments/?limit=${limit}&from=${from}`,
-                    headers: {
-                        'Content-Type': 'application/json',
-                        authorization: `Bearer ${localStorage.getItem('token')}`
-                    }
-                }).then(response => {
-                    if (response.data.comments.length > 0) {
-                        response.data.comments.map((comment: any) => {
+                fetchComments(id, limit, from).then((response: any) => {
+                    console.log(response);
+                    if (response.comments.length > 0) {
+                        response.comments.map((comment: any) => {
                             let commentDate = moment(comment.comment_created_at).format('DD/MM/YYYY à HH:mm').split(" ");
                             if (commentDate[0] == newDateSplit[0]) {
                                 commentDate[0] = "Aujourd'hui";
@@ -76,9 +69,10 @@ export const useCommentsStore = defineStore({
                         })
                         usePublicationsStore().$patch((state: any) => {
                             state.publications.map((post: any) => {
-                                if (post.publication_id == response.data.comments[0].publication_id) {
-                                    response.data.comments.map((comment: any) => {
-                                        post.comments.push(comment);
+                                if (post.publication_id == response.comments[0].publication_id) {
+                                    response.comments.map((comment: any) => {
+                                        console.log(comment);
+                                        post.comments.find((item: any) => item.comment_id == comment.comment_id) ? "" : post.comments.push(comment);
                                     })
                                 }
                             })
@@ -92,17 +86,10 @@ export const useCommentsStore = defineStore({
             })
         },
         getnumberOfComments: (id: number) => {
-            axios({
-                method: 'get',
-                url: `http://localhost:3000/api/publications/${id}/comments/count`,
-                headers: {
-                    'Content-Type': 'application/json',
-                    authorization: `Bearer ${localStorage.getItem('token')}`
-                }
-            }).then(response => {
+            fetchCountOfComments(id).then((response: any) => {
                 usePublicationsStore().$state.publications.map((publication: any) => {
                     if (publication.publication_id === id) {
-                        publication.numberOfComments = response.data.data
+                        publication.numberOfComments = response.data
                     }
                 })
             }).catch(error => {
@@ -110,14 +97,7 @@ export const useCommentsStore = defineStore({
             })
         },
         deleteComment: (publication_id: number, id: number) => {
-            axios({
-                method: 'delete',
-                url: `http://localhost:3000/api/publications/${publication_id}/comments/${id}`,
-                headers: {
-                    'Content-Type': 'application/json',
-                    authorization: `Bearer ${localStorage.getItem('token')}`
-                }
-            }).then(response => {
+            removeComment(publication_id, id).then((response: any) => {
                 let state = ref<any>();
                 state.value = usePublicationsStore().$state.publications.map((publication: any) => {
                     if (publication.publication_id == publication_id) {
@@ -133,22 +113,13 @@ export const useCommentsStore = defineStore({
                 console.log(error);
             })
         },
-        createComment: (publication_id: number | undefined, comment: string) => {
+        createComment: (publication_id: number, comment: string) => {
+            console.log(publication_id);
             return new Promise((resolve, reject) => {
                 let date = new Date();
                 let newDate = moment(date).format('DD/MM/YYYY HH:mm:ss');
                 let newDateSplit = newDate.split(" ");
-                axios({
-                    method: 'post',
-                    url: `http://localhost:3000/api/publications/${publication_id}/comments`,
-                    headers: {
-                        'Content-Type': 'application/json',
-                        authorization: `Bearer ${localStorage.getItem('token')}`
-                    },
-                    data: {
-                        "content": comment
-                    },
-                }).then(response => {
+                addComment(publication_id, comment).then((response: any) => {
                     console.log(response);
 
                     let commentDate = moment(response.data.data[0].comment_created_at).format('DD/MM/YYYY à HH:mm').split(" ");
@@ -188,7 +159,6 @@ export const useCommentsStore = defineStore({
                                     console.log('comment already exists');
                                 } else {
                                     publication.comments.unshift(obj.value)
-                                    publication.comments.pop();
                                     publication.numberOfComments = publication.numberOfComments! + 1;
                                 }
                             }

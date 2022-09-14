@@ -10,9 +10,9 @@ router.post('/', multer, sanitize, publicationsController.createPublication);
 router.put('/:id', multer, sanitize, publicationsController.updatePublication);
 router.delete('/:id', publicationsController.deletePublication);
 router.get('/', publicationsController.getAllPublications);
-router.post('/:id', publicationsController.likePublication);
+router.post('/:id/likes', publicationsController.likePublication);
 router.get('/count', publicationsController.getQtyOfPublications);
-router.get('/:id', publicationsController.getLikes);
+router.get('/:id/likes', publicationsController.getLikes);
 // router.get('/:id', publicationsController.getOnePublication);
 
 

@@ -1,9 +1,7 @@
 import { defineStore } from 'pinia';
-import axios from 'axios';
 import { ref } from 'vue';
 import { useAuthStore } from '../stores/authStore';
-import socket from '../../socket';
-
+import { fetchRequests, fetchFriends, acceptOrDecline, deleteFriend, searchFriend, addFriend, cancelReq, checkReq } from '../services/friends.service';
 
 interface FriendshipState {
     friends: any[];
@@ -37,15 +35,9 @@ export const useFriendshipStore = defineStore({
     actions: {
         getRequests: () => {
             return new Promise((resolve, reject) => {
-                axios({
-                    method: 'get',
-                    url: 'http://localhost:3000/api/friends/requests',
-                    headers: {
-                        Authorization: `Bearer ${localStorage.getItem('token')}`
-                    },
-                }).then(response => {
-                    if (response.data.results && response.data.results.length > 0) {
-                        response.data.results.map((item: any) => {
+                fetchRequests().then((response: any) => {
+                    if (response.results && response.results.length > 0) {
+                        response.results.map((item: any) => {
                             if (useFriendshipStore().$state.requests.find((requests: any) => requests.sender == item.sender)) {
                                 return;
                             } else {
@@ -65,16 +57,8 @@ export const useFriendshipStore = defineStore({
         },
         getAllFriends: (id?: number) => {
             return new Promise((resolve, reject) => {
-                let BASE_URL = "";
-                id ? BASE_URL = `http://localhost:3000/api/user/${id}/friends` : BASE_URL = 'http://localhost:3000/api/friends/';
-                axios({
-                    method: 'get',
-                    url: BASE_URL,
-                    headers: {
-                        Authorization: `Bearer ${localStorage.getItem('token')}`
-                    },
-                }).then(response => {
-                    // console.log('get all friends');
+                let param = id ? id : '';
+                fetchFriends(param).then((response: any) => {
                     let userToCompare = 0;
                     let newFriend = ref({
                         user_id: 0,
@@ -83,7 +67,7 @@ export const useFriendshipStore = defineStore({
                         lastname: '',
                     });
                     id ? userToCompare = id : userToCompare = useAuthStore().$state.user.user_id;
-                    response.data.results.map((item: any) => {
+                    response.results.map((item: any) => {
                         if (userToCompare == item.sender_user_id) {
                             newFriend.value = {
                                 user_id: item.recipient_user_id,
@@ -127,17 +111,9 @@ export const useFriendshipStore = defineStore({
             })
         },
         acceptOrDeclineRequest: (req: any, answer: string) => {
+            console.log(req, answer);
             return new Promise((resolve, reject) => {
-                axios({
-                    method: 'put',
-                    url: `http://localhost:3000/api/friends/requests/${req.sender}`,
-                    headers: {
-                        Authorization: `Bearer ${localStorage.getItem('token')}`
-                    },
-                    data: {
-                        response: answer
-                    }
-                }).then(response => {
+                acceptOrDecline(req.sender, answer).then((response: any) => {
                     if (answer == 'refused') {
                         let state = ref([]);
                         useFriendshipStore().$state.requests.map((item: any) => {
@@ -174,14 +150,7 @@ export const useFriendshipStore = defineStore({
         },
         removeFriend: (id: number) => {
             return new Promise((resolve, reject) => {
-                axios({
-                    method: 'delete',
-                    url: `http://localhost:3000/api/friends/${id}`,
-                    headers: {
-                        'Content-Type': 'application/json',
-                        authorization: `Bearer ${localStorage.getItem('token')}`
-                    }
-                }).then(response => {
+                deleteFriend(id).then((response: any) => {
                     let stateFriends = ref([]);
                     let stateSearch = ref([])
                     useFriendshipStore().$state.friends.map((item: any) => {
@@ -204,18 +173,10 @@ export const useFriendshipStore = defineStore({
             })
         },
         searchUser: (search: string) => {
-            console.log(search);
-            useFriendshipStore().$patch({
-                searchResults: [],
+            useFriendshipStore().$patch((state: any) => {
+                state.searchResults.splice(0, state.searchResults.length)
             });
-            axios({
-                method: 'get',
-                url: `http://localhost:3000/api/friends/search/?search=${search}`,
-                headers: {
-                    Authorization: `Bearer ${localStorage.getItem('token')}`
-                },
-            }).then(response => {
-                console.log(response);
+            searchFriend(search).then((response: any) => {
                 if (response.data.results) {
                     let state = ref([]);
                     if (useFriendshipStore().$state.friends.length > 0) {
@@ -249,13 +210,7 @@ export const useFriendshipStore = defineStore({
         },
         sendFriendRequest: (user_id: number) => {
             return new Promise((resolve, reject) => {
-                axios({
-                    method: 'post',
-                    url: `http://localhost:3000/api/friends/search/${user_id}`,
-                    headers: {
-                        Authorization: `Bearer ${localStorage.getItem('token')}`
-                    }
-                }).then(response => {
+                addFriend(user_id).then((response: any) => {
                     console.log(response);
                     useFriendshipStore().$state.searchResults.map((item: any) => {
                         item.user_id == user_id ? item.pending = true : "";
@@ -284,13 +239,7 @@ export const useFriendshipStore = defineStore({
         },
         cancelRequest: (user_id: number) => {
             return new Promise((resolve, reject) => {
-                axios({
-                    method: 'delete',
-                    url: `http://localhost:3000/api/friends/search/${user_id}`,
-                    headers: {
-                        Authorization: `Bearer ${localStorage.getItem('token')}`
-                    }
-                }).then(response => {
+                cancelReq(user_id).then((response: any) => {
                     useFriendshipStore().$patch((state: FriendshipState) => {
                         state.searchResults.map((item: any) => {
                             if (item.user_id == user_id) {
@@ -312,13 +261,7 @@ export const useFriendshipStore = defineStore({
         },
         checkRequestsSended: () => {
             return new Promise((resolve, reject) => {
-                axios({
-                    method: 'get',
-                    url: `http://localhost:3000/api/friends/requests/sended`,
-                    headers: {
-                        Authorization: `Bearer ${localStorage.getItem('token')}`
-                    }
-                }).then(response => {
+                checkReq().then((response: any) => {
                     let state = ref([]);
                     response.data.results.map((item: never) => {
                         state.value.push(item);

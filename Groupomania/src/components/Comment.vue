@@ -63,22 +63,31 @@ function createComment(event: any) {
                 Afficher plus de commentaires
             </button>
         </div>
-        <div class="create_post">
-            <div class="create_post__top">
+        <!-- <div class="create_post"> -->
+        <!-- <div class="create_post__top">
                 <div class="create_post__top__details">
-                    <!-- <div class="create_post__top__details__avatar">
+                    <div class="create_post__top__details__avatar">
                         <img :src="props.user.picture_url" alt="avatar" />
-                    </div> -->
+                    </div>
                 </div>
-            </div>
-            <div class="create_post__info">
+            </div> -->
+        <!-- <div class="create_post__info">
                 <div class="create_post__info__content">
                     <form @keyup.enter="createComment($event)">
                         <textarea v-model="inputComment" placeholder="Écrivez un commentaire..."
                             class="create_post__info__content__input" @input="autoResize($event)"></textarea>
                     </form>
                 </div>
-
+            </div> -->
+        <!-- </div> -->
+    </div>
+    <div class="create_post">
+        <div class="create_post__info">
+            <div class="create_post__info__content">
+                <form @keyup.enter="createComment($event)">
+                    <textarea v-model="inputComment" placeholder="Écrivez un commentaire..."
+                        class="create_post__info__content__input" @input="autoResize($event)"></textarea>
+                </form>
             </div>
         </div>
     </div>
@@ -91,6 +100,10 @@ function createComment(event: any) {
     padding-top: 10px;
     border-top: 1px solid #dbdbdb;
     width: 100%;
+    display: flex;
+    flex-direction: column-reverse;
+    overflow-y: scroll;
+    max-height: 507px;
 
     .post {
         display: flex;
@@ -181,6 +194,7 @@ function createComment(event: any) {
 
 .create_post {
     display: flex;
+    justify-content: center;
     align-items: center;
     margin: 20px 0;
 
@@ -203,7 +217,7 @@ function createComment(event: any) {
     }
 
     &__info {
-        margin-left: 8px;
+        // margin-left: 8px;
         border: 1px solid #dbdbdb;
         border-radius: 5px;
         width: 90%;

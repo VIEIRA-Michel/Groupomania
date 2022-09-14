@@ -1,7 +1,6 @@
 import { useCommentsStore } from './commentsStore';
 import { defineStore } from 'pinia';
-import axios from 'axios';
-import { fetchPublications, addPublication, fetchCountOfPublication, editPublication } from '../services/publications.service';
+import { fetchPublications, addPublication, fetchCountOfPublication, editPublication, removePublication, fetchLikes, likeAndDislike } from '../services/publications.service';
 import type { Publication } from '../interfaces/publication.interface';
 import { useAuthStore } from '../stores/authStore';
 import socket from "../../socket";
@@ -80,16 +79,16 @@ export const usePublicationsStore = defineStore({
                             if (state.publications.length == 5) {
                                 state.cache.unshift(state.publications.pop());
                             }
-                            if (state.numOfResults == undefined || state.numOfResults == NaN) {
+                            if (state.numOfResults == undefined) {
                                 state.numOfResults = 0;
                             }
                             state.numOfResults += 1;
                             state.publications.unshift(publication.value);
-                            if (state.numberOfPages == undefined || state.numberOfPages == NaN) {
+                            if (state.numberOfPages == undefined) {
                                 state.numberOfPages = 1;
                             }
                             state.numberOfPages = Math.floor(state.numOfResults / 5 - 0.2) + 1;
-                            if (state.page == undefined || state.page == NaN) {
+                            if (state.page == undefined) {
                                 state.page = 1;
                             }
                         })
@@ -205,7 +204,7 @@ export const usePublicationsStore = defineStore({
             let formData = new FormData();
             update.content ? formData.append('content', update.content) : "";
             update.picture ? formData.append('picture', update.picture) : "";
-            editPublication(id, formData).then(response => {
+            editPublication(id, formData).then((response: any) => {
                 usePublicationsStore().$patch((state: any) => {
                     state.publications.map((item: any) => {
                         if (item.publication_id == id) {
@@ -222,14 +221,7 @@ export const usePublicationsStore = defineStore({
         },
         deletePublication: (id: number) => {
             return new Promise((resolve, reject) => {
-                axios({
-                    method: 'delete',
-                    url: `http://localhost:3000/api/publications/${id}`,
-                    headers: {
-                        'Content-Type': 'application/json',
-                        authorization: `Bearer ${localStorage.getItem('token')}`
-                    }
-                }).then(response => {
+                removePublication(id).then((response: any) => {
                     usePublicationsStore().$patch((state: any) => {
                         state.publications.map((item: any) => {
                             if (item.publication_id == id) {
@@ -252,14 +244,7 @@ export const usePublicationsStore = defineStore({
             })
         },
         getLikes: (id: number) => {
-            axios({
-                method: 'get',
-                url: `http://localhost:3000/api/publications/${id}`,
-                headers: {
-                    'Content-Type': 'application/json',
-                    authorization: `Bearer ${localStorage.getItem('token')}`
-                }
-            }).then(response => {
+            fetchLikes(id).then((response: any) => {
                 // console.log(response)
                 const user_id: any = useAuthStore().$state.user.user_id;
                 response.data.data = response.data.data.map((publication: any) => {
@@ -298,14 +283,7 @@ export const usePublicationsStore = defineStore({
             })
         },
         likePublication: (id: number) => {
-            axios({
-                method: 'post',
-                url: `http://localhost:3000/api/publications/${id}`,
-                headers: {
-                    'Content-Type': 'application/json',
-                    authorization: `Bearer ${localStorage.getItem('token')}`
-                },
-            }).then(response => {
+            likeAndDislike(id).then((response: any) => {
                 const user: any = useAuthStore().$state.user;
                 usePublicationsStore().$state.publications.map((item: any) => {
                     if (item.publication_id == id) {

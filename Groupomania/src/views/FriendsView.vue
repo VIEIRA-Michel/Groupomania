@@ -103,7 +103,7 @@ function deleteModal(user: any) {
                             <button v-if="user.pending" @click="cancelModal(user)" class="pending">
                                 <fa icon="fa-solid fa-user-clock" />
                             </button>
-                            <button v-if="user.isFriend" @click="open = true" class="friend">
+                            <button v-if="user.isFriend" @click="deleteModal(user)" class="friend">
                                 <fa icon="fa-solid fa-user-check" />
                             </button>
                             <Teleport to="body">
@@ -598,6 +598,7 @@ function deleteModal(user: any) {
         &__header {
 
             &__title {
+                margin-bottom: 20px;
                 margin-top: 0;
             }
         }

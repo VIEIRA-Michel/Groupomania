@@ -1,6 +1,6 @@
 import { defineStore, storeToRefs } from 'pinia';
-import axios from 'axios';
 import socket from "../../socket";
+import { signUp, signIn, fetchInformation, editProfile } from "../services/auth.service";
 
 export interface IAuthStore {
     isConnected: boolean | null;
@@ -33,17 +33,7 @@ export const useAuthStore = defineStore({
             return new Promise((resolve, reject) => {
                 if (lastname && firstname && email && password && confirmPassword) {
                     if (password === confirmPassword) {
-                        axios({
-                            method: 'post',
-                            url: 'http://localhost:3000/api/auth/signup',
-                            data: {
-                                lastname: lastname,
-                                firstname: firstname,
-                                email: email,
-                                password: password,
-                            }
-                        }).then(response => {
-                            // useAuthStore().login(email, password);
+                        signUp(lastname, firstname, email, password).then((response: any) => {
                             resolve(response);
                         }).catch(error => {
                             console.log(error);
@@ -53,16 +43,9 @@ export const useAuthStore = defineStore({
                 }
             })
         },
-        login(username: string, password: string) {
+        login(email: string, password: string) {
             return new Promise((resolve, reject) => {
-                axios({
-                    method: 'post',
-                    url: 'http://localhost:3000/api/auth/login',
-                    data: {
-                        email: username,
-                        password: password,
-                    },
-                }).then((response => {
+                signIn(email, password).then((response: any) => {
                     localStorage.setItem('user', JSON.stringify(response.data.user));
                     localStorage.setItem('token', response.data.accessToken);
                     useAuthStore().$patch({
@@ -70,7 +53,7 @@ export const useAuthStore = defineStore({
                         isConnected: true,
                     });
                     resolve(response);
-                })).catch((error => {
+                }).catch((error => {
                     if (error.response.data.message == `L'adresse email n'existe pas !`) {
                         useAuthStore().$reset();
                         useAuthStore().$patch({
@@ -100,13 +83,7 @@ export const useAuthStore = defineStore({
                 token ? useAuthStore().$patch({
                     isConnected: true,
                 }) : "";
-                axios({
-                    method: 'get',
-                    url: 'http://localhost:3000/api/user/me',
-                    headers: {
-                        authorization: `Bearer ${localStorage.getItem('token')}`
-                    },
-                }).then(response => {
+                fetchInformation().then((response: any) => {
                     useAuthStore().$patch({
                         user: response.data,
                         isConnected: true,
@@ -129,14 +106,7 @@ export const useAuthStore = defineStore({
                 update.picture_url !== undefined ? formData.append('picture', update.picture_url) : "";
                 update.email !== '' && update.email !== undefined ? formData.append('email', update.email) : "";
                 update.password !== '' && update.password !== undefined ? formData.append('password', update.password) : "";
-                axios({
-                    method: 'put',
-                    url: 'http://localhost:3000/api/user/profil',
-                    headers: {
-                        authorization: `Bearer ${localStorage.getItem('token')}`
-                    },
-                    data: formData
-                }).then((response: any) => {
+                editProfile(formData).then((response: any) => {
                     if (update.picture_url) {
                         useAuthStore().$patch((state: any) => {
                             state.user.picture_url = response.data[0].picture_url

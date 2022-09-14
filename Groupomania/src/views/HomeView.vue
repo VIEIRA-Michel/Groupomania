@@ -16,8 +16,6 @@ const numOfResults = computed(() => usePublicationsStore().$state.numOfResults);
 let page = ref(1);
 let content = ref('');
 let picture = ref();
-let updateInput = ref('');
-let updatePicture = ref();
 
 let editPost = reactive({
     content: '',
@@ -60,10 +58,6 @@ function editPickFile(event: any) {
     editPost.picture = event.target.files[0];
 }
 
-function updatePublication(publication: any) {
-    usePublicationsStore().updatePublication(publication.publication_id, editPost);
-}
-
 function deletePublication(id: number) {
     if (page.value < numberOfPages.value && usePublicationsStore().$state.cache.length == 0 && publications.value.length < numOfResults.value) {
         usePublicationsStore().fetchAllPublication(page.value + 1, true).then((response: any) => {
@@ -78,61 +72,6 @@ function deletePublication(id: number) {
     }
 }
 
-function getComments(publication: any) {
-    // if (!publication.displayComments) {
-    //     usePublicationsStore().$state.publications.map((item: any) => {
-    //         if (item.publication_id == publication.publication_id) {
-    //             useCommentsStore().getAllComments(publication.publication_id, item.limit, item.from).then((response) => {
-    //                 usePublicationsStore().$patch((state: any) => {
-    //                     state.publications.map((post: any) => {
-    //                         if (post.publication_id == publication.publication_id) {
-    //                             post.displayComments = true;
-    //                         }
-    //                         return post;
-    //                     })
-    //                 })
-    //             })
-
-    //         }
-    //     })
-    // } else {
-    //     usePublicationsStore().$patch((state: any) => {
-    //         state.publications.map((item: any) => {
-    //             if (item.publication_id == publication.publication_id) {
-    //                 item.displayComments = false;
-    //                 item.comments.splice(0, item.comments.length);
-    //                 item.limit = 5;
-    //                 item.from = 0;
-    //                 return item;
-    //             }
-    //         })
-    //     })
-    // }
-    useCommentsStore().beforeGetComments(publication);
-}
-
-
-function getMoreComments(publication: any) {
-    useCommentsStore().getMoreComments(publication);
-    // usePublicationsStore().$patch((state: any) => {
-    //     state.publications.map((item: any) => {
-    //         if (item.publication_id == publication.publication_id) {
-    //             item.from = item.from + item.limit;
-    //             item.limit = item.limit + item.limit;
-    //             item.comments.length >= item.from ? useCommentsStore().getAllComments(publication.publication_id, item.limit, item.from) : null;
-    //         }
-    //         return item;
-    //     })
-    // })
-}
-
-function displayMenu(publication: any) {
-    usePublicationsStore().displayMenu(publication);
-}
-function likePublication(publication_id: any) {
-    usePublicationsStore().likePublication(publication_id);
-}
-
 function changePage(operation: string) {
     usePublicationsStore().resetPublicationsAndCache();
     if (operation == 'next') {
@@ -144,9 +83,8 @@ function changePage(operation: string) {
 
 function init() {
     usePublicationsStore().resetPublicationsAndCache();
-    // usePublicationsStore().getAllPublications(page.value, false);
     usePublicationsStore().fetchAllPublication(page.value, false);
-}
+};
 
 watch(page, (newPageValue) => {
     usePublicationsStore().fetchAllPublication(newPageValue, false).then((response: any) => {
@@ -205,7 +143,8 @@ init();
                                 </div>
                                 <div v-if="user.user_id == publication.user_id" class="post__top__menu">
                                     <div v-if="!publication.editMode" class="post__top__menu__button">
-                                        <fa icon="fa-solid fa-ellipsis" @click="displayMenu(publication)" />
+                                        <fa icon="fa-solid fa-ellipsis"
+                                            @click="usePublicationsStore().displayMenu(publication)" />
                                         <div v-if="publication.menu" class="post__top__menu__content">
                                             <div class="post__top__menu__content__diamond"></div>
                                             <div class="post__top__menu__content__item">
@@ -239,25 +178,28 @@ init();
                         <div v-if="publication.editMode" class="post__button">
                             <div class="post__button__list">
                                 <button @click="publication.editMode = false" class="cancel">Annuler</button>
-                                <button @click="updatePublication(publication)" class="submit">Sauvegarder</button>
+                                <button
+                                    @click="usePublicationsStore().updatePublication(publication.publication_id, editPost)"
+                                    class="submit">Sauvegarder</button>
                             </div>
                         </div>
                         <div v-else class="post__likeAndComment">
                             <div class="post__interaction">
                                 <div class="post__interaction__like">
                                     <button v-if="!publication.iLike"
-                                        @click.stop="likePublication(publication.publication_id)">
+                                        @click.stop="usePublicationsStore().likePublication(publication.publication_id)">
                                         <span>{{ publication.likes.length + ' ' }}</span>
                                         <fa icon="fa-regular fa-heart" />
                                     </button>
                                     <button v-else class="like"
-                                        @click.stop="likePublication(publication.publication_id)">
+                                        @click.stop="usePublicationsStore().likePublication(publication.publication_id)">
                                         <span>{{ publication.likes.length + ' ' }}</span>
                                         <fa icon="fa-solid fa-heart" />
                                     </button>
                                 </div>
                                 <div class="post__interaction__comment">
-                                    <button @click.stop="getComments(publication)" type="button">
+                                    <button @click.stop="useCommentsStore().beforeGetComments(publication)"
+                                        type="button">
                                         <span>{{ publication.numberOfComments + ' ' }}</span>
                                         <fa icon="fa-regular fa-comment-dots" />
                                     </button>
@@ -267,7 +209,8 @@ init();
                                 <template v-if="publication.displayComments">
                                     <Comment :publication_id="publication.publication_id" :user="user"
                                         :numberOfComments="publication.numberOfComments"
-                                        :comments="publication.comments" @getMore="getMoreComments(publication)" />
+                                        :comments="publication.comments"
+                                        @getMore="useCommentsStore().getMoreComments(publication)" />
                                 </template>
                             </div>
                         </div>

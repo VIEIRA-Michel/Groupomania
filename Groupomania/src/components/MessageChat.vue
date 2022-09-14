@@ -32,7 +32,7 @@ function displayInformation() {
     if (allow.value == true) {
         useFriendshipStore().getAllFriends(selectedUser.value.user).then((response: any) => {
             display.value = true;
-            response.data.results.map((friend: any) => {
+            response.results.map((friend: any) => {
                 if (friend.sender_user_id == user.value.user_id) {
                     obj.value = {
                         created_at: new Date(friend.recipient_created_at).toLocaleDateString("fr"),
@@ -109,16 +109,6 @@ const emit = defineEmits<{
     (e: 'read'): any;
     (e: 'return'): any
 }>();
-
-onBeforeMount(() => {
-    // let numConversation = ref<any>();
-    // if (props.user.user > user.value.user_id) {
-    //     numConversation.value = `${user.value.user_id}${props.user.user}`
-    // } else {
-    //     numConversation.value = `${props.user.user}${user.value.user_id}`
-    // }
-    // useChatStore().getMessagesOfConversation(numConversation.value)
-})
 
 </script>
 <template>
@@ -328,6 +318,7 @@ onBeforeMount(() => {
             width: 100%;
             height: 100%;
             overflow-y: scroll;
+            overflow-x: hidden;
 
             &__description {
                 &__birthday {

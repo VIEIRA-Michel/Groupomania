@@ -10,7 +10,6 @@ const user = computed(() => useAuthStore().$state.user);
 const typing = computed(() => useChatStore().$state.typing);
 const users = computed(() => useChatStore().$state.users);
 let usersOnline = computed(() => useChatStore().onlineList);
-// const selectedUser = ref<any>(null);
 const selectedUser = computed(() => useChatStore().$state.selectedUser);
 const change = ref(false);
 
@@ -23,7 +22,7 @@ function onSelectUser(utilisateur: any) {
     }
     useChatStore().getMessagesOfConversation(numConversation.value).then((response: any) => {
         !useChatStore().$state.selectedUser || useChatStore().$state.selectedUser.user !== utilisateur.user ?
-            response.data.forEach((message: any) => {
+            response.forEach((message: any) => {
                 message.from == utilisateur.user || message.to == utilisateur.user ? utilisateur.messages.push(message) : "";
             }) : "";
         utilisateur.hasNewMessages = false;
@@ -42,33 +41,6 @@ function unselect() {
         state.selectedUser = null;
     })
 }
-
-// function onMessage(content: any) {
-//     if (selectedUser.value) {
-//         console.log(selectedUser.value);
-//         useChatStore().sendMessage(selectedUser.value.user, content, user.value.user_id).then((response) => {
-//             useChatStore().$patch((state: any) => {
-//                 state.messages.push({
-//                     from: user.value.user_id,
-//                     id: response,
-//                     message: content,
-//                     to: selectedUser.value.user,
-//                 });
-//             })
-//             socket.emit("private message", {
-//                 id: response,
-//                 message: content,
-//                 to: selectedUser.value.userID,
-//             });
-//             selectedUser.value.messages.push({
-//                 from: user.value.user_id,
-//                 id: response,
-//                 message: content,
-//                 to: selectedUser.value.user,
-//             });
-//         })
-//     };
-// };
 
 function isTyping(param: any) {
     param ? socket.emit('typing', user.value.firstname + ' ' + user.value.lastname) : socket.emit('stoptyping', user.value.firstname + ' ' + user.value.lastname);
@@ -109,8 +81,8 @@ onBeforeMount(() => {
             </div>
         </div>
         <div v-if="selectedUser != null" :class="[change ? 'container-center active' : 'container-center']">
-            <MessageChat v-if="selectedUser != null" :typing="typing" @typing="isTyping"
-                @read="messageRead" @return="unselect" />
+            <MessageChat v-if="selectedUser != null" :typing="typing" @typing="isTyping" @read="messageRead"
+                @return="unselect" />
         </div>
     </div>
 </template>

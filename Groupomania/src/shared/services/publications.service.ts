@@ -56,3 +56,36 @@ export async function editPublication(id: number, data: any): Promise<any> {
     })
     return response;
 }
+
+export async function removePublication(id: number): Promise<any> {
+    const response = await axios({
+        method: 'delete',
+        url: `${BASE_URL}/${id}`,
+        headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`
+        },
+    })
+    return response;
+}
+
+export async function fetchLikes(id: number): Promise<any> {
+    const response = await axios({
+        method: 'get',
+        url: `${BASE_URL}/${id}/likes`,
+        headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`
+        },
+    })
+    return response;
+}
+
+export async function likeAndDislike(id: number): Promise<any> {
+    const response = await axios({
+        method: 'post',
+        url: `${BASE_URL}/${id}/likes`,
+        headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`
+        },
+    })
+    return response;
+}
