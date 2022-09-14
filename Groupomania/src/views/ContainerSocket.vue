@@ -228,7 +228,6 @@ onBeforeMount(() => {
                                 state.publications.map((item: any) => {
                                     if (item.publication_id == data._value.publication_id) {
                                         item.comments.unshift(data._value);
-                                        // item.comments.pop();
                                         item.numberOfComments = item.numberOfComments + 1;
                                     }
                                     return item;

@@ -114,7 +114,7 @@ onBeforeMount(() => {
         border: 1px solid #FD2D01;
         border-radius: 5px;
         margin-right: 10px;
-        background-color: #FFFFFF;
+        background-color: floralwhite;
         z-index: 2;
         -webkit-animation: slide-in-left 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
         animation: slide-in-left 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
@@ -124,7 +124,11 @@ onBeforeMount(() => {
             font-size: 20px;
             display: flex;
             justify-content: center;
-            margin-top: 20px;
+            margin: 20px;
+            border: 1px solid #dbdbdb;
+            background: #FFFFFF;
+            padding: 10px;
+            border-radius: 5px;
         }
 
         &__list {
@@ -140,10 +144,10 @@ onBeforeMount(() => {
             }
 
             &__item {
-                @media only screen and (max-width: 768px) {
-                    display: flex;
-                    justify-content: center;
-                }
+                justify-content: center;
+                // @media only screen and (max-width: 768px) {
+                //     display: flex;
+                // }
             }
         }
 

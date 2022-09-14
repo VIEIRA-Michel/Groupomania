@@ -407,30 +407,31 @@ init();
 
                 svg {
                     cursor: pointer;
-                    color: #FD2D01;
+                    color: #4E5166;
                 }
             }
 
             &__content {
                 position: absolute;
+                display: flex;
                 right: -10px;
                 top: 30px;
                 -webkit-animation: scale-in-ver-top 0.2s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
                 animation: scale-in-ver-top 0.2s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
                 border-radius: 5px;
-                background: #FFFFFF;
-                border: 1px solid #FD2D01;
+                background: #dbdbdb;
+                border: 1px solid #4E5166;
 
                 &__diamond {
                     transform: translate(-10px, -7px) rotate(-45deg);
                     width: 10px;
                     height: 10px;
-                    background: #FFFFFF;
+                    background: #dbdbdb;
                     position: absolute;
                     right: 0px;
                     top: 1px;
-                    border-top: 1px solid #FD2D01;
-                    border-right: 1px solid #FD2D01;
+                    border-top: 1px solid #4E5166;
+                    border-right: 1px solid #4E5166;
                 }
 
                 &__item {
@@ -601,6 +602,41 @@ init();
         &__list {
             display: flex;
             justify-content: flex-end;
+            margin: 10px;
+
+            button {
+                margin-left: 10px;
+                padding: 5px;
+                border: 1px solid #dbdbdb;
+                border-radius: 5px;
+                cursor: pointer;
+                transition : all 0.3s ease-in-out;
+
+                &:hover {
+                    // background: 
+                }
+            }
+            .cancel {
+                background-color: #FFFFFF;
+                border: 1px solid #4E5166;
+                color: #4E5166;
+
+                &:hover {
+                    background-color: #4E5166;
+                    color: #FFFFFF;
+                }
+            }
+
+            .submit {
+                background: #FFFFFF;
+                border: 1px solid #FD2D01;
+                color: #FD2D01;
+
+                &:hover {
+                    background-color: #FD2D01;
+                    color: #FFFFFF;
+                }
+            }
         }
     }
 

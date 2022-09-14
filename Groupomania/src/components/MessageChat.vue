@@ -235,6 +235,7 @@ const emit = defineEmits<{
         align-items: center;
         justify-content: space-between;
         width: 100%;
+        background: floralwhite;
         box-shadow: 0px 1px 8px -3px rgb(0 0 0 / 40%);
         flex-wrap: wrap;
 
@@ -259,6 +260,8 @@ const emit = defineEmits<{
             }
 
             &__right {
+                margin-left: 5px;
+
                 &__name {
                     font-weight: bold;
                 }
@@ -311,10 +314,15 @@ const emit = defineEmits<{
 
         &__information {
             margin-right: 15px;
+
+            &__button {
+                svg {
+                    color: #FD2D01;
+                }
+            }
         }
 
         &__user {
-            background-color: #FFFFFF;
             width: 100%;
             height: 100%;
             overflow-y: scroll;
@@ -381,7 +389,7 @@ const emit = defineEmits<{
                     border-radius: 0 0 5px 5px;
 
                     .friends-list {
-                        background: #FFFFFF;
+                        background: floralwhite;
                         width: 80%;
                         margin: 10px auto 0px auto;
                         border-radius: 5px;
@@ -583,7 +591,7 @@ const emit = defineEmits<{
             padding: 5px;
             border-top: 1px solid #DBDBDB;
             border-radius: 0 0 5px 5px;
-            background-color: #FFFFFF;
+            background-color: floralwhite;
 
             &__text {
                 background-color: #FFFFFF;

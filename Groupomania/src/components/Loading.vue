@@ -6,6 +6,11 @@
   </div>
 </template>
 <style scoped lang="scss">
+
+* {
+    font-family: 'Lato', sans-serif;
+}
+
 @keyframes fade {
   0% {
     opacity: 0.5;

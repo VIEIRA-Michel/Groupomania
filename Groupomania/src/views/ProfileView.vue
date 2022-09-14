@@ -84,20 +84,17 @@ function updateProfile(userEdit?: any) {
                 <div class="edit-profil__body__content">
                     <div class="edit-profil__body__content__picture">
                         <img :src="user.picture_url" alt="profil picture" id="picture" />
+                        <fa icon="fa-solid fa-pen" />
+                        <input type="file" class="input-file" accept="image/*" @change="previewPicture($event)" />
                     </div>
                     <div class="edit-profil__body__content__form">
                         <form @submit.prevent="updateProfile(userEdit)" @change="checkForm">
-                            <div class="edit-profil__body__content__form__input">
-                                <label for="picture">Photo de profil</label>
-                                <input type="file" class="input-file" accept="image/*"
-                                    @change="previewPicture($event)" />
-                            </div>
                             <div class="edit-profil__body__content__form__input">
                                 <label for="email">Email</label>
                                 <input type="text" id="email" v-model="userEdit.email" />
                             </div>
                             <div class="edit-profil__body__content__form__input">
-                                <label for="confirmEmail">Confirmation de l'adresse email</label>
+                                <label for="confirmEmail">Confirmer l'email</label>
                                 <input type="text" id="confirmEmail" v-model="userEdit.confirmEmail" />
                             </div>
                             <div class="edit-profil__body__content__form__input">
@@ -105,7 +102,7 @@ function updateProfile(userEdit?: any) {
                                 <input type="password" id="password" v-model="userEdit.password" />
                             </div>
                             <div class="edit-profil__body__content__form__input">
-                                <label for="confirmPassword">Confirmation du mot de passe</label>
+                                <label for="confirmPassword">Confirmer le mot de passe</label>
                                 <input type="password" id="confirmPassword" v-model="userEdit.confirmPassword" />
                             </div>
                             <div v-if="changed"
@@ -213,6 +210,7 @@ function updateProfile(userEdit?: any) {
                 &__picture {
                     display: flex;
                     border-radius: 35px;
+                    position: relative;
 
                     img {
                         border: 1px solid #dbdbdb;
@@ -220,6 +218,36 @@ function updateProfile(userEdit?: any) {
                         height: 80px;
                         border-radius: 45px;
                         object-fit: cover;
+                    }
+
+                    svg {
+                        position: absolute;
+                        top: 80%;
+                        left: 80%;
+                        background: #ffffff;
+                        border: 1px solid #dbdbdb;
+                        padding: 5px;
+                        border-radius: 50%;
+                        transform: translate(-50%, -50%);
+                        color: #4E5166;
+                        font-size: 20px;
+                        font-size: 15px;
+                        opacity: 1;
+                    }
+
+                    .input-file {
+                        position: absolute;
+                        top: 80%;
+                        left: 80%;
+                        border: 1px solid #4E5166;
+                        padding: 5px;
+                        border-radius: 50%;
+                        transform: translate(-50%, -50%);
+                        font-size: 15px;
+                        width: 15px;
+                        height: 15px;
+                        opacity: 0;
+                        z-index: 10;
                     }
                 }
 
