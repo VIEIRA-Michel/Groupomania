@@ -52,7 +52,8 @@ function displayInformation() {
         })
     } else {
         useFriendshipStore().$patch((state) => {
-            state.friendsOfUser = []
+            // state.friendsOfUser = []
+            state.friendsOfUser.splice(0, state.friendsOfUser.length)
         })
         display.value = false;
     }
@@ -173,11 +174,8 @@ const emit = defineEmits<{
                                 </div>
                                 <div class="friends-list__list__item__name">
                                     <div class="friends-list__list__item__name__text">
-                                        <div class="friends-list__list__item__name__text__firstname">
-                                            <span>{{ friend.firstname }}</span>
-                                        </div>
-                                        <div class="friends-list__list__item__name__text__lastname">
-                                            <span>{{ friend.lastname }}</span>
+                                        <div class="friends-list__list__item__name__text__username">
+                                            <span>{{ friend.firstname }} {{ friend.lastname}}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -238,6 +236,8 @@ const emit = defineEmits<{
         background: floralwhite;
         box-shadow: 0px 1px 8px -3px rgb(0 0 0 / 40%);
         flex-wrap: wrap;
+        z-index: 1;
+        border-radius: 5px 5px 0 0;
 
         &__previously {
             margin-left: 15px;
@@ -325,7 +325,6 @@ const emit = defineEmits<{
         &__user {
             width: 100%;
             height: 100%;
-            overflow-y: scroll;
             overflow-x: hidden;
 
             &__description {
@@ -384,9 +383,6 @@ const emit = defineEmits<{
                 }
 
                 &__friendlist {
-                    padding-bottom: 20px;
-                    box-shadow: 0px 5px 8px -3px rgb(0 0 0 / 40%);
-                    border-radius: 0 0 5px 5px;
 
                     .friends-list {
                         background: floralwhite;
@@ -419,10 +415,13 @@ const emit = defineEmits<{
                             flex-direction: row;
                             flex-wrap: wrap;
                             margin: auto;
-                            width: 70%;
                             height: 140px;
                             justify-content: space-between;
                             overflow-y: scroll;
+                            margin: 20px;
+                            padding: 10px;
+                            background: #dbdbdb;
+                            border: 1px solid #4E5166;
 
                             @media (max-width: 768px) {
                                 width: 100%;
@@ -432,9 +431,8 @@ const emit = defineEmits<{
 
                                 margin: 10px auto;
                                 width: 90px;
-                                padding: 15px;
-                                background: linear-gradient(180deg, #FFD7D7, transparent);
-                                border: 1px solid #FD2D01;
+                                background: #EFEFEF;
+                                border: 1px solid #4E5166;
                                 border-radius: 5px;
                                 -webkit-animation: fade-in 1.2s cubic-bezier(0.390, 0.575, 0.565, 1.000) 1.6s both;
                                 animation: fade-in 1.2s cubic-bezier(0.390, 0.575, 0.565, 1.000) 1.6s both;
@@ -473,34 +471,30 @@ const emit = defineEmits<{
                                     justify-content: center;
 
                                     img {
-                                        width: 50px;
-                                        height: 50px;
+                                        width: 100%;
+                                        height: 80px;
                                         object-fit: cover;
+                                        border-radius: 5px 5px 0 0;
                                     }
                                 }
 
                                 &__name {
+                                    display: flex;
+                                    height: 37px px;
+                                    border-top: 1px solid #4E5166;
+                                    align-items: center;
+                                    justify-content: center;
+
                                     &__text {
-                                        margin-bottom: 5px;
+                                        margin: 5px;
 
-                                        &__firstname {
+                                        &__username {
                                             display: flex;
                                             justify-content: center;
 
                                             span {
-                                                font-size: 20px;
-                                                font-weight: bold;
-                                            }
-                                        }
-
-                                        &__lastname {
-                                            display: flex;
-                                            justify-content: center;
-
-                                            span {
-
-                                                font-size: 20px;
-                                                font-weight: bold;
+                                                font-size: 12px;
+                                                font-weight: 300;
                                             }
                                         }
                                     }

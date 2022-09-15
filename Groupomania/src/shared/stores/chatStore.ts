@@ -61,26 +61,25 @@ export const useChatStore = defineStore({
         getUsersConnected() {
             return new Promise((resolve, reject) => {
                 fetchUsers().then((response: any) => {
-                    let obj = ref([]);
                     if (response.data?.length > 0) {
                         const session: any = JSON.parse(localStorage.getItem("user")!);
                         let currentUserConnected = response.data.filter((user: any) => user.userID !== session.userID);
                         currentUserConnected.map((user: any) => {
                             useFriendshipStore().$state.friends.map((item: any) => {
                                 if (item.user_id == user.user) {
-                                    obj.value.push({
-                                        ...user,
-                                        messages: [],
-                                        hasNewMessages: false
-                                    });
+                                    useChatStore().$patch((state: any) => {
+                                        state.users.splice(0, state.users.length);
+                                        state.users.push({
+                                            ...user,
+                                            messages: [],
+                                            hasNewMessages: false
+                                        });
+                                    })
                                 }
                             })
                         })
-                        useChatStore().$patch((state: any) => {
-                            state.users = obj.value
-                        });
                     }
-                    resolve(obj.value);
+                    resolve(useChatStore().$state.users);
                 }).catch(error => {
                     console.log(error);
                     reject(error);

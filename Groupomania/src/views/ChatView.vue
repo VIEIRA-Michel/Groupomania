@@ -21,10 +21,13 @@ function onSelectUser(utilisateur: any) {
         numConversation.value = `${utilisateur.user}${user.value.user_id}`
     }
     useChatStore().getMessagesOfConversation(numConversation.value).then((response: any) => {
-        !useChatStore().$state.selectedUser || useChatStore().$state.selectedUser.user !== utilisateur.user ?
-            response.forEach((message: any) => {
-                message.from == utilisateur.user || message.to == utilisateur.user ? utilisateur.messages.push(message) : "";
-            }) : "";
+        console.log(response);
+        if (response.data) {
+            !useChatStore().$state.selectedUser || useChatStore().$state.selectedUser.user !== utilisateur.user ?
+                response.forEach((message: any) => {
+                    message.from == utilisateur.user || message.to == utilisateur.user ? utilisateur.messages.push(message) : "";
+                }) : "";
+        }
         utilisateur.hasNewMessages = false;
         change.value = true;
         setTimeout(() => {

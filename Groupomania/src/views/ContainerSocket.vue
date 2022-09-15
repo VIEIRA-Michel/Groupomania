@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, onBeforeMount, onUnmounted } from 'vue';
+import { computed, ref, onBeforeMount, onUnmounted, watch } from 'vue';
 import { useAuthStore } from '@/shared/stores/authStore';
 import { usePublicationsStore } from '@/shared/stores/publicationsStore';
 import { useChatStore } from '@/shared/stores/chatStore';
@@ -13,9 +13,11 @@ const isConnected = computed(() => useAuthStore().isConnected);
 const users = computed(() => useChatStore().$state.users);
 const selectedUser = computed(() => useChatStore().$state.selectedUser);
 const loading = computed(() => useOtherStore().$state.loading);
-// const numberOfPages = computed(() => usePublicationsStore().$state.numberOfPages);
-// const numOfResults = computed(() => usePublicationsStore().$state.numOfResults);
-// const publications = computed(() => usePublicationsStore().$state.publications);
+
+watch(useFriendshipStore().$state.friends, (newValue: any) => {
+    useChatStore().getUsersConnected().then((response: any) => {
+    });
+});
 
 let page = ref(1);
 
@@ -250,89 +252,110 @@ onBeforeMount(() => {
                             })
                         })
                         socket.on('friendRequest sended', (data) => {
-                            useFriendshipStore().$patch((state: any) => {
-                                if (state.requests.find((item: any) => item.sender == data.sender)) {
-                                    return;
-                                } else {
-                                    state.requests.push(data);
-                                }
-                                state.isLoading = false;
-                            });
+                            if (data.recipient == user.value.user_id) {
+                                useFriendshipStore().$patch((state: any) => {
+                                    if (state.requests.find((item: any) => item.sender !== data.sender) || state.requests.length == 0) {
+                                        state.requests.push(data);
+                                    }
+                                    if (state.searchResults.length > 0) {
+                                        state.searchResults.map((item: any) => {
+                                            if (item.user_id == data.sender) {
+                                                item.waitingReply = true;
+                                            }
+                                        })
+                                    }
+                                    state.isLoading = false;
+                                });
+                            }
                         });
                         socket.on('friendRequest refused', (data) => {
-                            useFriendshipStore().$patch((state: any) => {
-                                if (state.invitSendedTo.length > 0) {
-                                    state.invitSendedTo.map((item: any) => {
-                                        if (item.id == data) {
-                                            state.invitSendedTo.splice(state.invitSendedTo.indexOf(item), 1);
+                            if (data.target == user.value.user_id) {
+                                useFriendshipStore().$patch((state: any) => {
+                                    if (state.invitSendedTo.length > 0) {
+                                        state.invitSendedTo.map((item: any) => {
+                                            if (item.id == data.user) {
+                                                state.invitSendedTo.splice(state.invitSendedTo.indexOf(item), 1);
 
-                                        }
-                                    })
-                                }
-                                if (state.searchResults.length > 0) {
-                                    state.searchResults.map((item: any) => {
-                                        console.log(item);
-                                        if (item.user_id == data) {
-                                            item.pending = false;
-                                            item.isFriend = false;
+                                            }
+                                        })
+                                    }
+                                    if (state.searchResults.length > 0) {
+                                        state.searchResults.map((item: any) => {
+                                            console.log(item);
+                                            if (item.user_id == data.user) {
+                                                item.pending = false;
+                                                item.isFriend = false;
 
-                                        }
-                                    })
-                                }
+                                            }
+                                        })
+                                    }
 
-                                state.isLoading = false;
-                            })
+                                    state.isLoading = false;
+                                })
+                            }
                         })
 
                         socket.on('friendRequest accepted', (data) => {
-                            useFriendshipStore().$patch((state: any) => {
-                                if (state.invitSendedTo.length > 0) {
-                                    state.invitSendedTo.map((item: any) => {
-                                        if (item.id == data.data.results[0].user_id_recipient) {
-                                            state.invitSendedTo.splice(state.invitSendedTo.indexOf(item), 1);
+                            if (data.data.results[0].user_id_sender == user.value.user_id) {
+                                useFriendshipStore().$patch((state: any) => {
+                                    if (state.invitSendedTo.length > 0) {
+                                        state.invitSendedTo.map((item: any) => {
+                                            if (item.id == data.data.results[0].user_id_recipient) {
+                                                state.invitSendedTo.splice(state.invitSendedTo.indexOf(item), 1);
 
-                                        }
-                                    })
-                                }
-                                if (state.searchResults.length > 0) {
-                                    state.searchResults.map((item: any) => {
-                                        if (item.user_id == data.data.results[0].user_id_recipient) {
-                                            item.pending = false;
-                                            item.isFriend = true;
+                                            }
+                                        })
+                                    }
+                                    if (state.searchResults.length > 0) {
+                                        state.searchResults.map((item: any) => {
+                                            if (item.user_id == data.data.results[0].user_id_recipient) {
+                                                item.pending = false;
+                                                item.isFriend = true;
 
-                                        }
+                                            }
+                                        })
+                                    }
+                                    state.friends.push({
+                                        user_id: data.data.results[0].id,
+                                        firstname: data.data.results[0].firstname,
+                                        lastname: data.data.results[0].lastname,
+                                        picture_url: data.data.results[0].picture_url
                                     })
-                                }
-                                let newFriend = ref({
-                                    user_id: data.data.results[0].id,
-                                    firstname: data.data.results[0].firstname,
-                                    lastname: data.data.results[0].lastname,
-                                    picture_url: data.data.results[0].picture_url,
+                                    state.isLoading = false;
+
                                 })
-                                state.friends.push(newFriend.value);
-                                state.isLoading = false;
-                            })
+                            }
                         })
 
                         socket.on('friend removed', (data) => {
-                            useFriendshipStore().$patch((state: any) => {
-                                if (state.friends.length > 0) {
-                                    state.friends.map((item: any) => {
-                                        console.log(item);
-                                        if (item.user_id == data) {
-                                            state.friends.splice(state.friends.indexOf(item), 1);
-                                        }
-                                    })
-                                }
-                                if (state.searchResults.length > 0) {
-                                    state.searchResults.map((item: any) => {
-                                        if (item.user_id == data) {
-                                            item.isFriend = false;
-                                        }
-                                    })
-                                }
-                                state.isLoading = false;
-                            })
+                            if (user.value.user_id == data.target) {
+                                useFriendshipStore().$patch((state: any) => {
+                                    if (state.friends.length > 0) {
+                                        state.friends.map((item: any) => {
+                                            if (item.user_id == data.user) {
+                                                state.friends.splice(state.friends.indexOf(item), 1);
+                                            }
+                                        })
+                                    }
+                                    if (state.searchResults.length > 0) {
+                                        state.searchResults.map((item: any) => {
+                                            if (item.user_id == data.user) {
+                                                item.isFriend = false;
+                                            }
+                                        })
+                                    }
+                                    if (useChatStore().$state.users.length > 0) {
+                                        useChatStore().$patch((state: any) => {
+                                            state.users.map((item: any) => {
+                                                if (item.user == data.user) {
+                                                    state.users.splice(state.users.indexOf(item), 1);
+                                                }
+                                            })
+                                        })
+                                    }
+                                    state.isLoading = false;
+                                })
+                            }
                         })
 
                         socket.on('friendRequest canceled', (data) => {

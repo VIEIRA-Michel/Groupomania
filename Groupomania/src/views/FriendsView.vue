@@ -16,15 +16,14 @@ let userToBeDeleted = ref(null);
 let invitToBeCanceled = ref(null);
 
 function removeFriend(user_id: number) {
-    useFriendshipStore().removeFriend(user_id).then((response) => {
+    useFriendshipStore().removeFriend(user_id).then((response: any) => {
         open.value = false;
-        socket.emit('friend removed', (useAuthStore().$state.user.user_id));
+        socket.emit('friend removed', ({ user: useAuthStore().$state.user.user_id, target: user_id }));
     });
 }
 
 function addToFriends(user_id: any) {
     useFriendshipStore().sendFriendRequest(user_id).then((response: any) => {
-        console.log(response);
         let req = ref({
             approve_date: response.data.results[0].approve_date,
             denied_date: response.data.results[0].denied_date,
@@ -46,18 +45,17 @@ function replyToRequest(invitation: any, reply: string) {
         if (reply == 'accepted') {
             socket.emit('friendRequest accepted', (response));
         } else {
-            socket.emit('friendRequest refused', (useAuthStore().$state.user.user_id));
+            socket.emit('friendRequest refused', ({ user: useAuthStore().$state.user.user_id, target: invitation.sender }));
         }
     })
 }
 
 function searchUser() {
-    useFriendshipStore().$patch({
-        isLoading: true,
+    useFriendshipStore().checkRequestsSended().then((response: any) => {
+        useFriendshipStore().searchUser(search.value).then((response: any) => {
+        })
     });
-    useFriendshipStore().checkRequestsSended();
-    useFriendshipStore().searchUser(search.value);
-}
+};
 
 function cancelRequest(user_id: number) {
     useFriendshipStore().cancelRequest(user_id).then((response) => {
@@ -97,15 +95,27 @@ function deleteModal(user: any) {
                                     <span>{{ user.firstname }} {{ user.lastname }}</span>
                                 </div>
                             </div>
-                            <button v-if="!user.isFriend && !user.pending" @click="addToFriends(user.user_id)">
+                            <button v-if="!user.isFriend && !user.pending && !user.waitingReply"
+                                @click="addToFriends(user.user_id)">
                                 <fa icon="fa-solid fa-user-plus" />
                             </button>
-                            <button v-if="user.pending" @click="cancelModal(user)" class="pending">
+                            <button v-if="user.pending && !user.isFriend && !user.waitingReply"
+                                @click="cancelModal(user)" class="pending">
                                 <fa icon="fa-solid fa-user-clock" />
                             </button>
-                            <button v-if="user.isFriend" @click="deleteModal(user)" class="friend">
+                            <button v-if="user.isFriend && !user.pending && !user.waitingReply"
+                                @click="deleteModal(user)" class="friend">
                                 <fa icon="fa-solid fa-user-check" />
                             </button>
+                            <div v-if="user.waitingReply && !user.pending && !user.isFriend"
+                                class="search-user__results__list__item__name__button">
+                                <button @click="replyToRequest({ sender: user.user_id }, 'refused')" class="refused">
+                                    <fa icon="fa-solid fa-xmark" />
+                                </button>
+                                <button @click="replyToRequest({ sender: user.user_id }, 'accepted')" class="accepted">
+                                    <fa icon="fa-solid fa-check" />
+                                </button>
+                            </div>
                             <Teleport to="body">
                                 <div v-if="modalRequest" @click="modalRequest = false"
                                     class="calc d-flex flex-row justify-content-center align-items-center">
@@ -321,6 +331,29 @@ function deleteModal(user: any) {
                             }
                         }
 
+                        &__button {
+                            display: flex;
+                            flex-direction: row;
+                            border-top: 1px solid #dbdbdb;
+                            border-radius: 0 0 5px 5px;
+
+                            button {
+                                width: 100%;
+                            }
+
+                            .refused {
+                                border-radius: 0 0 0 5px;
+                                background: #ff7a7a;
+                                border: none;
+                            }
+
+                            .accepted {
+                                border-radius: 0 0 5px 0;
+                                background: #bcffcb;
+                                border: none;
+                            }
+                        }
+
                         button {
                             background: #bcffcb;
                             width: 100%;
@@ -330,7 +363,6 @@ function deleteModal(user: any) {
                             border-radius: 0 0 5px 5px;
                             font-weight: bold;
                             cursor: pointer;
-                            border: 1px solid #DBDBDB;
                         }
 
                         .pending {

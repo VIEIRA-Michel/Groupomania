@@ -47,7 +47,6 @@ export const usePublicationsStore = defineStore({
                 }
                 if (content || picture) {
                     addPublication(formData).then((response: any) => {
-                        console.log(response);
                         let publicationDate = moment(response.data.data[0].publication_created).format('DD/MM/YYYY à HH:mm').split(" ");
                         if (publicationDate[0] == newDateSplit[0]) {
                             publicationDate[0] = "Aujourd'hui";
