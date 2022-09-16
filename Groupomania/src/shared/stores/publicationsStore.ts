@@ -73,6 +73,8 @@ export const usePublicationsStore = defineStore({
                             lastname: useAuthStore().$state.user.lastname,
                             email: useAuthStore().$state.user.email,
                             picture_url: useAuthStore().$state.user.picture_url,
+                            limit: 5,
+                            from: 0
                         });
                         usePublicationsStore().$patch((state: any) => {
                             if (state.publications.length == 5) {

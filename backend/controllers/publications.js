@@ -4,13 +4,18 @@ const fs = require('fs');
 
 exports.getAllPublications = (req, res, next) => {
     const resultsPerPage = 5;
+    let reqVariables = [req.user.userId, req.user.userId, req.user.userId];
     let sql = `SELECT publications.id as publication_id, content, picture, user_id, publications.created_at as publication_created, updated_at, 
     users.id, users.picture_url, users.lastname, users.firstname, users.gender_id, users.birthday, users.email, users.role_id, users.created_at, users.account_disabled, 
     senders.id as sender_requestId, senders.user_id_sender as sender_userId, senders.user_id_recipient as sender_recipientId, senders.request_date as sender_requestDate, senders.approve_date as sender_approveDate, senders.denied_date as sender_deniedDate, 
     recipients.id as recipient_requestId, recipients.user_id_sender as recipient_senderId , recipients.user_id_recipient as recipient_userId, recipients.request_date as recipient_requestDate, recipients.approve_date as recipient_approveDate, recipients.denied_date as recipient_deniedDate FROM publications 
     LEFT JOIN users ON users.id = publications.user_id AND users.account_disabled IS NULL LEFT JOIN requests_friendship senders ON users.id = senders.user_id_sender LEFT JOIN requests_friendship recipients ON users.id = recipients.user_id_recipient WHERE users.id = ? OR (senders.user_id_recipient = ? AND senders.approve_date IS NOT NULL) OR (recipients.user_id_sender = ? AND recipients.approve_date IS NOT NULL) GROUP BY publication_id;`;
+    if (req.user.role_id == 2) {
+        sql = `SELECT publications.id as publication_id, publications.content, publications.picture, publications.user_id, publications.created_at as publication_created, publications.updated_at, users.id, users.picture_url, users.lastname, users.firstname, users.email, users.role_id, users.created_at, users.account_disabled, users.session_id, users.userID from publications LEFT JOIN users ON users.id = publications.user_id;`;
+        req.reqVariables = [];
+    }
     connection.query(
-        sql, [req.user.userId, req.user.userId, req.user.userId], function (err, results) {
+        sql, reqVariables, function (err, results) {
             if (err) {
                 console.log(err);
                 res.status(500).json({ message: 'Erreur lors de la récupération des publications' });
@@ -32,8 +37,11 @@ exports.getAllPublications = (req, res, next) => {
                            senders.id as sender_requestId, senders.user_id_sender as sender_userId, senders.user_id_recipient as sender_recipientId, senders.request_date as sender_requestDate, senders.approve_date as sender_approveDate, senders.denied_date as sender_deniedDate, 
                            recipients.id as recipient_requestId, recipients.user_id_sender as recipient_senderId , recipients.user_id_recipient as recipient_userId, recipients.request_date as recipient_requestDate, recipients.approve_date as recipient_approveDate, recipients.denied_date as recipient_deniedDate FROM publications 
                            LEFT JOIN users ON users.id = publications.user_id AND users.account_disabled IS NULL LEFT JOIN requests_friendship senders ON users.id = senders.user_id_sender LEFT JOIN requests_friendship recipients ON users.id = recipients.user_id_recipient WHERE users.id = ? OR (senders.user_id_recipient = ? AND senders.approve_date IS NOT NULL) OR (recipients.user_id_sender = ? AND recipients.approve_date IS NOT NULL) ORDER BY publication_id DESC LIMIT ${startingLimit}, ${resultsPerPage};`
+                    if (req.user.role_id == 2) {
+                        sql = `SELECT publications.id as publication_id, publications.content, publications.picture, publications.user_id, publications.created_at as publication_created, publications.updated_at, users.id, users.picture_url, users.lastname, users.firstname, users.email, users.role_id, users.created_at, users.account_disabled, users.session_id, users.userID from publications LEFT JOIN users ON users.id = publications.user_id ORDER BY publication_id DESC LIMIT ${startingLimit}, ${resultsPerPage};`;
+                    }
                     connection.query(
-                        sql, [req.user.userId, req.user.userId, req.user.userId], function (err, results) {
+                        sql, reqVariables, function (err, results) {
                             if (err) {
                                 console.log(err);
                                 res.status(500).json({ message: 'Erreur lors de la récupération des publications' });

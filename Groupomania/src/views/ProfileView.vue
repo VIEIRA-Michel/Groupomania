@@ -26,10 +26,11 @@ function previewPicture(e: any) {
     userEdit.picture_url = e.target.files[0];
     console.log(userEdit.picture_url);
     userEdit.picture_url ? image.src = URL.createObjectURL(userEdit.picture_url) : "";
+    changed.value = true
 }
 
 function checkForm() {
-    if (userEdit.picture_url !== user.value.picture_url || userEdit.email || userEdit.password) {
+    if (userEdit.email || userEdit.password) {
         changed.value = true;
     } else {
         changed.value = false;

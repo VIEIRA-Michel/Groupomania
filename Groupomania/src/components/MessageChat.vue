@@ -21,8 +21,8 @@ const props = defineProps<{
 function displaySender(message: any, index: number) {
     return (
         index === 0 ||
-        selectedUser.value.messages[index - 1].from !==
-        selectedUser.value.messages[index].from
+        selectedUser.value.messages[index - 1].sender !==
+        selectedUser.value.messages[index].sender
     );
 };
 
@@ -61,13 +61,13 @@ function displayInformation() {
 function send(event: any) {
     event?.preventDefault();
     if (selectedUser.value) {
-        useChatStore().sendMessage(selectedUser.value.user, newMessage.value, user.value.user_id).then((response) => {
+        useChatStore().sendMessage(selectedUser.value.user, newMessage.value).then((response) => {
             useChatStore().$patch((state: any) => {
                 state.messages.push({
-                    from: user.value.user_id,
+                    sender: user.value.user_id,
                     id: response,
-                    message: newMessage.value,
-                    to: selectedUser.value.user,
+                    content: newMessage.value,
+                    recipient: selectedUser.value.user,
                 });
             })
             socket.emit("private message", {
@@ -76,10 +76,10 @@ function send(event: any) {
                 to: selectedUser.value.userID,
             });
             selectedUser.value.messages.push({
-                from: user.value.user_id,
+                sender: user.value.user_id,
                 id: response,
-                message: newMessage.value,
-                to: selectedUser.value.user,
+                content: newMessage.value,
+                recipient: selectedUser.value.user,
             });
             newMessage.value = '';
             event.target.style.height = 'auto';
@@ -148,12 +148,12 @@ const emit = defineEmits<{
         </div>
         <div v-if="display" class="container-center__top__user">
             <div class="container-center__top__user__description">
-                <div v-if="obj.birthday" class="container-center__top__user__description__birthday">
+                <!-- <div v-if="obj.birthday" class="container-center__top__user__description__birthday">
                     <fa icon="fa-solid fa-cake-candles" /><span>C'est son anniversaire le {{ obj.birthday }}</span>
-                </div>
-                <div v-else class="container-center__top__user__description__birthday">
+                </div> -->
+                <!-- <div v-else class="container-center__top__user__description__birthday">
                     <fa icon="fa-solid fa-cake-candles" /><span>Date d'anniversaire masqué</span>
-                </div>
+                </div> -->
                 <div class="container-center__top__user__description__createdat">
                     <fa icon="fa-solid fa-address-card" /><span>Inscrit depuis le {{ obj.created_at }}</span>
                 </div>
@@ -191,13 +191,13 @@ const emit = defineEmits<{
             <ul>
                 <li v-for="(message, index) in selectedUser.messages" :key="index"
                     class="container-center__body__chat__item"
-                    v-bind:class="[message.from == useAuthStore().$state.user.user_id ? 'fromSelf' : 'fromUser']">
+                    v-bind:class="[message.sender == useAuthStore().$state.user.user_id ? 'fromSelf' : 'fromUser']">
                     <div v-if="displaySender(message, index)" class="container-center__body__chat__item__left">
                     </div>
                     <div class="container-center__body__chat__item__right">
                         <div class="container-center__body__chat__item__right__message"
-                            v-bind:class="[message.from == useAuthStore().$state.user.user_id ? 'fromSelf' : 'fromUser']">
-                            {{ message.message }}
+                            v-bind:class="[message.sender == useAuthStore().$state.user.user_id ? 'fromSelf' : 'fromUser']">
+                            {{ message.content }}
                         </div>
                     </div>
                 </li>
@@ -573,6 +573,15 @@ const emit = defineEmits<{
                 flex-direction: row-reverse;
                 justify-content: end;
             }
+
+        }
+
+        &__bottom {
+            width: 100%;
+            position: fixed;
+            background: linear-gradient(90deg, #FFFFFF, transparent);
+            padding: 5px;
+
         }
     }
 

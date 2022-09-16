@@ -76,7 +76,7 @@ exports.login = (req, res, next) => {
     let user = {
         email: req.body.email
     };
-    let sql = `SELECT id, picture_url, firstname, lastname, email, password, session_id, userID FROM users WHERE email = ?;`;
+    let sql = `SELECT id, picture_url, firstname, lastname, email, password, session_id, userID, role_id FROM users WHERE email = ?;`;
     connection.query(
         sql, [user.email], function (err, results) {
             if (err) {
@@ -109,7 +109,8 @@ exports.login = (req, res, next) => {
                                         lastname: results[0].lastname,
                                         email: results[0].email,
                                         session_id: results[0].session_id,
-                                        userID: results[0].userID
+                                        userID: results[0].userID,
+                                        role_id: results[0].role_id
                                     },
                                     redis: JSON.parse(getStringResult)
                                 })
@@ -220,7 +221,7 @@ exports.disabledProfil = (req, res, next) => {
 }
 
 exports.me = (req, res, next) => {
-    let sql = `SELECT id, picture_url, lastname, firstname, email, birthday, session_id, userID FROM users WHERE id = ?;`;
+    let sql = `SELECT id, picture_url, lastname, firstname, email, birthday, session_id, userID, role_id FROM users WHERE id = ?;`;
     connection.query(
         sql, [req.user.userId], function (err, results) {
             if (err) {
@@ -238,6 +239,7 @@ exports.me = (req, res, next) => {
                         email: results[0].email,
                         session_id: results[0].session_id,
                         userID: results[0].userID,
+                        role_id: results[0].role_id
                     });
                 }
             };

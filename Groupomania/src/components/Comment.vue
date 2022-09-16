@@ -38,9 +38,12 @@ function createComment(event: any) {
                     <div class="post__details__info__avatar">
                         <img :src="com.picture_url" alt="avatar" />
                     </div>
-                    <div class="post__details__info__commentary">
+                    <div
+                        :class="[com.role_id == 2 ? 'post__details__info__commentary administrator' : 'post__details__info__commentary']">
                         <div class="post__details__info__commentary__name">
-                            <span>{{ com.firstname + ' ' + com.lastname }}</span>
+                            <span v-if="com.role_id == 1">{{ com.firstname + ' ' + com.lastname }}</span>
+                            <span class="post__details__info__commentary__name__role"
+                                v-if="com.role_id == 2">Administrateur</span>
                         </div>
                         <div class="post__details__info__commentary__date">
                             <span>{{ com.comment_created_at }}</span>
@@ -50,7 +53,7 @@ function createComment(event: any) {
                         </div>
                     </div>
                     <div class="post__button">
-                        <fa v-if="props.user.email == com.email"
+                        <fa v-if="props.user.email == com.email || props.user.role_id == 2"
                             @click="useCommentsStore().deleteComment(com.publication_id, com.comment_id)"
                             icon="fa-solid fa-trash-can" />
                     </div>
@@ -63,23 +66,6 @@ function createComment(event: any) {
                 Afficher plus de commentaires
             </button>
         </div>
-        <!-- <div class="create_post"> -->
-        <!-- <div class="create_post__top">
-                <div class="create_post__top__details">
-                    <div class="create_post__top__details__avatar">
-                        <img :src="props.user.picture_url" alt="avatar" />
-                    </div>
-                </div>
-            </div> -->
-        <!-- <div class="create_post__info">
-                <div class="create_post__info__content">
-                    <form @keyup.enter="createComment($event)">
-                        <textarea v-model="inputComment" placeholder="Écrivez un commentaire..."
-                            class="create_post__info__content__input" @input="autoResize($event)"></textarea>
-                    </form>
-                </div>
-            </div> -->
-        <!-- </div> -->
     </div>
     <div class="create_post">
         <div class="create_post__info">
@@ -146,9 +132,23 @@ function createComment(event: any) {
                     border: 1px solid #4E5166;
                     width: 70%;
 
+                    &.administrator {
+                        background: #ffcf77;
+                    }
+
                     &__name {
+                        margin-bottom: 5px;
+
                         span {
                             font-weight: 700;
+                        }
+
+                        &__role {
+                            font-size: 12px;
+                            color: #FFFFFF;
+                            padding: 2px;
+                            background: #FD2D01;
+                            border-radius: 5px;
                         }
                     }
 

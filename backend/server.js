@@ -139,16 +139,44 @@ io.on('connection', (socket) => {
         const connected = await redis.get(`connected`);
         const arr = `[${connected}]`;
         const userConnectedData = JSON.parse(arr);
+        let user = "";
         let userConnectedDataFiltered = "";
         for (let i = 0; i < userConnectedData.length; i++) {
           if (userConnectedData[i].userID == socket.userID) {
             userConnectedData[i].connected = false;
+            user = userConnectedData[i].user;
           }
           if (userConnectedDataFiltered != "") {
             userConnectedDataFiltered += ",";
           }
           userConnectedDataFiltered += JSON.stringify(userConnectedData[i]);
         }
+        const userInformation = await redis.get(`user:${user}`);
+        const arrInformation = `[${userInformation}]`;
+        const userInformationData = JSON.parse(arrInformation);
+        let arrayIdConversation = [];
+        userInformationData[0].conversations.map((conv) => {
+          conv.split("-").map((id) => {
+            if (parseInt(id) !== user) {
+              arrayIdConversation.push(parseInt(id));
+            }
+          });
+        })
+        userConnectedData.map(async (item) => {
+          for (let i = 0; i < arrayIdConversation.length; i++) {
+            if (item.user === arrayIdConversation[i]) {
+              if (!item.connected) {
+                let idConversation = '';
+                if (item.user < user) {
+                  idConversation = `${item.user}-${user}`;
+                } else {
+                  idConversation = `${user}-${item.user}`;
+                }
+                await redis.del(`conversation:${idConversation}`);
+              }
+            }
+          }
+        })
         await redis.set(`connected`, userConnectedDataFiltered);
       })();
     }

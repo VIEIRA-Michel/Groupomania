@@ -16,28 +16,41 @@ const change = ref(false);
 function onSelectUser(utilisateur: any) {
     let numConversation = ref<any>();
     if (utilisateur.user > user.value.user_id) {
-        numConversation.value = `${user.value.user_id}${utilisateur.user}`
+        numConversation.value = `${user.value.user_id}-${utilisateur.user}`
     } else {
-        numConversation.value = `${utilisateur.user}${user.value.user_id}`
+        numConversation.value = `${utilisateur.user}-${user.value.user_id}`
     }
-    useChatStore().getMessagesOfConversation(numConversation.value).then((response: any) => {
-        console.log(response);
-        if (response.data) {
-            !useChatStore().$state.selectedUser || useChatStore().$state.selectedUser.user !== utilisateur.user ?
-                response.forEach((message: any) => {
-                    message.from == utilisateur.user || message.to == utilisateur.user ? utilisateur.messages.push(message) : "";
-                }) : "";
-        }
-        utilisateur.hasNewMessages = false;
-        change.value = true;
-        setTimeout(() => {
-            change.value = false;
-            useChatStore().$patch((state: any) => {
-                state.selectedUser = utilisateur;
-            });
-        }, 200);
+    // console.log('composant', utilisateur.limit, utilisateur.from);
+    useChatStore().getCountOfMessages(numConversation.value).then((count: any) => {
+        console.log(count);
+        useChatStore().getMessagesOfConversation(numConversation.value, utilisateur.limit, utilisateur.from).then((response: any) => {
+            console.log(response);
+            if (response.length > 0) {
+                if (!useChatStore().$state.selectedUser || useChatStore().$state.selectedUser.user !== utilisateur.user) {
+                    response.forEach((message: any) => {
+                        console.log(message);
+                        if (message.sender == utilisateur.user || message.recipient == utilisateur.user) {
+                            // if(useChatStore().$state.selectedUser.messages.length > 0) {}
+                            // useChatStore().$state.selectedUser.messages.map((item: any) => {
+                            //     if (item.id !== message.id) {
+                            //     }
+                            // })
+                            utilisateur.messages.push(message)
+                        }
+                    });
+                }
+            }
+            utilisateur.hasNewMessages = false;
+            change.value = true;
+            setTimeout(() => {
+                change.value = false;
+                useChatStore().$patch((state: any) => {
+                    state.selectedUser = utilisateur;
+                });
+            }, 200);
 
-    })
+        })
+    });
 }
 function unselect() {
     useChatStore().$patch((state: any) => {

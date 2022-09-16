@@ -3,7 +3,7 @@ import axios from 'axios';
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import type { Message } from '../interfaces/message.interface';
-import { sendMsg, fetchMessages, fetchUsers } from '../services/chat.service';
+import { sendMsg, fetchMessages, fetchUsers, getCount } from '../services/chat.service';
 
 export interface chatState {
     newmessage: null;
@@ -32,14 +32,18 @@ export const useChatStore = defineStore({
             useFriendshipStore().$state.friends.map((friend: any) => {
                 if (user.user == friend.user_id) {
                     useChatStore().$patch((state: any) => {
-                        state.users.push(user);
+                        state.users.push({
+                            ...user,
+                            limit: 25,
+                            from: 0
+                        });
                     })
                 }
             })
         },
-        sendMessage: (id: number, message: any, from: any) => {
+        sendMessage: (id: number, message: any) => {
             return new Promise((resolve, reject) => {
-                sendMsg(id, message, from).then((response: any) => {
+                sendMsg(id, message).then((response: any) => {
                     resolve(response.data.message_sended_id);
                 }).catch(error => {
                     console.log(error);
@@ -47,10 +51,9 @@ export const useChatStore = defineStore({
                 })
             })
         },
-        getMessagesOfConversation: (conversation_id: number) => {
+        getMessagesOfConversation: (conversation_id: number, limit: number, from: number) => {
             return new Promise((resolve, reject) => {
-                fetchMessages(conversation_id).then((response: any) => {
-                    console.log(response)
+                fetchMessages(conversation_id, limit, from).then((response: any) => {
                     resolve(response);
                 }).catch(error => {
                     console.log(error);
@@ -72,7 +75,9 @@ export const useChatStore = defineStore({
                                         state.users.push({
                                             ...user,
                                             messages: [],
-                                            hasNewMessages: false
+                                            hasNewMessages: false,
+                                            limit: 25,
+                                            from: 0
                                         });
                                     })
                                 }
@@ -86,5 +91,16 @@ export const useChatStore = defineStore({
                 })
             })
         },
+        getCountOfMessages: (conversation_id: number) => {
+            return new Promise((resolve, reject) => {
+                getCount(conversation_id).then((response: any) => {
+                    console.log(response);
+                    resolve(response.data.count);
+                }).catch(error => {
+                    console.log(error);
+                    reject(error);
+                })
+            })
+        }
     },
 });

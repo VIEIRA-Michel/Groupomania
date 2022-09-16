@@ -141,7 +141,7 @@ init();
                                         </div>
                                     </div>
                                 </div>
-                                <div v-if="user.user_id == publication.user_id" class="post__top__menu">
+                                <div v-if="user.user_id == publication.user_id || user.role_id == 2" class="post__top__menu">
                                     <div v-if="!publication.editMode" class="post__top__menu__button">
                                         <fa icon="fa-solid fa-ellipsis"
                                             @click="usePublicationsStore().displayMenu(publication)" />

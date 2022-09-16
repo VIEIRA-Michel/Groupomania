@@ -54,6 +54,7 @@ export const useAuthStore = defineStore({
                     });
                     resolve(response);
                 }).catch((error => {
+                    console.log(error);
                     if (error.response.data.message == `L'adresse email n'existe pas !`) {
                         useAuthStore().$reset();
                         useAuthStore().$patch({

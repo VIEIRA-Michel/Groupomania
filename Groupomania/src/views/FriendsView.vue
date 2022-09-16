@@ -60,7 +60,7 @@ function searchUser() {
 function cancelRequest(user_id: number) {
     useFriendshipStore().cancelRequest(user_id).then((response) => {
         modalRequest.value = false;
-        socket.emit('friendRequest canceled', (useAuthStore().$state.user.user_id));
+        socket.emit('friendRequest canceled', ({ user: useAuthStore().$state.user.user_id, target: user_id }));
     });
 }
 

@@ -1,79 +1,75 @@
 const redis = require('../database/redis_connexion');
+const connection = require('../database/mysql_connexion');
+const date = require('date-and-time');
+const fs = require('fs');
 require('dotenv').config();
 
 exports.sendMessage = async (req, res, next) => {
-    let numConversation = "";
-    if (req.body.from > req.body.to) {
-        numConversation = `${req.body.to}${req.body.from}`
-    } else {
-        numConversation = `${req.body.from}${req.body.to}`
-    }
-    const alreadyTexted = await redis.get(`conversation:${numConversation}`);
-    if (alreadyTexted == null) {
-        await redis.set(
-            `conversation:${numConversation}`,
-            JSON.stringify(
-                {
-                    id: 1,
-                    message: req.body.message,
-                    from: req.body.from,
-                    to: req.body.to
-                }
-            )
-        );
-        let arrayOfUsers = await redis.mGet([`user:${req.body.from}`, `user:${req.body.to}`]);
-        let arr = []
-        for (let i = 0; i < arrayOfUsers.length; i++) {
-            let user = JSON.parse(arrayOfUsers[i]);
-            user.conversations.push(numConversation);
-            if (i == 0) {
-                arr.push(`user:${req.body.from}`);
+    let sql = `INSERT INTO messages (content, sender, recipient, created_at) VALUES (?, ?, ?, ?);`;
+    let sqlVariables = [req.body.message, req.user.userId, req.params.id, date.format(new Date(), 'YYYY-MM-DD HH:mm:ss')];
+    connection.query(sql, sqlVariables, async (err, result) => {
+        if (err) {
+            return res.status(500).json({ error: err });
+        }
+        if (result.affectedRows === 1) {
+            let numConversation = "";
+            if (req.user.userId > req.params.id) {
+                numConversation = `${req.params.id}-${req.user.userId}`
             } else {
-                arr.push(`user:${req.body.to}`);
+                numConversation = `${req.user.userId}-${req.params.id}`
             }
-            arr.push(JSON.stringify(user));
-        };
-        await redis.MSET(arr);
-        res.status(200).json({ message: "Message envoyé", message_sended_id: 1 });
+            const alreadyTexted = await redis.get(`conversation:${numConversation}`);
+            if (alreadyTexted == null) {
+                await redis.set(
+                    `conversation:${numConversation}`,
+                    JSON.stringify(
+                        {
+                            id: 1,
+                            content: req.body.message,
+                            message_id_mysql: result.insertId,
+                            sender: req.user.userId,
+                            recipient: parseInt(req.params.id)
+                        }
+                    )
+                );
+                let arrayOfUsers = await redis.mGet([`user:${req.user.userId}`, `user:${req.params.id}`]);
+                let arr = []
+                for (let i = 0; i < arrayOfUsers.length; i++) {
+                    let user = JSON.parse(arrayOfUsers[i]);
+                    user.conversations.push(numConversation);
+                    if (i == 0) {
+                        arr.push(`user:${req.user.userId}`);
+                    } else {
+                        arr.push(`user:${req.params.id}`);
+                    }
+                    arr.push(JSON.stringify(user));
+                };
+                await redis.MSET(arr);
+                res.status(200).json({ message: "Message envoyé", message_sended_id: 1 });
 
-    } else {
-        const msgParse = `[${alreadyTexted}]`;
-        const idRefer = JSON.parse(msgParse).pop().id;
-        await redis.append(
-            `conversation:${numConversation}`, ',');
-        await redis.append(
-            `conversation:${numConversation}`,
-            JSON.stringify(
-                {
-                    id: idRefer + 1,
-                    message: req.body.message,
-                    from: req.body.from,
-                    to: req.body.to
-                }
-            )
-        );
-        res.status(200).json({ message: 'message envoyé', message_sended_id: idRefer + 1 });
-    }
-};
-
-exports.getAllMessages = async (req, res, next) => {
-    const msg = await redis.get(`user:${req.user.userId}`);
-    if (msg != null) {
-        const messages = JSON.parse(msg).conversations;
-        let inbox = [];
-        for (let i = 0; i < messages.length; i++) {
-            let conversationMessages = await redis.get(`conversation:${messages[i]}`);
-            let arr = `[${conversationMessages}]`;
-            const conv = JSON.parse(arr);
-            for (let j = 0; j < conv.length; j++) {
-                inbox.push(conv[j]);
+            } else {
+                const msgParse = `[${alreadyTexted}]`;
+                const idRefer = JSON.parse(msgParse).pop().id;
+                await redis.append(
+                    `conversation:${numConversation}`, ',');
+                await redis.append(
+                    `conversation:${numConversation}`,
+                    JSON.stringify(
+                        {
+                            id: idRefer + 1,
+                            content: req.body.message,
+                            message_id_mysql: result.insertId,
+                            sender: req.user.userId,
+                            recipient: parseInt(req.params.id)
+                        }
+                    )
+                );
+                res.status(200).json({ message: 'message envoyé', message_sended_id: idRefer + 1 });
             }
         }
-        res.status(200).json(inbox);
-    } else {
-        res.status(200).json({ message: "Pas de messages" });
-    }
-}
+    });
+
+};
 
 exports.getUsersConnected = async (req, res, next) => {
     const connected = await redis.get(`connected`);
@@ -83,13 +79,65 @@ exports.getUsersConnected = async (req, res, next) => {
 };
 
 exports.getMessageOfConversation = async (req, res, next) => {
-    console.log(req.params.id);
+    // Si la discussion est disponible sur redis je récupère l'intégralité des messages
+    // Autrement j'effectue une requête SQL me permettant de récupérer les 25 derniers messages
+    let user_id = req.params.id.split('-');
     const msg = await redis.get(`conversation:${req.params.id}`);
     if (msg != null) {
         const arr = `[${msg}]`;
         const conv = JSON.parse(arr);
-        res.status(200).json(conv);
+        // res.status(200).json(conv);
+        if (conv.length < 25) {
+            let sql = `SELECT * FROM messages WHERE (sender = ? AND recipient = ?) OR (sender = ? AND recipient = ?) ORDER BY id DESC LIMIT 25 OFFSET ?;`;
+            let sqlVariables = [user_id[0], user_id[1], user_id[1], user_id[0], conv.length];
+            connection.query(sql, sqlVariables, (err, result) => {
+                if (err) {
+                    return res.status(500).json({ error: err });
+                } else if (result.length > 0) {
+                    result.map((item) => {
+                        conv.push(item);
+                    })
+                    res.status(200).json(conv);
+                } else if (result.length == 0 && conv.length > 0) {
+                    res.status(200).json(conv);
+                } else {
+                    res.status(200).json({ message: 'Aucun message' });
+                }
+            });
+        } else {
+            res.status(200).json(conv);
+        }
     } else {
-        res.status(200).json({ message: "Pas de messages" });
+        let limitValue = parseInt(req.query.limit);
+        let from = parseInt(req.query.from);
+        let sql = `SELECT * FROM messages WHERE (sender = ? AND recipient = ?) OR (sender = ? AND recipient = ?) ORDER BY id DESC LIMIT ? OFFSET ?;`;
+        let sqlVariables = [user_id[0], user_id[1], user_id[1], user_id[0], limitValue, from];
+        connection.query(sql, sqlVariables, (err, result) => {
+            if (err) {
+                return res.status(500).json({ error: err });
+            }
+            if (result.length > 0) {
+                res.status(200).json(result);
+            } else {
+                res.status(200).json({ message: "Aucun message" });
+            }
+        });
     }
+
+}
+
+exports.countMessages = async (req, res, next) => {
+    let sql = `SELECT COUNT(*) AS count FROM messages WHERE (sender = ? AND recipient = ?) OR (sender = ? AND recipient = ?);`;
+    let sqlVariables = [req.user.userId, req.params.id, req.params.id, req.user.userId];
+    connection.query(sql, sqlVariables, (err, result) => {
+        if (err) {
+            return res.status(500).json({ error: err });
+        }
+        if (result.length > 0) {
+            console.log(result);
+            res.status(200).json(result[0]);
+        } else {
+            res.status(200).json({ message: "Aucun message" });
+        }
+    })
 }
