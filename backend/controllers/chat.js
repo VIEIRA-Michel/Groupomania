@@ -95,8 +95,9 @@ exports.getMessageOfConversation = async (req, res, next) => {
                     return res.status(500).json({ error: err });
                 } else if (result.length > 0) {
                     result.map((item) => {
-                        conv.push(item);
+                        conv.unshift(item);
                     })
+                    console.log(conv);
                     res.status(200).json(conv);
                 } else if (result.length == 0 && conv.length > 0) {
                     res.status(200).json(conv);
@@ -117,6 +118,7 @@ exports.getMessageOfConversation = async (req, res, next) => {
                 return res.status(500).json({ error: err });
             }
             if (result.length > 0) {
+                console.log(result)
                 res.status(200).json(result);
             } else {
                 res.status(200).json({ message: "Aucun message" });
@@ -134,7 +136,6 @@ exports.countMessages = async (req, res, next) => {
             return res.status(500).json({ error: err });
         }
         if (result.length > 0) {
-            console.log(result);
             res.status(200).json(result[0]);
         } else {
             res.status(200).json({ message: "Aucun message" });

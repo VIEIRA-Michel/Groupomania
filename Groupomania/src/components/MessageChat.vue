@@ -188,6 +188,11 @@ const emit = defineEmits<{
     </div>
     <div class="container-center__body">
         <div class="container-center__body__chat">
+            <div class="container-center__body__chat__button">
+                <button class="container-center__body__chat__button__more">
+                    Charger plus de messages
+                </button>
+            </div>
             <ul>
                 <li v-for="(message, index) in selectedUser.messages" :key="index"
                     class="container-center__body__chat__item"
@@ -526,6 +531,22 @@ const emit = defineEmits<{
 
         &__chat {
             height: 100%;
+
+            &__button {
+                display: flex;
+                justify-content: center;
+                margin-top: 10px;
+
+                &__more {
+                    padding: 5px;
+                    outline: none;
+                    background: #4E5166;
+                    border-radius: 5px;
+                    cursor: pointer;
+                    border: none;
+                    color: floralwhite;
+                }
+            }
 
             ul {
                 padding: 10px;

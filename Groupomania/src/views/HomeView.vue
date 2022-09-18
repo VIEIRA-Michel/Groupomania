@@ -72,6 +72,17 @@ function deletePublication(id: number) {
     }
 }
 
+function likePublication(publication_id: number) {
+    usePublicationsStore().likePublication(publication_id).then((response: any) => {
+        socket.emit('like dislike', { publication_id: publication_id, user: user.value, like: response.data.liked });
+        if (response.data.liked == true) {
+            socket.emit('like', { publication_id: publication_id, user: user.value });
+        } else {
+            socket.emit('remove like', { publication_id: publication_id, user_id: user.value.user_id });
+        }
+    });
+}
+
 function changePage(operation: string) {
     usePublicationsStore().resetPublicationsAndCache();
     if (operation == 'next') {
@@ -84,9 +95,11 @@ function changePage(operation: string) {
 function init() {
     usePublicationsStore().resetPublicationsAndCache();
     usePublicationsStore().fetchAllPublication(page.value, false);
+    console.log('init');
 };
 
 watch(page, (newPageValue) => {
+    console.log('watch');
     usePublicationsStore().fetchAllPublication(newPageValue, false).then((response: any) => {
     });
 })
@@ -141,7 +154,8 @@ init();
                                         </div>
                                     </div>
                                 </div>
-                                <div v-if="user.user_id == publication.user_id || user.role_id == 2" class="post__top__menu">
+                                <div v-if="user.user_id == publication.user_id || user.role_id == 2"
+                                    class="post__top__menu">
                                     <div v-if="!publication.editMode" class="post__top__menu__button">
                                         <fa icon="fa-solid fa-ellipsis"
                                             @click="usePublicationsStore().displayMenu(publication)" />
@@ -186,15 +200,11 @@ init();
                         <div v-else class="post__likeAndComment">
                             <div class="post__interaction">
                                 <div class="post__interaction__like">
-                                    <button v-if="!publication.iLike"
-                                        @click.stop="usePublicationsStore().likePublication(publication.publication_id)">
-                                        <span>{{ publication.likes.length + ' ' }}</span>
-                                        <fa icon="fa-regular fa-heart" />
-                                    </button>
-                                    <button v-else class="like"
-                                        @click.stop="usePublicationsStore().likePublication(publication.publication_id)">
-                                        <span>{{ publication.likes.length + ' ' }}</span>
-                                        <fa icon="fa-solid fa-heart" />
+                                    <button :class="[publication.iLike ? 'like' : '']"
+                                        @click.stop="likePublication(publication.publication_id)">
+                                        <span>{{ publication.likes!.length + ' ' }}</span>
+                                        <fa v-if="!publication.iLike" icon="fa-regular fa-heart" />
+                                        <fa v-else icon="fa-solid fa-heart" />
                                     </button>
                                 </div>
                                 <div class="post__interaction__comment">
@@ -610,12 +620,13 @@ init();
                 border: 1px solid #dbdbdb;
                 border-radius: 5px;
                 cursor: pointer;
-                transition : all 0.3s ease-in-out;
+                transition: all 0.3s ease-in-out;
 
                 &:hover {
                     // background: 
                 }
             }
+
             .cancel {
                 background-color: #FFFFFF;
                 border: 1px solid #4E5166;

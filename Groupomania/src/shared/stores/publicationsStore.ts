@@ -105,6 +105,7 @@ export const usePublicationsStore = defineStore({
         fetchAllPublication: (page?: number, cache?: boolean) => {
             return new Promise((resolve, reject) => {
                 fetchPublications(page).then((response: any) => {
+                    console.log(response);
                     let date = new Date();
                     let newDate = moment(date).format('DD/MM/YYYY HH:mm:ss');
                     let newDateSplit = newDate.split(" ");
@@ -284,31 +285,29 @@ export const usePublicationsStore = defineStore({
             })
         },
         likePublication: (id: number) => {
-            likeAndDislike(id).then((response: any) => {
-                const user: any = useAuthStore().$state.user;
-                usePublicationsStore().$state.publications.map((item: any) => {
-                    if (item.publication_id == id) {
-                        if (response.data.liked) {
-                            item.likes.push(user);
-                            item.iLike = true;
-                            socket.emit('like', {
-                                publication_id: id,
-                                user_id: useAuthStore().$state.user.user_id
-                            });
-                        } else {
-                            item.likes = item.likes.filter((item: any) => {
-                                return item.user_id !== user.user_id;
-                            });
-                            item.iLike = false;
-                            socket.emit('remove like', {
-                                publication_id: id,
-                                user_id: useAuthStore().$state.user.user_id
-                            })
-                        }
-                    }
-                });
-            }).catch(error => {
-                console.log(error);
+            return new Promise((resolve, reject) => {
+                likeAndDislike(id).then((response: any) => {
+                    const user: any = useAuthStore().$state.user;
+                    usePublicationsStore().$patch((state: any) => {
+                        state.publications.map((item: any) => {
+                            if (item.publication_id == id) {
+                                if (response.data.liked) {
+                                    item.likes.push(user);
+                                    item.iLike = true;
+                                } else {
+                                    item.likes = item.likes.filter((item: any) => {
+                                        return item.user_id !== user.user_id;
+                                    });
+                                    item.iLike = false;
+                                }
+                            }
+                        })
+                    })
+                    resolve(response);
+                }).catch(error => {
+                    console.log(error);
+                    reject(error);
+                })
             })
         },
         resetPublicationsAndCache: () => {

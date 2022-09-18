@@ -35,7 +35,8 @@ export const useChatStore = defineStore({
                         state.users.push({
                             ...user,
                             limit: 25,
-                            from: 0
+                            from: 0,
+                            messagesQty: 0
                         });
                     })
                 }
@@ -44,6 +45,13 @@ export const useChatStore = defineStore({
         sendMessage: (id: number, message: any) => {
             return new Promise((resolve, reject) => {
                 sendMsg(id, message).then((response: any) => {
+                    useChatStore().$patch((state: any) => {
+                        console.log(response.data);
+                        state.selectedUser.messagesQty += 1;
+                        // state.selectedUser.messages.push({
+
+                        // })
+                    });
                     resolve(response.data.message_sended_id);
                 }).catch(error => {
                     console.log(error);
@@ -77,7 +85,8 @@ export const useChatStore = defineStore({
                                             messages: [],
                                             hasNewMessages: false,
                                             limit: 25,
-                                            from: 0
+                                            from: 0,
+                                            messagesQty: 0
                                         });
                                     })
                                 }
@@ -94,7 +103,6 @@ export const useChatStore = defineStore({
         getCountOfMessages: (conversation_id: number) => {
             return new Promise((resolve, reject) => {
                 getCount(conversation_id).then((response: any) => {
-                    console.log(response);
                     resolve(response.data.count);
                 }).catch(error => {
                     console.log(error);

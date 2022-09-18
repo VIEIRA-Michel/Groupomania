@@ -118,8 +118,9 @@ onBeforeMount(() => {
                                             sender: utilisateur.user,
                                             id,
                                             content: message,
-                                            recipient: user.value.user_id,
+                                            recipient: user.value.user_id
                                         });
+                                        utilisateur.messagesQty += 1;
                                         // selectedUser.value ?
                                         if (utilisateur !== selectedUser) {
                                             // 
@@ -131,29 +132,30 @@ onBeforeMount(() => {
                             })
                         })
                         socket.on('like', (data) => {
-                            console.log(data);
                             usePublicationsStore().$patch((state: any) => {
                                 state.publications.map((item: any) => {
                                     if (item.publication_id == data.publication_id) {
-                                        item.likes.push(data.user_id);
+                                        if (item.likes.find((like: any) => like.user_id !== data.user.user_id) || item.likes.length == 0) {
+                                            item.likes.push(data.user);
+                                        }
                                     }
                                     return item;
                                 })
                             })
                         })
                         socket.on('remove like', (data) => {
-                            console.log(data);
                             usePublicationsStore().$patch((state: any) => {
                                 state.publications.map((item: any) => {
-                                    if (item.publication_id == data.publication_id) {
-                                        item.likes = item.likes.filter((like: any) => like != data.user_id);
-                                    }
-                                    return item;
-                                });
+                                    item.likes.map((like: any) => {
+                                        if (like.user_id == data.user_id) {
+                                            item.likes.splice(item.likes.indexOf(like), 1);
+                                        }
+                                        return like;
+                                    })
+                                })
                             });
-                        })
+                        });
                         socket.on('new publication', (data) => {
-                            console.log(data._value);
                             useFriendshipStore().$patch((state: any) => {
                                 state.friends.map((item: any) => {
                                     if (item.user_id == data._value.user_id) {
