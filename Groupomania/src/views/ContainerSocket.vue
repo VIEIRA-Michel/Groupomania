@@ -134,7 +134,7 @@ onBeforeMount(() => {
                         socket.on('like', (data) => {
                             usePublicationsStore().$patch((state: any) => {
                                 state.publications.map((item: any) => {
-                                    if (item.publication_id == data.publication_id) {
+                                    if (item.publication_id == data.publication.publication_id) {
                                         if (item.likes.find((like: any) => like.user_id !== data.user.user_id) || item.likes.length == 0) {
                                             item.likes.push(data.user);
                                         }
@@ -144,6 +144,7 @@ onBeforeMount(() => {
                             })
                         })
                         socket.on('remove like', (data) => {
+                            console.log(data);
                             usePublicationsStore().$patch((state: any) => {
                                 state.publications.map((item: any) => {
                                     item.likes.map((like: any) => {
@@ -158,7 +159,7 @@ onBeforeMount(() => {
                         socket.on('new publication', (data) => {
                             useFriendshipStore().$patch((state: any) => {
                                 state.friends.map((item: any) => {
-                                    if (item.user_id == data._value.user_id) {
+                                    if (item.user_id == data.publication._value.user_id) {
                                         usePublicationsStore().$patch((state: any) => {
                                             if (state.publications.length == 5) {
                                                 state.cache.unshift(state.publications.pop());
@@ -167,7 +168,7 @@ onBeforeMount(() => {
                                                 state.numOfResults = 0;
                                             }
                                             state.numOfResults += 1;
-                                            state.publications.unshift(data._value);
+                                            state.publications.unshift(data.publication._value);
                                             if (state.numberOfPages == undefined) {
                                                 state.numberOfPages = 1;
                                             }
@@ -459,6 +460,16 @@ onBeforeMount(() => {
                                 }
                             })
                         })
+                        socket.onAny((event, ...args) => {
+                            if (event == 'friendRequest sended'
+                                || event == 'friend accepted'
+                                || event == 'has commented'
+                                || event == 'new publication'
+                                || event == 'like'
+                                || event == 'private message') {
+                                useOtherStore().notificationPush(event, args);
+                            }
+                        });
                     })
                 });
             });

@@ -18,6 +18,7 @@ const props = defineProps<{
     typing: any
 }>();
 
+console.log(props.typing);
 function displaySender(message: any, index: number) {
     return (
         index === 0 ||
@@ -74,7 +75,7 @@ function send(event: any) {
                 id: response,
                 message: newMessage.value,
                 to: selectedUser.value.userID,
-            });
+            }, user.value);
             selectedUser.value.messages.push({
                 sender: user.value.user_id,
                 id: response,
@@ -95,6 +96,7 @@ function autoResize(event: any) {
 
 watchEffect(() => {
     newMessage.value.length >= 1 ? emit('typing', true) : emit('typing', false);
+    console.log(props.typing);
 })
 
 watch(selectedUser.value.messages, (nouvelleVal: any) => {
@@ -215,8 +217,9 @@ const emit = defineEmits<{
             </ul>
         </div>
         <div class="container-center__body__bottom">
-            <div v-if="props.typing" class="container-center__body__bottom__typing">
-                <small> <span>{{ props.typing }}</span> est entrain d'écrire</small>
+            <div v-if="props.typing.user_id == selectedUser.user" class="container-center__body__bottom__typing">
+                <small> <span>{{ props.typing.firstname + ' ' + props.typing.lastname }}</span> est entrain
+                    d'écrire</small>
             </div>
         </div>
     </div>

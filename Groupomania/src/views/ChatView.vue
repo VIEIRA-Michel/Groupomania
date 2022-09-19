@@ -46,7 +46,7 @@ function unselect() {
 }
 
 function isTyping(param: any) {
-    param ? socket.emit('typing', user.value.firstname + ' ' + user.value.lastname) : socket.emit('stoptyping', user.value.firstname + ' ' + user.value.lastname);
+    param ? socket.emit('typing', (user.value.firstname + ' ' + user.value.lastname, useAuthStore().$state.user)) : socket.emit('stoptyping', user.value.firstname + ' ' + user.value.lastname, user.value, useAuthStore().$state.user);
 };
 
 function messageRead() {

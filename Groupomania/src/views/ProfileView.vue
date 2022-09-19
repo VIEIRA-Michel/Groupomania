@@ -55,7 +55,7 @@ function updateProfile(userEdit?: any) {
                     inputError ? inputError.value = false : "";
                     updatedProfil.value = true;
                     setTimeout(() => {
-                        socket.emit('update profil', response);
+                        socket.emit('update profil', response, user.value);
                         updatedProfil.value = false;
                         router.push('/app/home');
                     }, 2000);

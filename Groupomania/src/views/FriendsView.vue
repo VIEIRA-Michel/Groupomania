@@ -18,7 +18,7 @@ let invitToBeCanceled = ref(null);
 function removeFriend(user_id: number) {
     useFriendshipStore().removeFriend(user_id).then((response: any) => {
         open.value = false;
-        socket.emit('friend removed', ({ user: useAuthStore().$state.user.user_id, target: user_id }));
+        socket.emit('friend removed', { user: useAuthStore().$state.user.user_id, target: user_id }, useAuthStore().$state.user);
     });
 }
 
@@ -36,16 +36,16 @@ function addToFriends(user_id: any) {
             request_date: response.data.results[0].request_date,
             sender: response.data.results[0].user_id_sender,
         })
-        socket.emit('friendRequest sended', (req.value));
+        socket.emit('friendRequest sended', req.value, useAuthStore().$state.user);
     })
 }
 
 function replyToRequest(invitation: any, reply: string) {
     useFriendshipStore().acceptOrDeclineRequest(invitation, reply).then((response) => {
         if (reply == 'accepted') {
-            socket.emit('friendRequest accepted', (response));
+            socket.emit('friendRequest accepted', response, useAuthStore().$state.user);
         } else {
-            socket.emit('friendRequest refused', ({ user: useAuthStore().$state.user.user_id, target: invitation.sender }));
+            socket.emit('friendRequest refused', { user: useAuthStore().$state.user.user_id, target: invitation.sender }, useAuthStore().$state.user);
         }
     })
 }
@@ -60,7 +60,7 @@ function searchUser() {
 function cancelRequest(user_id: number) {
     useFriendshipStore().cancelRequest(user_id).then((response) => {
         modalRequest.value = false;
-        socket.emit('friendRequest canceled', ({ user: useAuthStore().$state.user.user_id, target: user_id }));
+        socket.emit('friendRequest canceled', { user: useAuthStore().$state.user.user_id, target: user_id }, useAuthStore().$state.user);
     });
 }
 

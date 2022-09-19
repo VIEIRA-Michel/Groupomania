@@ -4,6 +4,7 @@ import { fetchComments, fetchCountOfComments, removeComment, addComment } from '
 import { ref } from 'vue';
 import socket from '../../socket';
 import moment from 'moment';
+import { useAuthStore } from './authStore';
 
 interface CommentState {
     isLoading: boolean;
@@ -108,7 +109,7 @@ export const useCommentsStore = defineStore({
                     }
                     return publication;
                 });
-                socket.emit('delete comment', { publication_id, id });
+                socket.emit('delete comment', { publication_id, id }, useAuthStore().$state.user);
             }).catch(error => {
                 console.log(error);
             })
@@ -151,7 +152,7 @@ export const useCommentsStore = defineStore({
                         role_id: response.data.data[0].role_id,
                         user_id: response.data.data[0].user_id,
                     });
-                    socket.emit('has commented', obj);
+                    socket.emit('has commented', obj, useAuthStore().$state.user);
                     usePublicationsStore().$patch((state: any) => {
                         state.publications.map((publication: any) => {
                             if (publication.publication_id === publication_id) {

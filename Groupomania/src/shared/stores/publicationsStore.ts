@@ -93,7 +93,7 @@ export const usePublicationsStore = defineStore({
                                 state.page = 1;
                             }
                         })
-                        socket.emit('new publication', publication);
+                        socket.emit('new publication', { publication, user: useAuthStore().$state.user });
                         resolve(response);
                     }).catch(error => {
                         console.log(error);
@@ -105,7 +105,6 @@ export const usePublicationsStore = defineStore({
         fetchAllPublication: (page?: number, cache?: boolean) => {
             return new Promise((resolve, reject) => {
                 fetchPublications(page).then((response: any) => {
-                    console.log(response);
                     let date = new Date();
                     let newDate = moment(date).format('DD/MM/YYYY HH:mm:ss');
                     let newDateSplit = newDate.split(" ");
@@ -216,7 +215,7 @@ export const usePublicationsStore = defineStore({
                         }
                     })
                 })
-                socket.emit('edit publication', response.data.data[0]);
+                socket.emit('edit publication', response.data.data[0], useAuthStore().$state.user);
             }).catch(error => {
                 console.log(error);
             })

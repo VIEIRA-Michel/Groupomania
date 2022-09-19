@@ -6,16 +6,19 @@ import { useAuthStore } from '../shared/stores/authStore';
 import { usePublicationsStore } from '../shared/stores/publicationsStore';
 import { useCommentsStore } from '../shared/stores/commentsStore';
 import socket from '../socket';
+import { useOtherStore } from '@/shared/stores/otherStore';
 
 const user = computed(() => useAuthStore().$state.user);
 const publications = computed(() => usePublicationsStore().$state.publications);
 const isLoading = computed(() => usePublicationsStore().$state.isLoading);
 const numberOfPages = computed(() => usePublicationsStore().$state.numberOfPages);
 const numOfResults = computed(() => usePublicationsStore().$state.numOfResults);
+const notifications = computed(() => useOtherStore().$state.notifications);
 
 let page = ref(1);
 let content = ref('');
 let picture = ref();
+let showNotification = ref<any>(null);
 
 let editPost = reactive({
     content: '',
@@ -62,23 +65,22 @@ function deletePublication(id: number) {
     if (page.value < numberOfPages.value && usePublicationsStore().$state.cache.length == 0 && publications.value.length < numOfResults.value) {
         usePublicationsStore().fetchAllPublication(page.value + 1, true).then((response: any) => {
             usePublicationsStore().deletePublication(id).then((response: any) => {
-                socket.emit('delete publication', id);
+                socket.emit('delete publication', id, user.value);
             });
         })
     } else {
         usePublicationsStore().deletePublication(id).then((response: any) => {
-            socket.emit('delete publication', id);
+            socket.emit('delete publication', id, user.value);
         });
     }
 }
 
-function likePublication(publication_id: number) {
-    usePublicationsStore().likePublication(publication_id).then((response: any) => {
-        socket.emit('like dislike', { publication_id: publication_id, user: user.value, like: response.data.liked });
+function likePublication(publication: any) {
+    usePublicationsStore().likePublication(publication.publication_id).then((response: any) => {
         if (response.data.liked == true) {
-            socket.emit('like', { publication_id: publication_id, user: user.value });
+            socket.emit('like', { publication, user: user.value }, user.value);
         } else {
-            socket.emit('remove like', { publication_id: publication_id, user_id: user.value.user_id });
+            socket.emit('remove like', { publication, user_id: user.value.user_id }, user.value);
         }
     });
 }
@@ -98,6 +100,14 @@ function init() {
     console.log('init');
 };
 
+function toggleNotification() {
+    if (showNotification.value == null || showNotification.value == false) {
+        showNotification.value = true;
+    } else {
+        showNotification.value = false;
+    }
+}
+
 watch(page, (newPageValue) => {
     console.log('watch');
     usePublicationsStore().fetchAllPublication(newPageValue, false).then((response: any) => {
@@ -111,7 +121,7 @@ init();
     <template v-if="isLoading">
         <Loading />
     </template>
-    <template v-else-if="!isLoading">
+    <template v-else-if="!isLoading" class="container">
         <div v-if="user" class="create_post">
             <div class="create_post__top">
                 <div class="create_post__top__details">
@@ -201,7 +211,7 @@ init();
                             <div class="post__interaction">
                                 <div class="post__interaction__like">
                                     <button :class="[publication.iLike ? 'like' : '']"
-                                        @click.stop="likePublication(publication.publication_id)">
+                                        @click.stop="likePublication(publication)">
                                         <span>{{ publication.likes!.length + ' ' }}</span>
                                         <fa v-if="!publication.iLike" icon="fa-regular fa-heart" />
                                         <fa v-else icon="fa-solid fa-heart" />
@@ -236,6 +246,30 @@ init();
                 </div>
             </div>
         </div>
+        <div @click="toggleNotification"
+            :class="[showNotification == null ? 'notification-alert' : showNotification == false ? 'notification-alert hidden' : 'notification-alert active']">
+            <div class="notification-alert__content">
+                <div class="notification-alert__content__icon">
+                    <fa icon="fa-solid fa-bell" />
+                </div>
+                <div v-for="notif in notifications" class="notification-alert__content__text">
+                    <!-- <p>{{ notification }}</p> -->
+                    <div v-if="showNotification" class="event">
+                        <div class="event__avatar">
+                            <img :src="notif.picture_url" alt="avatar" />
+                        </div>
+                        <div class="event__text">
+                            <div class="event__text__username">
+                                {{ notif.firstname + ' ' + notif.lastname }}
+                            </div>
+                            <div class="event__text__type">
+                                <p>{{ notif.type }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </template>
 </template>
 <style scoped lang="scss">
@@ -247,6 +281,10 @@ init();
 
 @import '../styles/Components/buttons';
 @import '../styles/Utils/keyframes';
+
+.container {
+    position: relative;
+}
 
 .create_post {
     max-height: 860px;
@@ -694,6 +732,64 @@ init();
     &:nth-child(5) {
         -webkit-animation: slide-in-left 0.2s cubic-bezier(0.250, 0.460, 0.450, 0.940) 1.3s both;
         animation: slide-in-left 0.2s cubic-bezier(0.250, 0.460, 0.450, 0.940) 1.3s both;
+    }
+}
+
+.notification-alert {
+    position: fixed;
+    right: 10px;
+    top: 70px;
+    padding: 10px;
+    background: #FFFFFF;
+    color: #FD2D01;
+    border-radius: 5px;
+    cursor: pointer;
+    box-shadow: 0 0 8px #dbdbdb;
+    width: 13.99px;
+    height: 16.36px;
+
+
+    &.active {
+        width: 220px;
+        height: 400px;
+        transition: all 0.5s ease-in-out;
+    }
+
+    &.hidden {
+        width: 13.99px;
+        height: 16.36px;
+        transition: all 0.5s ease-in-out;
+    }
+
+    .event {
+        margin-top: 10px;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+
+        &__avatar {
+            img {
+                width: 30px;
+                height: 30px;
+                object-fit: cover;
+                border-radius: 5px;
+            }
+        }
+
+        &__text {
+            margin-left: 10px;
+
+            &__username {
+                font-size: 12px;
+                font-weight: 400;
+            }
+
+            &__type {
+                font-size: 10px;
+                font-weight: 300;
+                color: #4E5166;
+            }
+        }
     }
 }
 </style>
