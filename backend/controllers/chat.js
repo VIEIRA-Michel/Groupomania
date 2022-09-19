@@ -79,17 +79,19 @@ exports.getUsersConnected = async (req, res, next) => {
 };
 
 exports.getMessageOfConversation = async (req, res, next) => {
-    // Si la discussion est disponible sur redis je récupère l'intégralité des messages
-    // Autrement j'effectue une requête SQL me permettant de récupérer les 25 derniers messages
-    let user_id = req.params.id.split('-');
-    const msg = await redis.get(`conversation:${req.params.id}`);
-    if (msg != null) {
+    let numConversation = "";
+    if (req.user.userId > req.params.id) {
+        numConversation = `${req.params.id}-${req.user.userId}`
+    } else {
+        numConversation = `${req.user.userId}-${req.params.id}`
+    }
+    const msg = await redis.get(`conversation:${numConversation}`);
+    if (msg != null && req.query.from == 0) {
         const arr = `[${msg}]`;
         const conv = JSON.parse(arr);
-        // res.status(200).json(conv);
         if (conv.length < 25) {
             let sql = `SELECT * FROM messages WHERE (sender = ? AND recipient = ?) OR (sender = ? AND recipient = ?) ORDER BY id DESC LIMIT 25 OFFSET ?;`;
-            let sqlVariables = [user_id[0], user_id[1], user_id[1], user_id[0], conv.length];
+            let sqlVariables = [req.user.userId, req.params.id, req.params.id, req.user.userId, conv.length];
             connection.query(sql, sqlVariables, (err, result) => {
                 if (err) {
                     return res.status(500).json({ error: err });
@@ -97,7 +99,6 @@ exports.getMessageOfConversation = async (req, res, next) => {
                     result.map((item) => {
                         conv.unshift(item);
                     })
-                    console.log(conv);
                     res.status(200).json(conv);
                 } else if (result.length == 0 && conv.length > 0) {
                     res.status(200).json(conv);
@@ -112,14 +113,17 @@ exports.getMessageOfConversation = async (req, res, next) => {
         let limitValue = parseInt(req.query.limit);
         let from = parseInt(req.query.from);
         let sql = `SELECT * FROM messages WHERE (sender = ? AND recipient = ?) OR (sender = ? AND recipient = ?) ORDER BY id DESC LIMIT ? OFFSET ?;`;
-        let sqlVariables = [user_id[0], user_id[1], user_id[1], user_id[0], limitValue, from];
+        let sqlVariables = [req.user.userId, req.params.id, req.params.id, req.user.userId, limitValue, from];
         connection.query(sql, sqlVariables, (err, result) => {
             if (err) {
                 return res.status(500).json({ error: err });
             }
             if (result.length > 0) {
-                console.log(result)
-                res.status(200).json(result);
+                let conv = [];
+                result.map((item) => {
+                    conv.unshift(item);
+                })
+                res.status(200).json(conv);
             } else {
                 res.status(200).json({ message: "Aucun message" });
             }

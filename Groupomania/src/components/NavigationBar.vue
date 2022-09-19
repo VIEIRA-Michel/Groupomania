@@ -1,8 +1,12 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { useOtherStore } from '@/shared/stores/otherStore';
+import { useFriendshipStore } from '@/shared/stores/friendsStore';
+import { useChatStore } from '@/shared/stores/chatStore';
 
 const burgerMenu = computed(() => useOtherStore().$state.burgerMenu);
+const requests = computed(() => useFriendshipStore().$state.requests);
+const users = computed(() => useChatStore().$state.users);
 const props = defineProps<{
     isConnected: boolean,
 }>();
@@ -10,6 +14,7 @@ const props = defineProps<{
 const emit = defineEmits<{
     (e: 'logout'): any
 }>();
+
 </script>
 <template>
     <header>
@@ -27,11 +32,14 @@ const emit = defineEmits<{
             <router-link to="/app/friends">
                 <div class="menu__navigate">
                     <fa icon="user-group" />
+                    <span v-if="props.isConnected && requests.length > 0"> {{ requests.length }}</span>
                 </div>
             </router-link>
             <router-link to="/app/chat">
                 <div class="menu__navigate">
                     <fa icon="fa-solid fa-comments" />
+                    <span
+                        v-if="props.isConnected && users.length !== 0 && users.find((item:any) => item.hasNewMessages == true)">1</span>
                 </div>
             </router-link>
             <router-link to="/app/profil">
@@ -45,20 +53,21 @@ const emit = defineEmits<{
                 </div>
             </a>
         </div>
-        <div v-else-if="!props.isConnected" class="menu notLogged">
+        <!-- <div v-else-if="!props.isConnected" class="menu notLogged">
             <router-link to="/login">
                 <div class="menu__navigate">
                     <fa icon="fa-solid fa-user-pen" />
-                    <span>Se connecter / S'enregistrer</span>
+                    <div>Se connecter / S'enregistrer</div>
                 </div>
             </router-link>
-        </div>
+        </div> -->
         <div v-if="props.isConnected" class="burger">
             <button type="button" @click="useOtherStore().toggleBurgerMenu" className="burger__button">
                 <fa icon="fa-solid fa-bars" />
             </button>
         </div>
-        <div :class="[burgerMenu == null ? 'burger__menu disabled' : !burgerMenu ? 'burger__menu hidden' : 'burger__menu']">
+        <div
+            :class="[burgerMenu == null ? 'burger__menu disabled' : !burgerMenu ? 'burger__menu hidden' : 'burger__menu']">
             <div class="burger__menu__item" @click="useOtherStore().toggleBurgerMenu">
                 <router-link to="/app/home">
                     <div class="burger__menu__item__navigate">
@@ -153,7 +162,23 @@ header {
 
         &__navigate {
             cursor: pointer;
+            position: relative;
+
+            svg {
+                font-size: 20px;
+            }
+
+            span {
+                padding: 0px 4px;
+                background: pink;
+                border-radius: 50%;
+                position: absolute;
+                bottom: 5px;
+                left: 20px;
+                border: 1px solid #FFFFFF;
+            }
         }
+
         &.notLogged {
             justify-content: end;
         }

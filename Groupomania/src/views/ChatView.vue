@@ -14,25 +14,12 @@ const selectedUser = computed(() => useChatStore().$state.selectedUser);
 const change = ref(false);
 
 function onSelectUser(utilisateur: any) {
-    let numConversation = ref<any>();
-    if (utilisateur.user > user.value.user_id) {
-        numConversation.value = `${user.value.user_id}-${utilisateur.user}`
-    } else {
-        numConversation.value = `${utilisateur.user}-${user.value.user_id}`
-    }
     useChatStore().getCountOfMessages(utilisateur.user).then((count: any) => {
-        useChatStore().getMessagesOfConversation(numConversation.value, utilisateur.limit, utilisateur.from).then((response: any) => {
+        useChatStore().getMessagesOfConversation(utilisateur.user, utilisateur.limit, utilisateur.from).then((response: any) => {
             if (response.length > 0) {
                 if (!useChatStore().$state.selectedUser || useChatStore().$state.selectedUser.user !== utilisateur.user) {
                     response.forEach((message: any) => {
-                        console.log(message);
-                        // console.log(message);
                         if (message.sender == utilisateur.user || message.recipient == utilisateur.user) {
-                            // if(useChatStore().$state.selectedUser.messages.length > 0) {}
-                            // useChatStore().$state.selectedUser.messages.map((item: any) => {
-                            //     if (item.id !== message.id) {
-                            //     }
-                            // })
                             utilisateur.messages.push(message)
                         }
                     });
@@ -51,6 +38,7 @@ function onSelectUser(utilisateur: any) {
         })
     });
 }
+
 function unselect() {
     useChatStore().$patch((state: any) => {
         state.selectedUser = null;
@@ -97,7 +85,7 @@ onBeforeMount(() => {
         </div>
         <div v-if="selectedUser != null" :class="[change ? 'container-center active' : 'container-center']">
             <MessageChat v-if="selectedUser != null" :typing="typing" @typing="isTyping" @read="messageRead"
-                @return="unselect" />
+                @moreMessages="useChatStore().fetchMoreMessages()" @return="unselect" />
         </div>
     </div>
 </template>

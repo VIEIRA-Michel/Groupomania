@@ -1,7 +1,5 @@
 import { useFriendshipStore } from './friendsStore';
-import axios from 'axios';
 import { defineStore } from 'pinia';
-import { ref } from 'vue';
 import type { Message } from '../interfaces/message.interface';
 import { sendMsg, fetchMessages, fetchUsers, getCount } from '../services/chat.service';
 
@@ -109,6 +107,26 @@ export const useChatStore = defineStore({
                     reject(error);
                 })
             })
+        },
+        fetchMoreMessages: () => {
+            return new Promise((resolve, reject) => {
+                useChatStore().$patch((state: any) => {
+                    state.selectedUser.from += 25;
+                    console.log(state.selectedUser);
+                    fetchMessages(state.selectedUser.user, state.selectedUser.limit, state.selectedUser.from).then((response: any) => {
+                        console.log(response);
+                        if (response.length > 0) {
+                            for (let i = response.length; i !== 0; i--) {
+                                state.selectedUser.messages.unshift(response.pop());
+                            }
+                        }
+                        resolve(response);
+                    }).catch(error => {
+                        console.log(error);
+                        reject(error)
+                    })
+                })
+            })
         }
-    },
+    }
 });
