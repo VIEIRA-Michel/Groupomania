@@ -2,6 +2,7 @@ import { useFriendshipStore } from './friendsStore';
 import { defineStore } from 'pinia';
 import type { Message } from '../interfaces/message.interface';
 import { sendMsg, fetchMessages, fetchUsers, getCount } from '../services/chat.service';
+import { useAuthStore } from './authStore';
 
 export interface chatState {
     newmessage: null;
@@ -127,6 +128,56 @@ export const useChatStore = defineStore({
                     })
                 })
             })
+        },
+        onTyping: (typing: boolean, data?: any) => {
+            useChatStore().$patch((state: any) => {
+                typing ? state.typing = data : state.typing = false;
+            })
+        },
+        onPrivateMessage: (data: any) => {
+            useChatStore().$patch((state: any) => {
+                useChatStore().$state.users.map((utilisateur: any) => {
+                    console.log(utilisateur.userID);
+                    if (utilisateur.userID == data.from) {
+                        state.messages.push({
+                            sender: utilisateur.user,
+                            id: data.id,
+                            content: data.message,
+                            recipient: useAuthStore().$state.user.user_id,
+                        });
+                        utilisateur.messages.push({
+                            sender: utilisateur.user,
+                            id: data.id,
+                            content: data.message,
+                            recipient: useAuthStore().$state.user.user_id,
+                        });
+                        utilisateur.messagesQty += 1;
+                        if (utilisateur !== state.selectedUser) {
+                            utilisateur.hasNewMessages = true;
+                        }
+                        return utilisateur;
+                    }
+                })
+            })
+        },
+        onUserConnnected: (data: any) => {
+            useChatStore().$patch((state: any) => {
+                state.users.map((item: any) => {
+                    if (item.userID == data.userID) {
+                        item.connected = true;
+                    }
+                    return item;
+                })
+            })
+        },
+        onUserDisconnected: (data: any) => {
+            useChatStore().$patch((state: any) => {
+                state.users.forEach((utilisateur: any) => {
+                    if (utilisateur.userID === data) {
+                        utilisateur.connected = false;
+                    }
+                });
+            });
         }
     }
 });

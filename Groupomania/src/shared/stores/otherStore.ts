@@ -38,7 +38,7 @@ export const useOtherStore = defineStore({
             console.log(type);
             console.log(content);
             useOtherStore().$patch((state: any) => {
-                if (type == "like" && content[0].publication.user_id == useAuthStore().$state.user.user_id) {
+                if (type == "like") {
                     type = "a aimé votre publication"
                 } else if (type == "has commented") {
                     type = "a commenté votre publication"
@@ -46,17 +46,15 @@ export const useOtherStore = defineStore({
                     type = "a envoyé une demande d'ami"
                 } else if (type == "friendRequest accepted") {
                     type = "a accepté votre demande d'ami"
-                } else if (type == "new publication") {
-                    type = "a poster une nouvelle publication"
                 } else if (type == "private message") {
                     type = "a envoyé un message"
                 }
-                if (content[0].user) {
+                if (content.user) {
                     state.notifications.push({
                         type: type,
-                        firstname: content[0].user.firstname,
-                        lastname: content[0].user.lastname,
-                        picture_url: content[0].user.picture_url,
+                        firstname: content.user.firstname,
+                        lastname: content.user.lastname,
+                        picture_url: content.user.picture_url,
                         // content: content
                     })
                 }

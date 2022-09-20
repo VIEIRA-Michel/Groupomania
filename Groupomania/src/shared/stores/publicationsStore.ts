@@ -6,6 +6,7 @@ import { useAuthStore } from '../stores/authStore';
 import socket from "../../socket";
 import { ref } from 'vue';
 import moment from 'moment';
+import { useFriendshipStore } from './friendsStore';
 
 
 interface PublicationState {
@@ -246,7 +247,6 @@ export const usePublicationsStore = defineStore({
         },
         getLikes: (id: number) => {
             fetchLikes(id).then((response: any) => {
-                // console.log(response)
                 const user_id: any = useAuthStore().$state.user.user_id;
                 response.data.data = response.data.data.map((publication: any) => {
                     return {
@@ -256,7 +256,7 @@ export const usePublicationsStore = defineStore({
                     };
                 })
 
-                let publication: any = usePublicationsStore().$state.publications.map(item => {
+                let publication: any = usePublicationsStore().$state.publications.map((item: any) => {
                     if (item.publication_id == id) {
                         for (let post of response.data.data) {
                             item.likes?.push(post);
@@ -327,5 +327,125 @@ export const usePublicationsStore = defineStore({
                 })
             })
         },
+        changePage: (operation: string) => {
+            usePublicationsStore().$patch((state: any) => {
+                if (operation == 'next') {
+                    state.page++
+                } else if (operation == 'previous') {
+                    state.page--
+                }
+            })
+        },
+        onLike: (data: any) => {
+            usePublicationsStore().$patch((state: any) => {
+                state.publications.map((item: any) => {
+                    if (item.publication_id == data.publication.publication_id) {
+                        if (item.likes.find((like: any) => like.user_id !== data.user.user_id) || item.likes.length == 0) {
+                            item.likes.push(data.user);
+                        }
+                    }
+                    return item;
+                })
+            })
+        },
+        onRemoveLike: (data: any) => {
+            usePublicationsStore().$patch((state: any) => {
+                state.publications.map((item: any) => {
+                    if (item.publication_id == data.publication.publication_id) {
+                        item.likes.map((like: any) => {
+                            if (like.user_id == data.user.user_id) {
+                                item.likes.splice(item.likes.indexOf(like), 1);
+                            }
+                            return like;
+                        })
+                    }
+                    return item;
+                })
+            });
+        },
+        onNewPublication: (data: any) => {
+            useFriendshipStore().$patch((state: any) => {
+                state.friends.map((item: any) => {
+                    if (item.user_id == data.publication._value.user_id) {
+                        usePublicationsStore().$patch((state: any) => {
+                            if (state.publications.length == 5) {
+                                state.cache.unshift(state.publications.pop());
+                            }
+                            if (state.numOfResults == undefined) {
+                                state.numOfResults = 0;
+                            }
+                            state.numOfResults += 1;
+                            state.publications.unshift(data.publication._value);
+                            if (state.numberOfPages == undefined) {
+                                state.numberOfPages = 1;
+                            }
+                            state.numberOfPages = Math.floor(state.numOfResults / 5 - 0.2) + 1;
+                            if (state.page == undefined) {
+                                state.page = 1;
+                            }
+                        });
+                    }
+                })
+            })
+        },
+        onEditPublication: (data: any) => {
+            usePublicationsStore().$patch((state: any) => {
+                state.publications.map((item: any) => {
+                    if (item.publication_id == data.publication_id) {
+                        item.content = data.content;
+                        item.picture = data.picture;
+                        item.updated_at = data.updated_at;
+                    }
+                    return item;
+                });
+            });
+        },
+        onDeletePublication: (data: any) => {
+            usePublicationsStore().$patch((state: any) => {
+                state.publications.map((item: any) => {
+                    if (item.publication_id == data) {
+                        usePublicationsStore().fetchCount().then((response: any) => {
+                            usePublicationsStore().$patch((state: any) => {
+                                state.numOfResults = response.qty;
+                                state.numberOfPages = Math.floor(state.numOfResults / 5 - 0.2) + 1;
+                            })
+                            let newValue = ref(0);
+                            state.page.value < usePublicationsStore().$state.numberOfPages ? newValue.value = state.page.value + 1 : newValue.value = state.page.value;
+                            if (usePublicationsStore().$state.cache.length > 0) {
+                                usePublicationsStore().$patch((state: any) => {
+                                    state.publications.map((item: any) => {
+                                        if (item.publication_id == data) {
+                                            state.publications.splice(state.publications.indexOf(item), 1);
+                                            let tmp = ref(state.cache.shift());
+                                            state.publications.find((item: any) => item.publication_id == tmp._value.publication_id) ? "" : state.publications.push(tmp._value);
+                                        }
+                                    })
+                                })
+                            } else {
+                                usePublicationsStore().fetchAllPublication(newValue.value, true).then((response: any) => {
+                                    usePublicationsStore().$patch((state: any) => {
+                                        state.publications.map((item: any) => {
+                                            if (item.publication_id == data) {
+                                                state.publications.splice(state.publications.indexOf(item), 1);
+                                            }
+                                        });
+                                        state.cache.map((item: any) => {
+                                            if (item.publication_id == data) {
+                                                state.cache.splice(state.cache.indexOf(item), 1);
+                                            }
+                                        })
+                                        if (state.numberOfPages != 1 && state.publications.length == 0) {
+                                            state.page -= 1;
+                                        } else if (state.numberOfPages != 1 && state.publications.length != 5) {
+                                            state.publications.push(state.cache.shift());
+                                        };
+                                    });
+                                });
+                            }
+                        });
+                    }
+                })
+            })
+        }
     }
 });

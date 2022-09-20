@@ -15,13 +15,10 @@ export async function fetchRequests(): Promise<any> {
 }
 
 export async function fetchFriends(id?: any): Promise<any> {
-    console.log(id);
     let url = '';
     if (id) {
-        console.log('id');
         url = `http://localhost:3000/api/user/${id}/friends`;
     } else {
-        console.log('string');
         url = BASE_URL;
     }
     const response = await axios({

@@ -14,11 +14,13 @@ const isLoading = computed(() => usePublicationsStore().$state.isLoading);
 const numberOfPages = computed(() => usePublicationsStore().$state.numberOfPages);
 const numOfResults = computed(() => usePublicationsStore().$state.numOfResults);
 const notifications = computed(() => useOtherStore().$state.notifications);
+const page = computed(() => usePublicationsStore().$state.page);
 
-let page = ref(1);
+let notif = ref(notifications.value.length);
 let content = ref('');
 let picture = ref();
 let showNotification = ref<any>(null);
+let newNotification = ref(false);
 
 let editPost = reactive({
     content: '',
@@ -78,40 +80,40 @@ function deletePublication(id: number) {
 function likePublication(publication: any) {
     usePublicationsStore().likePublication(publication.publication_id).then((response: any) => {
         if (response.data.liked == true) {
-            socket.emit('like', { publication, user: user.value }, user.value);
+            socket.emit('like', { publication, user: user.value });
         } else {
-            socket.emit('remove like', { publication, user_id: user.value.user_id }, user.value);
+            socket.emit('remove like', { publication, user: user.value });
         }
     });
 }
 
 function changePage(operation: string) {
     usePublicationsStore().resetPublicationsAndCache();
-    if (operation == 'next') {
-        page.value++
-    } else if (operation == 'previous') {
-        page.value--
-    }
+    usePublicationsStore().changePage(operation);
 }
 
 function init() {
     usePublicationsStore().resetPublicationsAndCache();
     usePublicationsStore().fetchAllPublication(page.value, false);
-    console.log('init');
 };
 
 function toggleNotification() {
     if (showNotification.value == null || showNotification.value == false) {
         showNotification.value = true;
+        newNotification.value = false;
     } else {
         showNotification.value = false;
     }
 }
 
-watch(page, (newPageValue) => {
+watch(page, (newPageValue: any) => {
     console.log('watch');
     usePublicationsStore().fetchAllPublication(newPageValue, false).then((response: any) => {
     });
+})
+
+watch(useOtherStore().$state.notifications, (newNotif) => {
+    newNotification.value = true;
 })
 
 init();
@@ -250,9 +252,12 @@ init();
             :class="[showNotification == null ? 'notification-alert' : showNotification == false ? 'notification-alert hidden' : 'notification-alert active']">
             <div class="notification-alert__content">
                 <div class="notification-alert__content__icon">
-                    <fa icon="fa-solid fa-bell" />
+                    <fa icon="fa-solid fa-bell"
+                        :class="[ showNotification == null && newNotification || showNotification == false && newNotification ? 'active' : '']" />
                 </div>
-                <div v-for="notif in notifications" class="notification-alert__content__text">
+            </div>
+            <div v-if="showNotification" class="notification-alert__list">
+                <div v-for="notif in notifications" class="notification-alert__list__item">
                     <!-- <p>{{ notification }}</p> -->
                     <div v-if="showNotification" class="event">
                         <div class="event__avatar">
@@ -610,6 +615,8 @@ init();
                     font-size: 20px;
                     // color: linear-gradient(to right, #FD2D01, #FFD7D7);
                     color: #FD2D01;
+                    -webkit-animation: jello-horizontal 0.9s both;
+                    animation: jello-horizontal 0.9s both;
                 }
             }
         }
@@ -790,6 +797,22 @@ init();
                 color: #4E5166;
             }
         }
+    }
+
+    &__content {
+        &__icon {
+            svg {
+                &.active {
+                    -webkit-animation: wobble-hor-top 1.5s infinite both;
+                    animation: wobble-hor-top 1.5s infinite both;
+                }
+            }
+        }
+    }
+
+    &__list {
+        -webkit-animation: text-focus-in 0.4s cubic-bezier(0.550, 0.085, 0.680, 0.530) 0.4s both;
+        animation: text-focus-in 0.4s cubic-bezier(0.550, 0.085, 0.680, 0.530) 0.4s both;
     }
 }
 </style>

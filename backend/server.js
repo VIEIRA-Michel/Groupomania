@@ -121,12 +121,13 @@ io.on('connection', (socket) => {
     await redis.set(`connected`, userConnectedDataFiltered);
   })();
 
-  socket.on("private message", ({ id, message, to }) => {
+  socket.on("private message", ({ id, message, to, user }) => {
     socket.to(to).to(socket.userID).emit("private message", {
       from: socket.userID,
       id,
       message,
       to,
+      user
     });
   });
 

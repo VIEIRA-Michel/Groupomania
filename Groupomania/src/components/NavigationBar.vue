@@ -18,40 +18,45 @@ const emit = defineEmits<{
 </script>
 <template>
     <header>
-        <div class="logo">
-            <router-link to="/app/home">
-                <img src="../assets/logo-header-svg.svg" alt="logo-groupomania">
-            </router-link>
-        </div>
-        <div v-if="props.isConnected" class="menu">
-            <router-link to="/app/home">
-                <div class="menu__navigate">
-                    <fa icon="home" />
-                </div>
-            </router-link>
-            <router-link to="/app/friends">
-                <div class="menu__navigate">
-                    <fa icon="user-group" />
-                    <span v-if="props.isConnected && requests.length > 0"> {{ requests.length }}</span>
-                </div>
-            </router-link>
-            <router-link to="/app/chat">
-                <div class="menu__navigate">
-                    <fa icon="fa-solid fa-comments" />
-                    <span
-                        v-if="props.isConnected && users.length !== 0 && users.find((item:any) => item.hasNewMessages == true)">1</span>
-                </div>
-            </router-link>
-            <router-link to="/app/profil">
-                <div class="menu__navigate">
-                    <fa icon="circle-user" />
-                </div>
-            </router-link>
-            <a>
+        <div class="menu">
+            <div class="logo">
+                <router-link to="/app/home">
+                    <img src="../assets/logo-groupomania.svg" alt="logo-groupomania">
+                    <span>Groupomania</span>
+                </router-link>
+            </div>
+            <div v-if="props.isConnected" class="center">
+                <router-link to="/app/home">
+                    <div class="menu__navigate">
+                        <fa icon="home" />
+                    </div>
+                </router-link>
+                <router-link to="/app/friends">
+                    <div class="menu__navigate">
+                        <fa icon="user-group" />
+                        <span v-if="props.isConnected && requests.length > 0"> {{ requests.length }}</span>
+                    </div>
+                </router-link>
+            </div>
+            <div v-if="props.isConnected" class="right">
+                <router-link to="/app/chat">
+                    <div class="menu__navigate">
+                        <fa icon="fa-solid fa-comments" />
+                        <span
+                            v-if="props.isConnected && users.length !== 0 && users.find((item:any) => item.hasNewMessages == true)">1</span>
+                    </div>
+                </router-link>
+                <router-link to="/app/profil">
+                    <div class="menu__navigate">
+                        <fa icon="circle-user" />
+                    </div>
+                </router-link>
+            </div>
+            <!-- <a>
                 <div class="menu__navigate">
                     <fa v-if="props.isConnected" @click="emit('logout')" icon="fa-right-from-bracket" />
                 </div>
-            </a>
+            </a> -->
         </div>
         <!-- <div v-else-if="!props.isConnected" class="menu notLogged">
             <router-link to="/login">
@@ -141,8 +146,8 @@ header {
         font-size: 15px;
         align-items: center;
         width: 100%;
-        justify-content: space-around;
-        margin-right: 20px;
+        justify-content: space-between;
+        // margin-right: 20px;
         cursor: pointer;
 
         @media only screen and (max-width: 768px) {
@@ -151,12 +156,12 @@ header {
 
         div {
 
-            margin-left: 30px;
+            // margin-left: 30px;
         }
 
         a {
             text-decoration: none;
-            margin-left: 10%;
+            margin-left: 20px;
             color: #FD2D01;
         }
 
@@ -181,6 +186,26 @@ header {
 
         &.notLogged {
             justify-content: end;
+        }
+
+        .center {
+            position: absolute;
+            display: flex;
+            left: 50%;
+            right: 50%;
+            flex-direction: row;
+            justify-content: space-around;
+
+            svg {
+                padding: 10px;
+                border-radius: 5px;
+            }
+        }
+
+        .right {
+            display: flex;
+            flex-direction: row;
+            margin-right: 20px;
         }
     }
 
@@ -272,11 +297,27 @@ header {
     z-index: 10;
     display: flex;
     align-items: center;
+    position: relative;
+
+    a {
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    span {
+        font-size: 25px;
+        font-weight: bold;
+        color: #FD2D01;
+        position: absolute;
+        background: #FFFFFF;
+    }
 }
 
 img {
-    width: 200px;
-    height: 30px;
+    width: 220px;
+    height: 50px;
     object-fit: cover;
 }
 

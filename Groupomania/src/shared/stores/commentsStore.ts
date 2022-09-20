@@ -152,7 +152,7 @@ export const useCommentsStore = defineStore({
                         role_id: response.data.data[0].role_id,
                         user_id: response.data.data[0].user_id,
                     });
-                    socket.emit('has commented', obj, useAuthStore().$state.user);
+                    socket.emit('has commented', { comment: obj.value, user: useAuthStore().$state.user });
                     usePublicationsStore().$patch((state: any) => {
                         state.publications.map((publication: any) => {
                             if (publication.publication_id === publication_id) {
@@ -184,5 +184,30 @@ export const useCommentsStore = defineStore({
                 })
             })
         },
+        onComment: (data: any) => {
+            usePublicationsStore().$patch((state: any) => {
+                state.publications.map((item: any) => {
+                    if (item.publication_id == data.comment.publication_id) {
+                        item.comments.unshift(data.comment);
+                        item.numberOfComments = item.numberOfComments + 1;
+                    }
+                    return item;
+                });
+            });
+        },
+        onDeleteComment: (data: any) => {
+            usePublicationsStore().$patch((state: any) => {
+                state.publications.map((item: any) => {
+                    if (item.publication_id == data.publication_id) {
+                        item.comments = item.comments.filter((itemComment: any) => {
+                            return itemComment.comment_id != data.id;
+                        });
+                        console.log(item);
+                        item.numberOfComments = item.numberOfComments - 1;
+                    }
+                    return item;
+                });
+            })
+        }
     }
 });

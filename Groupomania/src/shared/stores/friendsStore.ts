@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { useAuthStore } from '../stores/authStore';
 import { fetchRequests, fetchFriends, acceptOrDecline, deleteFriend, searchFriend, addFriend, cancelReq, checkReq } from '../services/friends.service';
+import { useChatStore } from './chatStore';
 
 interface FriendshipState {
     friends: any[];
@@ -273,6 +274,122 @@ export const useFriendshipStore = defineStore({
                     reject(error);
                 })
             })
+        },
+        onFriendRequestSended: (data: any) => {
+            if (data.request.recipient == useAuthStore().$state.user.user_id) {
+                useFriendshipStore().$patch((state: any) => {
+                    if (state.requests.find((item: any) => item.sender !== data.request.sender) || state.requests.length == 0) {
+                        state.requests.push(data.request);
+                    }
+                    if (state.searchResults.length > 0) {
+                        state.searchResults.map((item: any) => {
+                            if (item.user_id == data.request.sender) {
+                                item.waitingReply = true;
+                            }
+                        })
+                    }
+                    state.isLoading = false;
+                });
+            }
+        },
+        onFriendRequestRefused: (data: any) => {
+            if (data.target == useAuthStore().$state.user.user_id) {
+                useFriendshipStore().$patch((state: any) => {
+                    if (state.invitSendedTo.length > 0) {
+                        state.invitSendedTo.map((item: any) => {
+                            if (item.id == data.user) {
+                                state.invitSendedTo.splice(state.invitSendedTo.indexOf(item), 1);
+
+                            }
+                        })
+                    }
+                    if (state.searchResults.length > 0) {
+                        state.searchResults.map((item: any) => {
+                            console.log(item);
+                            if (item.user_id == data.user) {
+                                item.pending = false;
+                                item.isFriend = false;
+
+                            }
+                        })
+                    }
+
+                    state.isLoading = false;
+                })
+            }
+        },
+        onFriendRequestAccepted: (data: any) => {
+            if (data.response.data.results[0].user_id_sender == useAuthStore().$state.user.user_id) {
+                useFriendshipStore().$patch((state: any) => {
+                    if (state.invitSendedTo.length > 0) {
+                        state.invitSendedTo.map((item: any) => {
+                            if (item.id == data.response.data.results[0].user_id_recipient) {
+                                state.invitSendedTo.splice(state.invitSendedTo.indexOf(item), 1);
+                            }
+                        })
+                    }
+                    if (state.searchResults.length > 0) {
+                        state.searchResults.map((item: any) => {
+                            if (item.user_id == data.response.data.results[0].user_id_recipient) {
+                                item.pending = false;
+                                item.isFriend = true;
+                            }
+                        })
+                    }
+                    state.friends.push({
+                        user_id: data.response.data.results[0].id,
+                        firstname: data.response.data.results[0].firstname,
+                        lastname: data.response.data.results[0].lastname,
+                        picture_url: data.response.data.results[0].picture_url
+                    })
+                    state.isLoading = false;
+
+                })
+            }
+        },
+        onFriendRemoved: (data: any) => {
+            if (useAuthStore().$state.user.user_id == data.target) {
+                useFriendshipStore().$patch((state: any) => {
+                    if (state.friends.length > 0) {
+                        state.friends.map((item: any) => {
+                            if (item.user_id == data.user) {
+                                state.friends.splice(state.friends.indexOf(item), 1);
+                            }
+                        })
+                    }
+                    if (state.searchResults.length > 0) {
+                        state.searchResults.map((item: any) => {
+                            if (item.user_id == data.user) {
+                                item.isFriend = false;
+                            }
+                        })
+                    }
+                    if (useChatStore().$state.users.length > 0) {
+                        useChatStore().$patch((state: any) => {
+                            state.users.map((item: any) => {
+                                if (item.user == data.user) {
+                                    state.users.splice(state.users.indexOf(item), 1);
+                                }
+                            })
+                        })
+                    }
+                    state.isLoading = false;
+                })
+            }
+        },
+        onFriendRequestCanceled: (data: any) => {
+            if (useAuthStore().user.user_id == data.target) {
+                useFriendshipStore().$patch((state: any) => {
+                    if (state.requests.length > 0) {
+                        state.requests.map((item: any) => {
+                            if (item.sender == data.user) {
+                                state.requests.splice(state.requests.indexOf(item), 1);
+                            }
+                        })
+                    }
+                    state.isLoading = false;
+                })
+            }
         }
     }
 });

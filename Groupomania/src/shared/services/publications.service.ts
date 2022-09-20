@@ -4,7 +4,6 @@ import axios from 'axios';
 let BASE_URL = 'http://localhost:3000/api/publications';
 
 export async function fetchPublications(page?: number): Promise<Publication[]> {
-    console.log('fetching publications');
     let url = '';
     if (page) {
         url = `${BASE_URL}/?page=${page}`;

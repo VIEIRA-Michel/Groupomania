@@ -1,6 +1,9 @@
 import { defineStore, storeToRefs } from 'pinia';
 import socket from "../../socket";
 import { signUp, signIn, fetchInformation, editProfile } from "../services/auth.service";
+import { useChatStore } from './chatStore';
+import { useFriendshipStore } from './friendsStore';
+import { usePublicationsStore } from './publicationsStore';
 
 export interface IAuthStore {
     isConnected: boolean | null;
@@ -124,7 +127,75 @@ export const useAuthStore = defineStore({
                     reject(error);
                 })
             })
+        },
+        onUpdateProfile: (data: any) => {
+            useFriendshipStore().$patch((state: any) => {
+                if (state.friends.length > 0) {
+                    state.friends.map((item: any) => {
+                        if (item.user_id == data.data[0].id) {
+                            item.picture_url = data.data[0].picture_url;
+                        }
+                        return item;
+                    })
+                }
+                if (state.searchResults.length > 0) {
+                    state.searchResults.map((item: any) => {
+                        if (item.user_id == data.data[0].id) {
+                            item.picture_url = data.data[0].picture_url;
+                        }
+                        return item;
+                    })
+                }
+                if (state.invitSendedTo.length > 0) {
+                    state.invitSendedTo.map((item: any) => {
+                        if (item.id == data.data[0].id) {
+                            item.picture_url = data.data[0].picture_url;
+                        }
+                        return item;
+                    })
+                }
+                if (state.requests.length > 0) {
+                    state.requests.map((item: any) => {
+                        if (item.sender == data.data[0].id) {
+                            item.picture_url = data.data[0].picture_url;
+                        }
+                        return item;
+                    })
+                }
+            })
+            useChatStore().$patch((state: any) => {
+                if (state.users.length > 0) {
+                    state.users.map((item: any) => {
+                        if (item.user == data.data[0].id) {
+                            item.picture = data.data[0].picture_url;
+                        }
+                        return item;
+                    })
+                }
+            })
+            usePublicationsStore().$patch((state: any) => {
+                if (state.publications.length > 0) {
+                    state.publications.map((item: any) => {
+                        if (item.user_id == data.data[0].id) {
+                            item.picture_url = data.data[0].picture_url;
+                        }
+                        if (item.comments.length > 0) {
+                            item.comments.map((com: any) => {
+                                console.log(com.user_id);
+                                console.log(data.data[0].id);
+                                if (com.user_id == data.data[0].id) {
+                                    com.picture_url = data.data[0].picture_url;
+                                }
+                                return com;
+                            })
+                        }
+                        return item;
+                    })
+                    state.publications.map((item: any) => {
+                        return item;
+                    })
+                }
+            })
         }
-
     }
 });

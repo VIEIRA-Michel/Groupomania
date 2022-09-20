@@ -7,19 +7,17 @@ import { useFriendshipStore } from '@/shared/stores/friendsStore';
 import Loading from '@/components/Loading.vue';
 import socket from '@/socket';
 import { useOtherStore } from '@/shared/stores/otherStore';
+import { useCommentsStore } from '@/shared/stores/commentsStore';
 
 const user = computed(() => useAuthStore().$state.user);
 const isConnected = computed(() => useAuthStore().isConnected);
 const users = computed(() => useChatStore().$state.users);
-const selectedUser = computed(() => useChatStore().$state.selectedUser);
 const loading = computed(() => useOtherStore().$state.loading);
 
 watch(useFriendshipStore().$state.friends, (newValue: any) => {
     useChatStore().getUsersConnected().then((response: any) => {
     });
 });
-
-let page = ref(1);
 
 onBeforeMount(() => {
     if (isConnected.value) {
@@ -37,437 +35,76 @@ onBeforeMount(() => {
                     });
                     useChatStore().getUsersConnected().then((response2: any) => {
                         useOtherStore().loadedResources();
-                        socket.on('typing', (data) => {
-                            useChatStore().$patch((state) => {
-                                state.typing = data;
-                            });
-                        });
-                        socket.on('stoptyping', (data) => {
-                            useChatStore().$patch((state) => {
-                                state.typing = false;
-                            });
-                        });
-                        socket.on("connect", () => {
-                            users.value.forEach((utilisateur: any) => {
-                                utilisateur.self ? utilisateur.connected = true : "";
-                            });
-                        });
-                        socket.on("disconnect", () => {
-                            users.value.forEach((utilisateur: any) => {
-                                utilisateur.self ? utilisateur.connected = false : "";
-                            });
-                        });
-                        const initReactiveProperties = (utilisateur: any) => {
-                            utilisateur.connected = true;
-                            utilisateur.messages = [];
-                            utilisateur.hasNewMessages = false;
-                        };
-                        socket.on("users", (users2) => {
-                            users2.forEach((utilisateur: any) => {
-                                for (let i = 0; i < users2.length; i++) {
-                                    const existingUser = users2[i];
-                                    if (existingUser.userID === utilisateur.userID) {
-                                        initReactiveProperties(existingUser);
-                                        return;
+
+                        socket.onAny((event: string, ...args: any) => {
+                            switch (event) {
+                                case 'typing':
+                                    useChatStore().onTyping(true, args[0]);
+                                    break;
+                                case 'stoptyping':
+                                    useChatStore().onTyping(false);
+                                    break;
+                                case 'user connected':
+                                    if (users.value.find((user: any) => user.user == args[0].user)) {
+                                        useChatStore().onUserConnnected(args[0])
+                                    } else {
+                                        useChatStore().userConnected(args[0]);
                                     }
-                                }
-                                utilisateur.self = utilisateur.userID === socket.userID;
-                                initReactiveProperties(utilisateur);
-                            });
-                            users2 = users2.sort((a: any, b: any) => {
-                                if (a.self) return -1;
-                                if (b.self) return 1;
-                                if (a.username < b.username) return -1;
-                                return a.username > b.username ? 1 : 0;
-                            });
-                            let currentUserConnected = users2.filter((user: any) => user.userID !== socket.userID);
-                        });
-                        socket.on("user connected", (utilisateur: any) => {
-                            for (let i = 0; i < users.value.length; i++) {
-                                const existingUser: any = useChatStore().$state.users[i];
-                                if (existingUser.userID === utilisateur.userID) {
-                                    existingUser.connected = true;
-                                    return;
-                                }
+                                    break;
+                                case 'user disconnected':
+                                    useChatStore().onUserDisconnected(args[0]);
+                                    break;
+                                case 'private message':
+                                    useChatStore().onPrivateMessage(args[0]);
+                                    break;
+                                case 'like':
+                                    usePublicationsStore().onLike(args[0]);
+                                    break;
+                                case 'remove like':
+                                    usePublicationsStore().onRemoveLike(args[0]);
+                                    break;
+                                case 'new publication':
+                                    usePublicationsStore().onNewPublication(args[0]);
+                                    break;
+                                case 'edit publication':
+                                    usePublicationsStore().onEditPublication(args[0]);
+                                    break;
+                                case 'delete publication':
+                                    usePublicationsStore().onDeletePublication(args[0]);
+                                    break;
+                                case 'has commented':
+                                    useCommentsStore().onComment(args[0]);
+                                    break;
+                                case 'delete comment':
+                                    useCommentsStore().onDeleteComment(args[0]);
+                                    break;
+                                case 'friendRequest sended':
+                                    useFriendshipStore().onFriendRequestSended(args[0]);
+                                    break;
+                                case 'friendRequest refused':
+                                    useFriendshipStore().onFriendRequestRefused(args[0]);
+                                    break;
+                                case 'friendRequest accepted':
+                                    useFriendshipStore().onFriendRequestAccepted(args[0]);
+                                    break;
+                                case 'friend removed':
+                                    useFriendshipStore().onFriendRemoved(args[0]);
+                                    break;
+                                case 'friendRequest canceled':
+                                    useFriendshipStore().onFriendRequestCanceled(args[0]);
+                                    break;
+                                case 'update profil':
+                                    useAuthStore().onUpdateProfile(args[0]);
+                                    break;
+                                default:
+                                    console.log(`Sorry, we are out of ${event}.`);
                             }
-                            initReactiveProperties(utilisateur);
-                            useChatStore().userConnected(utilisateur);
-                        });
-                        socket.on("user disconnected", (id) => {
-                            console.log(id);
-                            useChatStore().$patch((state: any) => {
-                                state.users.forEach((utilisateur: any) => {
-                                    if (utilisateur.userID === id) {
-                                        utilisateur.connected = false;
-                                    }
-                                });
-                            });
-                        });
-                        socket.on("private message", ({ from, id, message, to }) => {
-                            useChatStore().$patch((state: any) => {
-                                useChatStore().$state.users.map((utilisateur: any) => {
-                                    console.log(utilisateur.userID);
-                                    if (utilisateur.userID == from) {
-                                        state.messages.push({
-                                            sender: utilisateur.user,
-                                            id,
-                                            content: message,
-                                            recipient: user.value.user_id,
-                                        });
-                                        utilisateur.messages.push({
-                                            sender: utilisateur.user,
-                                            id,
-                                            content: message,
-                                            recipient: user.value.user_id
-                                        });
-                                        utilisateur.messagesQty += 1;
-                                        // selectedUser.value ?
-                                        if (utilisateur !== selectedUser) {
-                                            // 
-                                            utilisateur.hasNewMessages = true;
-                                        }
-                                        return utilisateur;
-                                    }
-                                })
-                            })
-                        })
-                        socket.on('like', (data) => {
-                            usePublicationsStore().$patch((state: any) => {
-                                state.publications.map((item: any) => {
-                                    if (item.publication_id == data.publication.publication_id) {
-                                        if (item.likes.find((like: any) => like.user_id !== data.user.user_id) || item.likes.length == 0) {
-                                            item.likes.push(data.user);
-                                        }
-                                    }
-                                    return item;
-                                })
-                            })
-                        })
-                        socket.on('remove like', (data) => {
-                            console.log(data);
-                            usePublicationsStore().$patch((state: any) => {
-                                state.publications.map((item: any) => {
-                                    item.likes.map((like: any) => {
-                                        if (like.user_id == data.user_id) {
-                                            item.likes.splice(item.likes.indexOf(like), 1);
-                                        }
-                                        return like;
-                                    })
-                                })
-                            });
-                        });
-                        socket.on('new publication', (data) => {
-                            useFriendshipStore().$patch((state: any) => {
-                                state.friends.map((item: any) => {
-                                    if (item.user_id == data.publication._value.user_id) {
-                                        usePublicationsStore().$patch((state: any) => {
-                                            if (state.publications.length == 5) {
-                                                state.cache.unshift(state.publications.pop());
-                                            }
-                                            if (state.numOfResults == undefined) {
-                                                state.numOfResults = 0;
-                                            }
-                                            state.numOfResults += 1;
-                                            state.publications.unshift(data.publication._value);
-                                            if (state.numberOfPages == undefined) {
-                                                state.numberOfPages = 1;
-                                            }
-                                            state.numberOfPages = Math.floor(state.numOfResults / 5 - 0.2) + 1;
-                                            if (state.page == undefined) {
-                                                state.page = 1;
-                                            }
-                                        });
-                                    }
-                                })
-                            })
-
-                        });
-                        socket.on('edit publication', (data) => {
-                            usePublicationsStore().$patch((state: any) => {
-                                state.publications.map((item: any) => {
-                                    if (item.publication_id == data.publication_id) {
-                                        item.content = data.content;
-                                        item.picture = data.picture;
-                                        item.updated_at = data.updated_at;
-                                    }
-                                    return item;
-                                });
-                            });
-                        });
-
-                        socket.on('delete publication', (data) => {
-                            usePublicationsStore().$patch((state: any) => {
-                                state.publications.map((item: any) => {
-                                    if (item.publication_id == data) {
-                                        usePublicationsStore().fetchCount().then((response: any) => {
-                                            usePublicationsStore().$patch((state: any) => {
-                                                state.numOfResults = response.qty;
-                                                state.numberOfPages = Math.floor(state.numOfResults / 5 - 0.2) + 1;
-                                            })
-                                            let newValue = ref(0);
-                                            page.value < usePublicationsStore().$state.numberOfPages ? newValue.value = page.value + 1 : newValue.value = page.value;
-                                            if (usePublicationsStore().$state.cache.length > 0) {
-                                                usePublicationsStore().$patch((state: any) => {
-                                                    state.publications.map((item: any) => {
-                                                        if (item.publication_id == data) {
-                                                            state.publications.splice(state.publications.indexOf(item), 1);
-                                                            let tmp = ref(state.cache.shift());
-                                                            state.publications.find((item: any) => item.publication_id == tmp._value.publication_id) ? "" : state.publications.push(tmp._value);
-                                                        }
-                                                    })
-                                                })
-                                            } else {
-                                                usePublicationsStore().fetchAllPublication(newValue.value, true).then((response: any) => {
-                                                    usePublicationsStore().$patch((state: any) => {
-                                                        state.publications.map((item: any) => {
-                                                            if (item.publication_id == data) {
-                                                                state.publications.splice(state.publications.indexOf(item), 1);
-                                                            }
-                                                        });
-                                                        state.cache.map((item: any) => {
-                                                            if (item.publication_id == data) {
-                                                                state.cache.splice(state.cache.indexOf(item), 1);
-                                                            }
-                                                        })
-                                                        if (state.numberOfPages != 1 && state.publications.length == 0) {
-                                                            state.page -= 1;
-                                                        } else if (state.numberOfPages != 1 && state.publications.length != 5) {
-                                                            state.publications.push(state.cache.shift());
-                                                        };
-                                                    });
-                                                });
-                                            }
-                                        });
-                                    }
-                                })
-                            })
-                            // usePublicationsStore().getNumberOfPublications(user.value.user_id).then((response: any) => {
-                        });
-                        socket.on('has commented', (data: any) => {
-                            usePublicationsStore().$patch((state: any) => {
-                                state.publications.map((item: any) => {
-                                    if (item.publication_id == data._value.publication_id) {
-                                        item.comments.unshift(data._value);
-                                        item.numberOfComments = item.numberOfComments + 1;
-                                    }
-                                    return item;
-                                });
-                            });
-                        });
-
-                        socket.on('delete comment', (data: any) => {
-                            usePublicationsStore().$patch((state: any) => {
-                                state.publications.map((item: any) => {
-                                    if (item.publication_id == data.publication_id) {
-                                        item.comments = item.comments.filter((itemComment: any) => {
-                                            return itemComment.comment_id != data.id;
-                                        });
-                                        console.log(item);
-                                        item.numberOfComments = item.numberOfComments - 1;
-                                    }
-                                    return item;
-                                });
-                            })
-                        })
-                        socket.on('friendRequest sended', (data) => {
-                            if (data.recipient == user.value.user_id) {
-                                useFriendshipStore().$patch((state: any) => {
-                                    if (state.requests.find((item: any) => item.sender !== data.sender) || state.requests.length == 0) {
-                                        state.requests.push(data);
-                                    }
-                                    if (state.searchResults.length > 0) {
-                                        state.searchResults.map((item: any) => {
-                                            if (item.user_id == data.sender) {
-                                                item.waitingReply = true;
-                                            }
-                                        })
-                                    }
-                                    state.isLoading = false;
-                                });
-                            }
-                        });
-                        socket.on('friendRequest refused', (data) => {
-                            if (data.target == user.value.user_id) {
-                                useFriendshipStore().$patch((state: any) => {
-                                    if (state.invitSendedTo.length > 0) {
-                                        state.invitSendedTo.map((item: any) => {
-                                            if (item.id == data.user) {
-                                                state.invitSendedTo.splice(state.invitSendedTo.indexOf(item), 1);
-
-                                            }
-                                        })
-                                    }
-                                    if (state.searchResults.length > 0) {
-                                        state.searchResults.map((item: any) => {
-                                            console.log(item);
-                                            if (item.user_id == data.user) {
-                                                item.pending = false;
-                                                item.isFriend = false;
-
-                                            }
-                                        })
-                                    }
-
-                                    state.isLoading = false;
-                                })
-                            }
-                        })
-
-                        socket.on('friendRequest accepted', (data) => {
-                            if (data.data.results[0].user_id_sender == user.value.user_id) {
-                                useFriendshipStore().$patch((state: any) => {
-                                    if (state.invitSendedTo.length > 0) {
-                                        state.invitSendedTo.map((item: any) => {
-                                            if (item.id == data.data.results[0].user_id_recipient) {
-                                                state.invitSendedTo.splice(state.invitSendedTo.indexOf(item), 1);
-
-                                            }
-                                        })
-                                    }
-                                    if (state.searchResults.length > 0) {
-                                        state.searchResults.map((item: any) => {
-                                            if (item.user_id == data.data.results[0].user_id_recipient) {
-                                                item.pending = false;
-                                                item.isFriend = true;
-
-                                            }
-                                        })
-                                    }
-                                    state.friends.push({
-                                        user_id: data.data.results[0].id,
-                                        firstname: data.data.results[0].firstname,
-                                        lastname: data.data.results[0].lastname,
-                                        picture_url: data.data.results[0].picture_url
-                                    })
-                                    state.isLoading = false;
-
-                                })
-                            }
-                        })
-
-                        socket.on('friend removed', (data) => {
-                            if (user.value.user_id == data.target) {
-                                useFriendshipStore().$patch((state: any) => {
-                                    if (state.friends.length > 0) {
-                                        state.friends.map((item: any) => {
-                                            if (item.user_id == data.user) {
-                                                state.friends.splice(state.friends.indexOf(item), 1);
-                                            }
-                                        })
-                                    }
-                                    if (state.searchResults.length > 0) {
-                                        state.searchResults.map((item: any) => {
-                                            if (item.user_id == data.user) {
-                                                item.isFriend = false;
-                                            }
-                                        })
-                                    }
-                                    if (useChatStore().$state.users.length > 0) {
-                                        useChatStore().$patch((state: any) => {
-                                            state.users.map((item: any) => {
-                                                if (item.user == data.user) {
-                                                    state.users.splice(state.users.indexOf(item), 1);
-                                                }
-                                            })
-                                        })
-                                    }
-                                    state.isLoading = false;
-                                })
-                            }
-                        })
-
-                        socket.on('friendRequest canceled', (data) => {
-                            if (user.value.user_id == data.target) {
-                                useFriendshipStore().$patch((state: any) => {
-                                    if (state.requests.length > 0) {
-                                        state.requests.map((item: any) => {
-                                            if (item.sender == data.user) {
-                                                state.requests.splice(state.requests.indexOf(item), 1);
-                                            }
-                                        })
-                                    }
-                                    state.isLoading = false;
-                                })
-                            }
-                        })
-
-                        socket.on('update profil', (data) => {
-                            useFriendshipStore().$patch((state: any) => {
-                                if (state.friends.length > 0) {
-                                    state.friends.map((item: any) => {
-                                        if (item.user_id == data.data[0].id) {
-                                            item.picture_url = data.data[0].picture_url;
-                                        }
-                                        return item;
-                                    })
-                                }
-                                if (state.searchResults.length > 0) {
-                                    state.searchResults.map((item: any) => {
-                                        if (item.user_id == data.data[0].id) {
-                                            item.picture_url = data.data[0].picture_url;
-                                        }
-                                        return item;
-                                    })
-                                }
-                                if (state.invitSendedTo.length > 0) {
-                                    state.invitSendedTo.map((item: any) => {
-                                        if (item.id == data.data[0].id) {
-                                            item.picture_url = data.data[0].picture_url;
-                                        }
-                                        return item;
-                                    })
-                                }
-                                if (state.requests.length > 0) {
-                                    state.requests.map((item: any) => {
-                                        if (item.sender == data.data[0].id) {
-                                            item.picture_url = data.data[0].picture_url;
-                                        }
-                                        return item;
-                                    })
-                                }
-                            })
-                            useChatStore().$patch((state: any) => {
-                                if (state.users.length > 0) {
-                                    state.users.map((item: any) => {
-                                        if (item.user == data.data[0].id) {
-                                            item.picture = data.data[0].picture_url;
-                                        }
-                                        return item;
-                                    })
-                                }
-                            })
-                            usePublicationsStore().$patch((state: any) => {
-                                if (state.publications.length > 0) {
-                                    state.publications.map((item: any) => {
-                                        if (item.user_id == data.data[0].id) {
-                                            item.picture_url = data.data[0].picture_url;
-                                        }
-                                        if (item.comments.length > 0) {
-                                            item.comments.map((com: any) => {
-                                                console.log(com.user_id);
-                                                console.log(data.data[0].id);
-                                                if (com.user_id == data.data[0].id) {
-                                                    com.picture_url = data.data[0].picture_url;
-                                                }
-                                                return com;
-                                            })
-                                        }
-                                        return item;
-                                    })
-                                    state.publications.map((item: any) => {
-                                        return item;
-                                    })
-                                }
-                            })
-                        })
-                        socket.onAny((event, ...args) => {
-                            if (event == 'friendRequest sended'
-                                || event == 'friend accepted'
-                                || event == 'has commented'
-                                || event == 'new publication'
-                                || event == 'like'
-                                || event == 'private message') {
-                                useOtherStore().notificationPush(event, args);
+                            if (event == 'like' && args[0].publication.user_id == user.value.user_id
+                                || event == 'has commented' && args[0].comment.user_id == user.value.user_id
+                                || event == 'friendRequest sended' && args[0].request.recipient == user.value.user_id
+                                || event == 'friendRequest accepted' && args[0].response.data.results[0].user_id_sender == user.value.user_id
+                                || event == 'private message' && args[0].to == user.value.userID) {
+                                useOtherStore().notificationPush(event, args[0]);
                             }
                         });
                     })

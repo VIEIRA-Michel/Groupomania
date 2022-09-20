@@ -36,14 +36,14 @@ function addToFriends(user_id: any) {
             request_date: response.data.results[0].request_date,
             sender: response.data.results[0].user_id_sender,
         })
-        socket.emit('friendRequest sended', req.value, useAuthStore().$state.user);
+        socket.emit('friendRequest sended', { request: req.value, user: useAuthStore().$state.user });
     })
 }
 
 function replyToRequest(invitation: any, reply: string) {
     useFriendshipStore().acceptOrDeclineRequest(invitation, reply).then((response) => {
         if (reply == 'accepted') {
-            socket.emit('friendRequest accepted', response, useAuthStore().$state.user);
+            socket.emit('friendRequest accepted', { response, user: useAuthStore().$state.user });
         } else {
             socket.emit('friendRequest refused', { user: useAuthStore().$state.user.user_id, target: invitation.sender }, useAuthStore().$state.user);
         }
@@ -65,7 +65,6 @@ function cancelRequest(user_id: number) {
 }
 
 function cancelModal(user: any) {
-    console.log(user);
     modalRequest.value = true
     invitToBeCanceled.value = user;
 }

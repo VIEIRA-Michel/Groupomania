@@ -60,6 +60,7 @@ exports.getAllPublications = (req, res, next) => {
         }
     )
 };
+
 exports.getPublicationsOfOnePerson = (req, res, next) => {
     let sql = `SELECT * FROM publications WHERE user_id = ?;`;
     connection.query(
@@ -97,8 +98,6 @@ exports.createPublication = (req, res, next) => {
         user_id: req.user.userId,
         created_at: today,
     };
-    console.log('req file', req.file);
-    console.log('req body', req.body);
     if (req.file) {
         publication.picture = `${req.protocol}://${req.get('host')}/images/${req.file.filename}`;
     };
@@ -243,7 +242,6 @@ exports.likePublication = (req, res, next) => {
         }
     )
 }
-
 
 exports.getLikes = (req, res, next) => {
     let sql = `SELECT publication_user_liked.id as idLike, publication_user_liked.user_id as user_id_who_liked, publication_user_liked.publication_id as publication_id, users.id as user_id, users.picture_url, users.lastname as user_lastname, users.firstname as user_firstname, users.account_disabled as account_disabled FROM publication_user_liked LEFT JOIN users ON users.id = publication_user_liked.user_id AND users.account_disabled IS NULL WHERE publication_user_liked.publication_id = ?;`;

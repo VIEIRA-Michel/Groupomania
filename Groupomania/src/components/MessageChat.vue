@@ -8,7 +8,7 @@ import socket from "@/socket";
 
 const display = ref(false);
 const allow = ref(false);
-const user = computed(() => useAuthStore().user);
+const user = computed(() => useAuthStore().$state.user);
 const friendsOfUser = computed(() => useFriendshipStore().$state.friendsOfUser);
 const selectedUser = computed(() => useChatStore().$state.selectedUser);
 const newMessage = ref('');
@@ -53,7 +53,6 @@ function displayInformation() {
         })
     } else {
         useFriendshipStore().$patch((state) => {
-            // state.friendsOfUser = []
             state.friendsOfUser.splice(0, state.friendsOfUser.length)
         })
         display.value = false;
@@ -75,7 +74,8 @@ function send(event: any) {
                 id: response,
                 message: newMessage.value,
                 to: selectedUser.value.userID,
-            }, user.value);
+                user: user.value
+            });
             selectedUser.value.messages.push({
                 sender: user.value.user_id,
                 id: response,
