@@ -16,11 +16,10 @@ const numOfResults = computed(() => usePublicationsStore().$state.numOfResults);
 const notifications = computed(() => useOtherStore().$state.notifications);
 const page = computed(() => usePublicationsStore().$state.page);
 
-let notif = ref(notifications.value.length);
 let content = ref('');
 let picture = ref();
-let showNotification = ref<any>(null);
-let newNotification = ref(false);
+// let showNotification = ref<any>(null);
+// let newNotification = ref(false);
 
 let editPost = reactive({
     content: '',
@@ -97,14 +96,14 @@ function init() {
     usePublicationsStore().fetchAllPublication(page.value, false);
 };
 
-function toggleNotification() {
-    if (showNotification.value == null || showNotification.value == false) {
-        showNotification.value = true;
-        newNotification.value = false;
-    } else {
-        showNotification.value = false;
-    }
-}
+// function toggleNotification() {
+//     if (showNotification.value == null || showNotification.value == false) {
+//         showNotification.value = true;
+//         newNotification.value = false;
+//     } else {
+//         showNotification.value = false;
+//     }
+// }
 
 watch(page, (newPageValue: any) => {
     console.log('watch');
@@ -112,9 +111,9 @@ watch(page, (newPageValue: any) => {
     });
 })
 
-watch(useOtherStore().$state.notifications, (newNotif) => {
-    newNotification.value = true;
-})
+// watch(useOtherStore().$state.notifications, (newNotif) => {
+//     newNotification.value = true;
+// })
 
 init();
 
@@ -245,33 +244,6 @@ init();
                 </div>
                 <div v-if="page < numberOfPages" class="post__page__next">
                     <button @click="changePage('next')" type="button">Page Suivante</button>
-                </div>
-            </div>
-        </div>
-        <div @click="toggleNotification"
-            :class="[showNotification == null ? 'notification-alert' : showNotification == false ? 'notification-alert hidden' : 'notification-alert active']">
-            <div class="notification-alert__content">
-                <div class="notification-alert__content__icon">
-                    <fa icon="fa-solid fa-bell"
-                        :class="[ showNotification == null && newNotification || showNotification == false && newNotification ? 'active' : '']" />
-                </div>
-            </div>
-            <div v-if="showNotification" class="notification-alert__list">
-                <div v-for="notif in notifications" class="notification-alert__list__item">
-                    <!-- <p>{{ notification }}</p> -->
-                    <div v-if="showNotification" class="event">
-                        <div class="event__avatar">
-                            <img :src="notif.picture_url" alt="avatar" />
-                        </div>
-                        <div class="event__text">
-                            <div class="event__text__username">
-                                {{ notif.firstname + ' ' + notif.lastname }}
-                            </div>
-                            <div class="event__text__type">
-                                <p>{{ notif.type }}</p>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
@@ -739,80 +711,6 @@ init();
     &:nth-child(5) {
         -webkit-animation: slide-in-left 0.2s cubic-bezier(0.250, 0.460, 0.450, 0.940) 1.3s both;
         animation: slide-in-left 0.2s cubic-bezier(0.250, 0.460, 0.450, 0.940) 1.3s both;
-    }
-}
-
-.notification-alert {
-    position: fixed;
-    right: 10px;
-    top: 70px;
-    padding: 10px;
-    background: #FFFFFF;
-    color: #FD2D01;
-    border-radius: 5px;
-    cursor: pointer;
-    box-shadow: 0 0 8px #dbdbdb;
-    width: 13.99px;
-    height: 16.36px;
-
-
-    &.active {
-        width: 220px;
-        height: 400px;
-        transition: all 0.5s ease-in-out;
-    }
-
-    &.hidden {
-        width: 13.99px;
-        height: 16.36px;
-        transition: all 0.5s ease-in-out;
-    }
-
-    .event {
-        margin-top: 10px;
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-
-        &__avatar {
-            img {
-                width: 30px;
-                height: 30px;
-                object-fit: cover;
-                border-radius: 5px;
-            }
-        }
-
-        &__text {
-            margin-left: 10px;
-
-            &__username {
-                font-size: 12px;
-                font-weight: 400;
-            }
-
-            &__type {
-                font-size: 10px;
-                font-weight: 300;
-                color: #4E5166;
-            }
-        }
-    }
-
-    &__content {
-        &__icon {
-            svg {
-                &.active {
-                    -webkit-animation: wobble-hor-top 1.5s infinite both;
-                    animation: wobble-hor-top 1.5s infinite both;
-                }
-            }
-        }
-    }
-
-    &__list {
-        -webkit-animation: text-focus-in 0.4s cubic-bezier(0.550, 0.085, 0.680, 0.530) 0.4s both;
-        animation: text-focus-in 0.4s cubic-bezier(0.550, 0.085, 0.680, 0.530) 0.4s both;
     }
 }
 </style>
