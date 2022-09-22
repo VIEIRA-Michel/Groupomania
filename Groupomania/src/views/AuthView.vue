@@ -186,8 +186,8 @@ async function register() {
                 h1 {
                     font-size: 30px;
                     font-weight: bold;
-                    -webkit-animation: focus-in-expand 2.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) 1s both;
-                    animation: focus-in-expand 2.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) 1s both;
+                    -webkit-animation: focus-in-expand 0.8s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+                    animation: focus-in-expand 0.8s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
                 }
             }
 
@@ -195,8 +195,8 @@ async function register() {
                 text-align: center;
 
                 p {
-                    -webkit-animation: text-focus-in 3s cubic-bezier(0.215, 0.610, 0.355, 1.000) 4s both;
-                    animation: text-focus-in 3s cubic-bezier(0.215, 0.610, 0.355, 1.000) 4s both;
+                    -webkit-animation: text-focus-in 0.8s cubic-bezier(0.215, 0.610, 0.355, 1.000) 1.6s both;
+                    animation: text-focus-in 0.8s cubic-bezier(0.215, 0.610, 0.355, 1.000) 1.6s both;
                 }
             }
         }
@@ -206,8 +206,8 @@ async function register() {
             flex-direction: column;
             align-items: center;
             padding: 20px;
-            -webkit-animation: slide-out-blurred-bottom 2.5s cubic-bezier(0.755, 0.050, 0.855, 0.060) 2.5s reverse both;
-            animation: slide-out-blurred-bottom 2.5s cubic-bezier(0.755, 0.050, 0.855, 0.060) 2.5s reverse both;
+            -webkit-animation: slide-out-blurred-bottom 0.8s cubic-bezier(0.755, 0.050, 0.855, 0.060) 0.8s reverse both;
+            animation: slide-out-blurred-bottom 0.8s cubic-bezier(0.755, 0.050, 0.855, 0.060) 0.8s reverse both;
 
             @media only screen and (min-width: 769px) {
                 position: relative;
@@ -219,8 +219,8 @@ async function register() {
                 background: #FFFFFF;
                 border: 1px solid #FD2D01;
                 padding: 20px;
-                -webkit-animation: focus-in-expand 1s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
-                animation: focus-in-expand 1s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+                -webkit-animation: focus-in-expand 0.4s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+                animation: focus-in-expand 0.4s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
 
 
 
@@ -238,8 +238,8 @@ async function register() {
 
                     .invalidInput {
                         border: #FD2D01 2px ridge;
-                        -webkit-animation: shake-horizontal 0.8s cubic-bezier(0.455, 0.030, 0.515, 0.955) both;
-                        animation: shake-horizontal 0.8s cubic-bezier(0.455, 0.030, 0.515, 0.955) both;
+                        -webkit-animation: shake-horizontal 0.4s cubic-bezier(0.455, 0.030, 0.515, 0.955) both;
+                        animation: shake-horizontal 0.4s cubic-bezier(0.455, 0.030, 0.515, 0.955) both;
                     }
 
                     .default {

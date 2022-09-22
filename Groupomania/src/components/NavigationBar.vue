@@ -9,7 +9,10 @@ const burgerMenu = computed(() => useOtherStore().$state.burgerMenu);
 const requests = computed(() => useFriendshipStore().$state.requests);
 const user = computed(() => useAuthStore().$state.user);
 const users = computed(() => useChatStore().$state.users);
+const isConnected = computed(() => useAuthStore().$state.isConnected);
 const notifications = computed(() => useOtherStore().$state.notifications);
+const userPicture = JSON.parse(localStorage.getItem('user')).picture_url;
+// console.log(user);
 let showNotification = ref<any>(null);
 let newNotification = ref(false);
 let showProfileMenu = ref(false);
@@ -42,7 +45,9 @@ function toggleProfileMenu() {
 }
 
 watch(useOtherStore().$state.notifications, (newNotif) => {
-    newNotification.value = true;
+    if (showNotification.value == false || showNotification.value == null) {
+        newNotification.value = true;
+    }
 })
 
 </script>
@@ -99,10 +104,15 @@ watch(useOtherStore().$state.notifications, (newNotif) => {
                                 </div>
                             </div>
                         </div>
+                        <div v-if="showNotification && notifications.length <=0" class="notification-alert__text">
+                            <div class="event__text">
+                                <p>Aucune notification</p>
+                            </div>
+                        </div>
                     </div>
                 </nav>
                 <div @click.stop="toggleProfileMenu" class="profile">
-                    <img :src="user.picture_url" alt="avatar" />
+                    <img :src="userPicture" alt="avatar" />
                     <div :class="[ showProfileMenu ? 'profile__menu active' : 'profile__menu' ]">
                         <div v-if="showProfileMenu" class="profile__menu__list">
                             <div class="profile__menu__list__item">
@@ -111,8 +121,8 @@ watch(useOtherStore().$state.notifications, (newNotif) => {
                                     Modifier mon profil
                                 </router-link>
                             </div>
-                            <div class="profile__menu__list__item">
-                                <a @click="emit('logout')">
+                            <div @click="emit('logout')" class="profile__menu__list__item">
+                                <a>
                                     <fa icon="fa-right-from-bracket" />
                                     Se deconnecter
                                 </a>
@@ -122,54 +132,6 @@ watch(useOtherStore().$state.notifications, (newNotif) => {
                 </div>
             </div>
         </div>
-        <div v-if="props.isConnected" class="burger">
-            <button type="button" @click="useOtherStore().toggleBurgerMenu" className="burger__button">
-                <fa icon="fa-solid fa-bars" />
-            </button>
-        </div>
-        <div
-            :class="[burgerMenu == null ? 'burger__menu disabled' : !burgerMenu ? 'burger__menu hidden' : 'burger__menu']">
-            <div class="burger__menu__item" @click="useOtherStore().toggleBurgerMenu">
-                <router-link to="/app/home">
-                    <div class="burger__menu__item__navigate">
-                        <fa icon="home" />
-                        <span>Accueil</span>
-                    </div>
-                </router-link>
-            </div>
-            <div class="burger__menu__item" @click="useOtherStore().toggleBurgerMenu">
-                <router-link to="/app/friends">
-                    <div class="burger__menu__item__navigate">
-                        <fa icon="user-group" />
-                        <span>Amis</span>
-                    </div>
-                </router-link>
-            </div>
-            <div class="burger__menu__item" @click="useOtherStore().toggleBurgerMenu">
-                <router-link to="/app/chat">
-                    <div class="burger__menu__item__navigate">
-                        <fa icon="fa-solid fa-comments" />
-                        <span>Messagerie</span>
-                    </div>
-                </router-link>
-            </div>
-            <div class="burger__menu__item" @click="useOtherStore().toggleBurgerMenu">
-                <router-link to="/app/profil">
-                    <div class="burger__menu__item__navigate">
-                        <fa icon="circle-user" />
-                        <span>Profil</span>
-                    </div>
-                </router-link>
-            </div>
-            <div class="burger__menu__item" @click="useOtherStore().toggleBurgerMenu">
-                <a @click="emit('logout')">
-                    <div class="burger__menu__item__navigate">
-                        <fa icon="fa-right-from-bracket" />
-                        <span>Se déconnecter</span>
-                    </div>
-                </a>
-            </div>
-        </div>
     </header>
 </template>
 <style scoped lang="scss">
@@ -177,6 +139,10 @@ watch(useOtherStore().$state.notifications, (newNotif) => {
 
 * {
     font-family: 'Lato', sans-serif;
+}
+
+html {
+    overflow-y: hidden;
 }
 
 header {
@@ -204,9 +170,37 @@ header {
         width: 100%;
         justify-content: space-between;
 
-        @media only screen and (max-width: 768px) {
-            display: none;
+        // @media only screen and (max-width: 768px) {
+        //     display: none;
+        // }
+
+        .logo {
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            position: relative;
+
+            a {
+                text-decoration: none;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            span {
+                font-size: 25px;
+                font-weight: bold;
+                color: #FD2D01;
+                position: absolute;
+                background: #FFFFFF;
+                margin-bottom: 4px;
+            }
+
+            @media only screen and (max-width: 687px) {
+                display: none;
+            }
         }
+
 
         a {
             text-decoration: none;
@@ -258,6 +252,10 @@ header {
             flex-direction: row;
             justify-content: space-around;
 
+            @media only screen and (max-width: 687px) {
+                position: initial;
+            }
+
             svg {
                 padding: 10px;
                 border-radius: 5px;
@@ -268,7 +266,13 @@ header {
             display: flex;
             flex-direction: row;
             margin-right: 20px;
-            align-items: center;
+            padding-top: 3px;
+            // align-items: center;
+
+            @media only screen and (min-width: 687px) and (max-width: 991px) {
+                position: absolute;
+                right: 5px;
+            }
 
             svg {
                 border-radius: 50%;
@@ -318,7 +322,7 @@ header {
                     width: 0px;
                     height: 0px;
                     position: absolute;
-                    top: 55px;
+                    top: 54px;
                     right: 0px;
 
                     &__item {
@@ -375,6 +379,12 @@ header {
                         transition: 0.4s all;
                     }
                 }
+
+                &__text {
+                    display: flex;
+                    justify-content: center;
+                    margin-top: 10px;
+                }
             }
 
             .profile {
@@ -400,13 +410,14 @@ header {
                     top: 55px;
                     right: 0px;
                     width: 0px;
-                    background: #ffffff;
-                    border: 1px solid #dbdbdb;
+                    border: 1px solid transparent;
 
                     &.active {
                         border-radius: 5px;
                         width: 250px;
                         height: 80px;
+                        background: #ffffff;
+                        border: 1px solid #dbdbdb;
                         transition: 0.3s all;
                     }
 
@@ -528,28 +539,6 @@ header {
     cursor: pointer;
 }
 
-.logo {
-    z-index: 10;
-    display: flex;
-    align-items: center;
-    position: relative;
-
-    a {
-        text-decoration: none;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    span {
-        font-size: 25px;
-        font-weight: bold;
-        color: #FD2D01;
-        position: absolute;
-        background: #FFFFFF;
-        margin-bottom: 4px;
-    }
-}
 
 img {
     width: 220px;
@@ -571,11 +560,6 @@ img {
     color: #000;
     padding: 10px;
     cursor: pointer;
-}
-
-.logo {
-    display: flex;
-    align-items: center;
 }
 
 

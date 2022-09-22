@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, onBeforeMount } from 'vue';
+import { computed, ref } from 'vue';
 import UserChat from '../components/UserChat.vue';
 import MessageChat from "../components/MessageChat.vue";
 import { useAuthStore } from '../shared/stores/authStore';
@@ -55,19 +55,6 @@ function messageRead() {
     })
 }
 
-onBeforeMount(() => {
-    socket.on('typing', (data) => {
-        useChatStore().$patch((state) => {
-            state.typing = data;
-        });
-    });
-    socket.on('stoptyping', (data) => {
-        useChatStore().$patch((state) => {
-            state.typing = false;
-        });
-    });
-});
-
 </script>
 <template>
     <div class="container">
@@ -119,8 +106,8 @@ onBeforeMount(() => {
         margin-right: 10px;
         background-color: floralwhite;
         z-index: 2;
-        -webkit-animation: slide-in-left 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
-        animation: slide-in-left 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+        -webkit-animation: slide-in-left-chat 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+        animation: slide-in-left-chat 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
 
         &__title {
             font-weight: bold;
@@ -155,8 +142,8 @@ onBeforeMount(() => {
         }
 
         &.active {
-            -webkit-animation: slide-in-right 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
-            animation: slide-in-right 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+            -webkit-animation: slide-in-right-chat 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+            animation: slide-in-right-chat 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
 
             @media only screen and (max-width: 768px) {
                 display: none;
@@ -182,15 +169,15 @@ onBeforeMount(() => {
         border-radius: 5px;
         margin-right: 10px;
         z-index: 1;
-        -webkit-animation: slide-in-left 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.3s both;
-        animation: slide-in-left 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.3s both;
+        -webkit-animation: slide-in-left-chat 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.3s both;
+        animation: slide-in-left-chat 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.3s both;
 
         @media only screen and (max-width: 768px) {
             width: 90%;
             margin-right: 0;
             z-index: 0;
-            -webkit-animation: slide-in-left 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
-            animation: slide-in-left 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+            -webkit-animation: slide-in-left-chat 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+            animation: slide-in-left-chat 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
         }
 
         &.active {

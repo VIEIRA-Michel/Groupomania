@@ -14,10 +14,10 @@ const isConnected = computed(() => useAuthStore().isConnected);
 const users = computed(() => useChatStore().$state.users);
 const loading = computed(() => useOtherStore().$state.loading);
 
-watch(useFriendshipStore().$state.friends, (newValue: any) => {
-    useChatStore().getUsersConnected().then((response: any) => {
-    });
-});
+// watch(useFriendshipStore().$state.friends, (newValue: any) => {
+//     useChatStore().getUsersConnected().then((response: any) => {
+//     });
+// });
 
 onBeforeMount(() => {
     if (isConnected.value) {

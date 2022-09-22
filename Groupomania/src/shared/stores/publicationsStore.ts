@@ -193,32 +193,46 @@ export const usePublicationsStore = defineStore({
                 })
             })
         },
-        activateEditMode: (publication_id: number) => {
-            usePublicationsStore().$patch((state: any) => {
-                state.publications.map((publication: any) => {
-                    if (publication.publication_id == publication_id) {
-                        publication.editMode = true;
-                    }
-                })
-            })
-        },
-        updatePublication: (id: number, update: any) => {
-            let formData = new FormData();
-            update.content ? formData.append('content', update.content) : "";
-            update.picture ? formData.append('picture', update.picture) : "";
-            editPublication(id, formData).then((response: any) => {
+        activateEditMode: (publication_id: number, operation?: string) => {
+            return new Promise<void>((resolve, reject) => {
                 usePublicationsStore().$patch((state: any) => {
-                    state.publications.map((item: any) => {
-                        if (item.publication_id == id) {
-                            item.content = response.data.data[0].content;
-                            item.picture = response.data.data[0].picture;
-                            item.editMode = false;
+                    state.publications.map((publication: any) => {
+                        if (publication.publication_id == publication_id) {
+                            publication.editMode = true;
+                            if (operation == 'deactivate') {
+                                publication.editMode = false;
+                            }
+                        } else {
+                            publication.editMode = false;
                         }
                     })
                 })
-                socket.emit('edit publication', response.data.data[0], useAuthStore().$state.user);
-            }).catch(error => {
-                console.log(error);
+                resolve();
+            })
+        },
+        updatePublication: (id: number, update: any) => {
+            return new Promise((resolve, reject) => {
+                let formData = new FormData();
+                console.log(update);
+                console.log(typeof (update.picture) == 'object');
+                update.content ? formData.append('content', update.content) : "";
+                typeof (update.picture) == 'object' ? formData.append('picture', update.picture) : "";
+                editPublication(id, formData).then((response: any) => {
+                    usePublicationsStore().$patch((state: any) => {
+                        state.publications.map((item: any) => {
+                            if (item.publication_id == id) {
+                                item.content = response.data.data[0].content;
+                                item.picture = response.data.data[0].picture;
+                                item.editMode = false;
+                            }
+                        })
+                    })
+                    resolve(response);
+                    socket.emit('edit publication', response.data.data[0], useAuthStore().$state.user);
+                }).catch(error => {
+                    console.log(error);
+                    reject(error)
+                })
             })
         },
         deletePublication: (id: number) => {

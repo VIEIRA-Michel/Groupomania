@@ -2,7 +2,6 @@ import { defineStore } from 'pinia';
 import { useAuthStore } from './authStore';
 
 export interface otherStore {
-    burgerMenu: boolean | null;
     information: boolean;
     loading: boolean;
     notifications: []
@@ -11,24 +10,12 @@ export interface otherStore {
 export const useOtherStore = defineStore({
     id: "otherStore",
     state: (): otherStore => ({
-        burgerMenu: null,
         information: false,
-        loading: true,
+        loading: true,  
         notifications: []
     }),
     getters: {},
     actions: {
-        toggleBurgerMenu: (): void => {
-            if (useOtherStore().$state.burgerMenu == null) {
-                useOtherStore().$patch({
-                    burgerMenu: true,
-                })
-            } else {
-                useOtherStore().$patch({
-                    burgerMenu: !useOtherStore().$state.burgerMenu
-                })
-            }
-        },
         loadedResources: (): void => {
             useOtherStore().$patch({
                 loading: false
