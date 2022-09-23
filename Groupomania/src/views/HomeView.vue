@@ -14,23 +14,27 @@ const numberOfPages = computed(() => usePublicationsStore().$state.numberOfPages
 const numOfResults = computed(() => usePublicationsStore().$state.numOfResults);
 const page = computed(() => usePublicationsStore().$state.page);
 
+// create
 let selectedFile: any = ref<any>();
-let selectedFileOnEdit = ref<any>();
-let content = ref<string>('');
-// let picture = ref<any>();
-let pictureHasHidden = ref(false);
-let publicationIdToEdit = ref<string>('');
-let buttonDisabled = ref(false);
 let displayPicture = ref(false);
-
+let content = ref<string>('');
 let previewPicture = reactive({
     picture: ''
 })
+
+// edit
+let inputFileEdit = ref<any>();
+let tmpPicture = ref<string>('');
+let pictureHasHidden = ref(false);
+let publicationIdToEdit = ref<string>('');
+let buttonDisabled = ref(false);
+
+// delete
+let modalRequest = ref(false);
+let publicationIdToDelete = ref();
+
 let editPost = reactive({
     content: '',
-    picture: ''
-});
-let previewOnEdit = reactive({
     picture: ''
 });
 
@@ -78,41 +82,43 @@ function activeEditMode(publication: any) {
         pictureHasHidden.value = false;
         publicationIdToEdit.value = publication.publication_id.toString();
         editPost.content = publication.content;
+        if (publication.picture) {
+            tmpPicture.value = publication.picture;
+        }
     });
 }
-
-function hideImageOnPost(publication_id: number) {
-    if (selectedFileOnEdit.value) {
-        removePicture('edit');
+function editPickFile(event: any, publication: any) {
+    pictureHasHidden.value = false;
+    usePublicationsStore().previewMode(publication.publication_id, event.target.files[0]).then((response: any) => {
+        inputFileEdit.value = document.getElementById("file-edit").value;
+        publication.previewOnEdit ? document.getElementById(`${publication.publication_id.toString()}`).src = URL.createObjectURL(publication.previewOnEdit) : "";
+    })
+}
+function hideImageOnPost(publication: any) {
+    tmpPicture.value = '';
+    if (inputFileEdit.value) {
+        removePicture('edit', publication.publication_id);
     }
-    let id = publication_id.toString();
-    document.getElementById(`${id}`).style.display = 'none';
+    if (publication.previewOnEdit) {
+        usePublicationsStore().resetPreview(publication.publication_id);
+    }
     pictureHasHidden.value = true;
 }
-
-function editPickFile(event: any, publication: any) {
-    document.getElementById(`${publication.publication_id}`).style.display = 'block';
-    previewOnEdit.picture = event.target.files[0];
-    selectedFileOnEdit.value = document.getElementById("file-edit").value;
-    previewOnEdit.picture ? document.getElementById(`${publication.publication_id.toString()}`).src = URL.createObjectURL(previewOnEdit.picture) : "";
-}
-
-function removePicture(option: string) {
+function removePicture(option: string, publication_id?: number) {
     if (option == 'create') {
         document.getElementById("file").value = "";
         previewPicture.picture = null;
         selectedFile.value = null;
         displayPicture.value = false;
     } else if (option == 'edit') {
-        document.getElementById("file-edit").value = "";
-        selectedFileOnEdit.value = null;
-        editPost.picture = '';
-        previewOnEdit.picture = '';
-        if (pictureHasHidden.value) {
-            document.getElementById(`${publicationIdToEdit.value}`).style.display = 'block';
-            pictureHasHidden.value = false;
+        usePublicationsStore().resetPreview(publication_id!).then((response: any) => {
+            document.getElementById("file-edit").value = "";
+            inputFileEdit.value = null;
             editPost.picture = null;
-        }
+            if (pictureHasHidden.value) {
+                pictureHasHidden.value = false;
+            }
+        })
     }
 
 }
@@ -123,29 +129,47 @@ function cancelModification(publication: any) {
             document.getElementById(`${publicationIdToEdit.value}`).style.display = 'block';
             pictureHasHidden.value = false;
         }
-        if (previewOnEdit.picture) {
-            previewOnEdit.picture ? document.getElementById(`${publication.publication_id.toString()}`).src = publication.picture : "";
+        if (publication.previewOnEdit) {
+            usePublicationsStore().resetPreview(publication.publication_id).then((response: any) => {
+                if (publication.picture) {
+                    document.getElementById(`${publication.publication_id.toString()}`).src = publication.picture;
+                }
+            })
         }
-        selectedFileOnEdit.value = null;
+        inputFileEdit.value = null;
     })
 }
 
-function updatePublication(publication_id: number, update: any) {
-    if (previewOnEdit.picture) {
-        update.picture = previewOnEdit.picture;
+function updatePublication(publication: any, update: any) {
+    if (pictureHasHidden.value == true) {
+        console.log('picture has hidden true ? ')
+        editPost.picture = null;
+    } else if (publication.previewOnEdit !== null) {
+        console.log('publication preview on edit différent de nul ??')
+        update.picture = publication.previewOnEdit;
+    } else if (!pictureHasHidden.value && publication.previewOnEdit == null && publication.picture) {
+        console.log('publication preview on edit est nul et publication picture existe ?')
+        update.picture = publication.picture;
     }
     if (update.content || update.picture) {
-        usePublicationsStore().updatePublication(publication_id, update).then((response: any) => {
-            if (pictureHasHidden.value == true) {
-                document.getElementById(`${publicationIdToEdit.value}`).style.display = 'block';
-                pictureHasHidden.value = false;
-            }
-            selectedFileOnEdit.value = null;
+        usePublicationsStore().updatePublication(publication.publication_id, update).then((response: any) => {
+            usePublicationsStore().resetPreview(publication.publication_id).then((response2: any) => {
+                console.log(response)
+                // if (response.data.data[0].picture) {
+                //     document.getElementById(`${publicationIdToEdit.value}`).style.display = 'block';
+                // }
+                inputFileEdit.value = null;
+            })
         })
     }
 }
 
+function activateModal(publication_id: number) {
+    modalRequest.value = true;
+    publicationIdToDelete.value = publication_id;
+}
 function deletePublication(id: number) {
+    modalRequest.value = false;
     if (page.value < numberOfPages.value && usePublicationsStore().$state.cache.length == 0 && publications.value.length < numOfResults.value) {
         usePublicationsStore().fetchAllPublication(page.value + 1, true).then((response: any) => {
             usePublicationsStore().deletePublication(id).then((response: any) => {
@@ -194,6 +218,14 @@ watchEffect(() => {
         buttonDisabled.value = false;
     }
 });
+
+watch(modalRequest, (value: boolean) => {
+    if (value == true) {
+        document.querySelector('body')!.style.overflowY = 'hidden';
+    } else if (value == false) {
+        document.querySelector('body')!.style.overflowY = 'scroll';
+    }
+})
 
 init();
 
@@ -256,7 +288,15 @@ init();
                                             }}</span>
                                         </div>
                                         <div class="post__top__details__info__date">
-                                            <span>{{ publication.publication_date }}</span>
+                                            <div>{{ publication.publication_date }}
+                                                <span v-if="publication.publication_edit"
+                                                    class="post__top__details__info__date__edit">
+                                                    <fa icon="fa-regular fa-pen-to-square" />
+                                                    Modifiée -
+                                                    {{ publication.publication_edit
+                                                    }}
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -272,9 +312,34 @@ init();
                                                     icon="fa-solid fa-pen-to-square" />
                                             </div>
                                             <div class="post__top__menu__content__item">
-                                                <fa @click="deletePublication(publication.publication_id)"
+                                                <fa @click="activateModal(publication.publication_id)"
                                                     icon="fa-solid fa-trash-can" />
                                             </div>
+                                            <Teleport to="body">
+                                                <div v-if="modalRequest" @click="modalRequest = false"
+                                                    class="calc d-flex flex-row justify-content-center align-items-center">
+                                                    <div @click.stop class="modal-container">
+
+                                                        <div class="modal-container__content">
+                                                            <div class="modal-container__content__header">
+                                                                <div class="modal-container__content__header__title">
+                                                                    Êtes-vous certains de vouloir supprimer cette
+                                                                    publication ?
+                                                                </div>
+                                                            </div>
+                                                            <div class="modal-container__content__footer">
+                                                                <button @click="modalRequest = false" type="button"
+                                                                    class="btn btn-secondary"
+                                                                    data-dismiss="modal">Annuler</button>
+                                                                <button
+                                                                    @click="deletePublication(publicationIdToDelete)"
+                                                                    type="button"
+                                                                    class="btn btn-primary">Supprimer</button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </Teleport>
                                         </div>
                                     </div>
                                 </div>
@@ -288,10 +353,6 @@ init();
                                         <input type="file" ref="fileInput" accept="image/*"
                                             @change="editPickFile($event, publication)" id="file-edit"
                                             class="create_post__content__details__file">
-                                        <!-- <button v-if="selectedFileOnEdit" @click="removePicture('edit')" type="button"
-                                            class="create_post__content__details__button__cancel post-edit">
-                                            <fa icon="fa-solid fa-xmark" />
-                                        </button> -->
                                         <div @click="chooseFile('edit')"
                                             class="create_post__content__details__button__choose post-edit">Choisir un
                                             fichier</div>
@@ -300,11 +361,13 @@ init();
                                         <p v-if="publication.content">{{ publication.content }}</p>
                                     </template>
                                 </div>
-                                <img v-if="publication.picture" :src="publication.picture" alt=""
+                                <img :src="publication.picture" alt=""
+                                    :class="[ publication.picture && publication.editMode == false 
+                                    || publication.editMode == true && publication.previewOnEdit 
+                                    || publication.editMode == true && tmpPicture ? 'post__content__picture' : 'post__content__picture hidden']"
                                     :id="publication.publication_id.toString()">
-                                <button @click="hideImageOnPost(publication.publication_id)"
-                                    class="post__content__deleteButton"
-                                    v-if="publication.editMode && publication.picture && !pictureHasHidden">
+                                <button @click="hideImageOnPost(publication)" class="post__content__deleteButton"
+                                    v-if="publication.editMode && tmpPicture && !pictureHasHidden || publication.editMode && publication.previewOnEdit && !pictureHasHidden">
                                     <fa icon="fa-solid fa-trash-can" />
                                 </button>
                             </div>
@@ -312,7 +375,7 @@ init();
                         <div v-if="publication.editMode" class="post__button">
                             <div class="post__button__list">
                                 <button @click="cancelModification(publication)" class="cancel">Annuler</button>
-                                <button @click="updatePublication(publication.publication_id, editPost)"
+                                <button @click="updatePublication(publication, editPost)"
                                     :class="[buttonDisabled ? 'submit disabled' : 'submit']">Sauvegarder</button>
                             </div>
                         </div>
@@ -649,6 +712,12 @@ init();
                 &__date {
                     font-size: 12px;
                     color: #FD2D01;
+
+                    &__edit {
+                        margin-left: 10px;
+                        color: #4E5166;
+                        font-style: italic;
+                    }
                 }
             }
 
@@ -663,6 +732,7 @@ init();
 
             &__button {
                 position: relative;
+                height: 10px;
 
                 svg {
                     cursor: pointer;
@@ -679,7 +749,6 @@ init();
                 animation: scale-in-ver-top 0.2s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
                 border-radius: 5px;
                 background: #dbdbdb;
-                border: 1px solid #4E5166;
 
                 &__diamond {
                     transform: translate(-10px, -7px) rotate(-45deg);
@@ -687,19 +756,25 @@ init();
                     height: 10px;
                     background: #dbdbdb;
                     position: absolute;
-                    right: 0px;
-                    top: 1px;
-                    border-top: 1px solid #4E5166;
-                    border-right: 1px solid #4E5166;
+                    right: 2px;
+                    top: 2px;
                 }
 
                 &__item {
                     display: flex;
                     justify-content: center;
-                    margin: 10px;
+                    margin: 5px;
+                    z-index: 1;
 
                     svg {
                         cursor: pointer;
+                        padding: 5px;
+                    }
+
+                    &:hover {
+                        background: #f5f5f5;
+                        transition: 0.3s all;
+                        border-radius: 5px;
                     }
                 }
             }
@@ -750,7 +825,7 @@ init();
             }
         }
 
-        img {
+        &__picture {
             width: 100%;
             height: 100%;
             max-height: 353px;
@@ -758,7 +833,21 @@ init();
             border-top: 1px solid #dbdbdb;
             border-bottom: 1px solid #dbdbdb;
             background: #FFFFFF;
+
+            &.hidden {
+                display: none;
+            }
         }
+
+        // img {
+        //     width: 100%;
+        //     height: 100%;
+        //     max-height: 353px;
+        //     object-fit: cover;
+        //     border-top: 1px solid #dbdbdb;
+        //     border-bottom: 1px solid #dbdbdb;
+        //     background: #FFFFFF;
+        // }
 
         &__details {
 
@@ -949,6 +1038,66 @@ init();
 
         button {
             @include button-primary;
+        }
+    }
+}
+
+.calc {
+    position: fixed;
+    top: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-container {
+    background-color: #FFF;
+    color: #4E5166;
+    padding: 20px;
+    border-radius: 5px;
+    width: 300px;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: flex-start;
+    backdrop-filter: blur(2px);
+    transition: all 0.3s ease-in-out;
+    transform: translateY(-100px);
+    transform-origin: center;
+
+    &__content {
+        width: 100%;
+
+        &__header {
+
+            &__title {
+                margin-bottom: 20px;
+                margin-top: 0;
+
+                span {
+                    color: $color-primary;
+                    font-weight: 600;
+                }
+            }
+        }
+
+        &__footer {
+            display: flex;
+            justify-content: flex-end;
+
+            .btn.btn-primary {
+                @include button-primary;
+                margin-left: 10px;
+            }
+
+            .btn.btn-secondary {
+                @include button-secondary;
+            }
         }
     }
 }

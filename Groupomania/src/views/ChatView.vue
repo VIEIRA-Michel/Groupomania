@@ -60,7 +60,7 @@ function messageRead() {
     <div class="container">
         <div :class="[selectedUser ? 'container-left active' : 'container-left']">
             <div class="container-left__title">
-                <h1>Amis en ligne ({{ usersOnline.length }})</h1>
+                Amis en ligne ({{ usersOnline.length }})
             </div>
             <div class="container-left__list">
                 <UserChat v-if="users.length > 0" v-for="utilisateur in users" :key="utilisateur.userID"

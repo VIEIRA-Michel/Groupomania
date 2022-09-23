@@ -75,7 +75,8 @@ export const usePublicationsStore = defineStore({
                             email: useAuthStore().$state.user.email,
                             picture_url: useAuthStore().$state.user.picture_url,
                             limit: 5,
-                            from: 0
+                            from: 0,
+                            previewOnEdit: null,
                         });
                         usePublicationsStore().$patch((state: any) => {
                             if (state.publications.length == 5) {
@@ -113,6 +114,17 @@ export const usePublicationsStore = defineStore({
                         response.Publications.map((publication: any) => {
                             usePublicationsStore().getLikes(publication.publication_id);
                             useCommentsStore().getnumberOfComments(publication.publication_id);
+                            let publicationEdit: any = null;
+                            if (publication.updated_at) {
+                                publicationEdit = moment(publication.updated_at).format('DD/MM/YYYY à HH:mm').split(" ");
+                                if (publicationEdit[0] == newDateSplit[0]) {
+                                    publicationEdit[0] = "Aujourd'hui";
+                                } else if (parseInt(publicationEdit[0]) == parseInt(newDateSplit[0]) - 1) {
+                                    publicationEdit[0] = "Hier";
+                                } else if (parseInt(publicationEdit[0]) == parseInt(newDateSplit[0]) - 2) {
+                                    publicationEdit[0] = "Avant-hier";
+                                }
+                            }
                             let publicationDate = moment(publication.publication_created).format('DD/MM/YYYY à HH:mm').split(" ");
                             if (publicationDate[0] == newDateSplit[0]) {
                                 publicationDate[0] = "Aujourd'hui";
@@ -132,8 +144,10 @@ export const usePublicationsStore = defineStore({
                                         comments: [],
                                         numberOfComments: 0,
                                         publication_date: publicationDate.join(" "),
+                                        publication_edit: publicationEdit ? publicationEdit.join(" ") : null,
                                         limit: 5,
                                         from: 0,
+                                        previewOnEdit: null,
                                     })
                                 })
                             } else {
@@ -147,8 +161,10 @@ export const usePublicationsStore = defineStore({
                                         comments: [],
                                         numberOfComments: 0,
                                         publication_date: publicationDate.join(" "),
+                                        publication_edit: publicationEdit.join(" "),
                                         limit: 5,
                                         from: 0,
+                                        previewOnEdit: null,
                                     });
                                     state.isLoading = false;
                                 })
@@ -197,13 +213,36 @@ export const usePublicationsStore = defineStore({
             return new Promise<void>((resolve, reject) => {
                 usePublicationsStore().$patch((state: any) => {
                     state.publications.map((publication: any) => {
-                        if (publication.publication_id == publication_id) {
+                        if (publication.publication_id == publication_id && operation == 'deactivate') {
+                            publication.editMode = false;
+                        } else if (publication.publication_id == publication_id) {
                             publication.editMode = true;
-                            if (operation == 'deactivate') {
-                                publication.editMode = false;
-                            }
                         } else {
                             publication.editMode = false;
+                        }
+                    })
+                })
+                resolve();
+            })
+        },
+        previewMode: (publication_id: number, file: Blob) => {
+            return new Promise<void>((resolve, reject) => {
+                usePublicationsStore().$patch((state: any) => {
+                    state.publications.map((publication: any) => {
+                        if (publication.publication_id == publication_id) {
+                            publication.previewOnEdit = file;
+                        }
+                    })
+                })
+                resolve();
+            })
+        },
+        resetPreview: (publication_id: number) => {
+            return new Promise<void>((resolve, reject) => {
+                usePublicationsStore().$patch((state: any) => {
+                    state.publications.map((publication: any) => {
+                        if (publication.publication_id == publication_id) {
+                            publication.previewOnEdit = null;
                         }
                     })
                 })
@@ -213,17 +252,29 @@ export const usePublicationsStore = defineStore({
         updatePublication: (id: number, update: any) => {
             return new Promise((resolve, reject) => {
                 let formData = new FormData();
-                console.log(update);
-                console.log(typeof (update.picture) == 'object');
+                let date = new Date();
+                let newDate = moment(date).format('DD/MM/YYYY HH:mm:ss');
+                let newDateSplit = newDate.split(" ");
                 update.content ? formData.append('content', update.content) : "";
-                typeof (update.picture) == 'object' ? formData.append('picture', update.picture) : "";
+                update.picture ? formData.append('picture', update.picture) : "";
+                formData.get('picture');
                 editPublication(id, formData).then((response: any) => {
                     usePublicationsStore().$patch((state: any) => {
                         state.publications.map((item: any) => {
                             if (item.publication_id == id) {
+                                let publicationEdit: any = null;
+                                publicationEdit = moment(date).format('DD/MM/YYYY à HH:mm').split(" ");
+                                if (publicationEdit[0] == newDateSplit[0]) {
+                                    publicationEdit[0] = "Aujourd'hui";
+                                } else if (parseInt(publicationEdit[0]) == parseInt(newDateSplit[0]) - 1) {
+                                    publicationEdit[0] = "Hier";
+                                } else if (parseInt(publicationEdit[0]) == parseInt(newDateSplit[0]) - 2) {
+                                    publicationEdit[0] = "Avant-hier";
+                                }
                                 item.content = response.data.data[0].content;
                                 item.picture = response.data.data[0].picture;
                                 item.editMode = false;
+                                item.publication_edit = publicationEdit.join(" ");
                             }
                         })
                     })
@@ -248,7 +299,9 @@ export const usePublicationsStore = defineStore({
                         if (state.numberOfPages != 1 && state.publications.length == 0) {
                             state.page -= 1;
                         } else if (state.numberOfPages != 1 && state.publications.length != 5) {
-                            state.publications.push(state.cache.shift());
+                            if (state.cache.length > 0) {
+                                state.publications.push(state.cache.shift());
+                            }
                             state.numberOfPages = Math.floor(state.numOfResults / 5 - 0.2) + 1;
                         };
                     })
@@ -460,6 +513,6 @@ export const usePublicationsStore = defineStore({
                     }
                 })
             })
-        }
+        },
     }
 });

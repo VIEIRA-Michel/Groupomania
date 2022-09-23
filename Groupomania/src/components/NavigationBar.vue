@@ -11,8 +11,7 @@ const user = computed(() => useAuthStore().$state.user);
 const users = computed(() => useChatStore().$state.users);
 const isConnected = computed(() => useAuthStore().$state.isConnected);
 const notifications = computed(() => useOtherStore().$state.notifications);
-const userPicture = JSON.parse(localStorage.getItem('user')).picture_url;
-// console.log(user);
+
 let showNotification = ref<any>(null);
 let newNotification = ref(false);
 let showProfileMenu = ref(false);
@@ -112,7 +111,7 @@ watch(useOtherStore().$state.notifications, (newNotif) => {
                     </div>
                 </nav>
                 <div @click.stop="toggleProfileMenu" class="profile">
-                    <img :src="userPicture" alt="avatar" />
+                    <img :src="user.picture_url" alt="avatar" />
                     <div :class="[ showProfileMenu ? 'profile__menu active' : 'profile__menu' ]">
                         <div v-if="showProfileMenu" class="profile__menu__list">
                             <div class="profile__menu__list__item">

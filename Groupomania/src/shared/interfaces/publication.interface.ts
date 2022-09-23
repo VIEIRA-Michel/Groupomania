@@ -37,5 +37,6 @@ export interface Publication {
     publication_date?: string,
     limit?: number,
     from?: number,
-    page: number
+    page: number,
+    previewOnEdit: null | Blob,
 };

@@ -83,7 +83,6 @@ function createComment(event: any) {
 @import '../styles/Utils/variables';
 
 .container-post {
-    padding-top: 10px;
     border-top: 1px solid #dbdbdb;
     width: 100%;
     display: flex;

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useAuthStore } from '../shared/stores/authStore';
 import { useFriendshipStore } from '../shared/stores/friendsStore';
 import socket from '../socket';
@@ -73,6 +73,14 @@ function deleteModal(user: any) {
     userToBeDeleted.value = user;
 }
 
+watch(modalRequest, (value: boolean) => {
+    if (value == true) {
+        document.querySelector('body')!.style.overflowY = 'hidden';
+    } else if (value == false) {
+        document.querySelector('body')!.style.overflowY = 'scroll';
+    }
+})
+
 </script>
 <template>
     <div v-if="isConnected" class="container">
@@ -122,12 +130,12 @@ function deleteModal(user: any) {
 
                                         <div class="modal-container__content">
                                             <div class="modal-container__content__header">
-                                                <h5 class="modal-container__content__header__title">Êtes-vous
+                                                <div class="modal-container__content__header__title">Êtes-vous
                                                     certains de
-                                                    vouloir annuler votre demande d'amitié envers {{
+                                                    vouloir annuler votre demande d'amitié envers <span>{{
                                                     invitToBeCanceled.firstname
-                                                    }} ?
-                                                </h5>
+                                                    }}</span> ?
+                                                </div>
                                             </div>
                                             <div class="modal-container__content__footer">
                                                 <button @click="modalRequest = false" type="button"
@@ -211,8 +219,9 @@ function deleteModal(user: any) {
 
                                 <div class="modal-container__content">
                                     <div class="modal-container__content__header">
-                                        <h5 class="modal-container__content__header__title">Êtes-vous certains de
-                                            vouloir retirer {{ userToBeDeleted.firstname }} de votre liste d'amis ?</h5>
+                                        <div class="modal-container__content__header__title">Êtes-vous certains de
+                                            vouloir retirer <span>{{ userToBeDeleted.firstname }}</span> de votre liste
+                                            d'amis ?</div>
                                     </div>
                                     <div class="modal-container__content__footer">
                                         <button @click="open = false" type="button" class="btn btn-secondary"
@@ -257,8 +266,8 @@ function deleteModal(user: any) {
         margin: 10px auto 0px auto;
         border-radius: 5px;
         padding: 20px;
-        -webkit-animation: slide-in-top 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.3s both;
-        animation: slide-in-top 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.3s both;
+        -webkit-animation: slide-in-top 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+        animation: slide-in-top 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
 
         &__title {
             text-align: center;
@@ -388,8 +397,8 @@ function deleteModal(user: any) {
         padding: 20px;
         margin: 10px auto 0px auto;
         border-radius: 5px;
-        -webkit-animation: slide-in-bottom 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.6s both;
-        animation: slide-in-bottom 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.6s both;
+        -webkit-animation: slide-in-bottom 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.3s both;
+        animation: slide-in-bottom 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.3s both;
 
         &__title {
             width: 100%;
@@ -496,8 +505,8 @@ function deleteModal(user: any) {
         padding: 20px;
         margin: 10px auto 0px auto;
         border-radius: 5px;
-        -webkit-animation: slide-in-bottom 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.9s both;
-        animation: slide-in-bottom 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.9s both;
+        -webkit-animation: slide-in-bottom 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.6s both;
+        animation: slide-in-bottom 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.6s both;
 
         &__title {
             width: 100%;
@@ -596,7 +605,7 @@ function deleteModal(user: any) {
 }
 
 .calc {
-    position: absolute;
+    position: fixed;
     top: 0;
     background-color: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(2px);
@@ -612,7 +621,7 @@ function deleteModal(user: any) {
     background-color: #FFF;
     color: #4E5166;
     padding: 20px;
-    border-radius: 20px;
+    border-radius: 5px;
     width: 300px;
     display: flex;
     flex-direction: row;
@@ -631,6 +640,11 @@ function deleteModal(user: any) {
             &__title {
                 margin-bottom: 20px;
                 margin-top: 0;
+
+                span {
+                    color: $color-primary;
+                    font-weight: 600;
+                }
             }
         }
 
@@ -640,12 +654,11 @@ function deleteModal(user: any) {
 
             .btn.btn-primary {
                 @include button-primary;
+                margin-left: 10px;
             }
 
             .btn.btn-secondary {
-                @include button-primary;
-                color: #FD2D01;
-                background-color: #FFFFFF;
+                @include button-secondary;
             }
         }
     }
