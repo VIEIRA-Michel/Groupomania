@@ -11,13 +11,7 @@ import { useCommentsStore } from '@/shared/stores/commentsStore';
 
 const user = computed(() => useAuthStore().$state.user);
 const isConnected = computed(() => useAuthStore().isConnected);
-const users = computed(() => useChatStore().$state.users);
 const loading = computed(() => useOtherStore().$state.loading);
-
-watch(useFriendshipStore().$state.friends, (newValue: any) => {
-    useChatStore().getUsersConnected().then((response: any) => {
-    });
-});
 
 onBeforeMount(() => {
     if (isConnected.value) {
@@ -45,11 +39,7 @@ onBeforeMount(() => {
                                     useChatStore().onTyping(false);
                                     break;
                                 case 'user connected':
-                                    if (users.value.find((user: any) => user.user == args[0].user)) {
-                                        useChatStore().onUserConnnected(args[0])
-                                    } else {
-                                        useChatStore().userConnected(args[0]);
-                                    }
+                                    useChatStore().onUserConnnected(args[0])
                                     break;
                                 case 'user disconnected':
                                     useChatStore().onUserDisconnected(args[0]);

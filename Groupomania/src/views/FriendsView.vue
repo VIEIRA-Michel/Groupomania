@@ -35,6 +35,8 @@ function addToFriends(user_id: any) {
             recipient: response.data.results[0].user_id_recipient,
             request_date: response.data.results[0].request_date,
             sender: response.data.results[0].user_id_sender,
+            session_id: response.data.results[0].session_id,
+            userID: response.data.results[0].userID,
         })
         socket.emit('friendRequest sended', { request: req.value, user: useAuthStore().$state.user });
     })

@@ -2,7 +2,9 @@ import { defineStore, storeToRefs } from 'pinia';
 import socket from "../../socket";
 import { signUp, signIn, fetchInformation, editProfile } from "../services/auth.service";
 import { useChatStore } from './chatStore';
+import { useCommentsStore } from './commentsStore';
 import { useFriendshipStore } from './friendsStore';
+import { useOtherStore } from './otherStore';
 import { usePublicationsStore } from './publicationsStore';
 
 export interface IAuthStore {
@@ -80,6 +82,12 @@ export const useAuthStore = defineStore({
                 state.isConnected = false;
                 state.user = null;
             });
+            useAuthStore().$reset();
+            useChatStore().$reset();
+            useFriendshipStore().$reset();
+            usePublicationsStore().$reset();
+            useCommentsStore().$reset();
+            useOtherStore().$reset();
         },
         getMyInformations: () => {
             return new Promise((resolve, reject) => {

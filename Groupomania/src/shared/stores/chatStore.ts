@@ -3,6 +3,7 @@ import { defineStore } from 'pinia';
 import type { Message } from '../interfaces/message.interface';
 import { sendMsg, fetchMessages, fetchUsers, getCount } from '../services/chat.service';
 import { useAuthStore } from './authStore';
+import { ref } from 'vue';
 
 export interface chatState {
     newmessage: null;
@@ -10,6 +11,7 @@ export interface chatState {
     typing: boolean;
     users: [];
     selectedUser: any;
+    friendsConnected: []
 }
 
 export const useChatStore = defineStore({
@@ -20,25 +22,52 @@ export const useChatStore = defineStore({
         typing: false,
         users: [],
         selectedUser: null,
+        friendsConnected: []
     }),
     getters: {
         onlineList: (state: chatState) => {
-            return state.users.filter((user: any) => user.connected);
+            return state.friendsConnected.filter((user: any) => user.connected);
         },
     },
     actions: {
-        userConnected: (user: any) => {
-            useFriendshipStore().$state.friends.map((friend: any) => {
-                if (user.user == friend.user_id) {
-                    useChatStore().$patch((state: any) => {
-                        state.users.push({
-                            ...user,
-                            limit: 25,
-                            from: 0,
-                            messagesQty: 0
-                        });
-                    })
+        newFriend: (user: any) => {
+            useChatStore().$patch((state: any) => {
+                state.friendsConnected.push({
+                    user: user.sender ? user.sender : user.user_id,
+                    connected: true,
+                    picture: user.picture_url,
+                    username: user.firstname + ' ' + user.lastname,
+                    userID: user.userID,
+                    from: 0,
+                    limit: 25,
+                    hasNewMessages: false,
+                    messages: [],
+                    messagesQty: 0
+                })
+            })
+        },
+        friendDeleted: (user_id: number) => {
+            useChatStore().$patch((state: any) => {
+                state.friendsConnected.map((friend: any) => {
+                    if (friend.user == user_id) {
+                        state.friendsConnected.splice(state.friendsConnected.indexOf(friend), 1);
+                    }
+                })
+                if (state.selectedUser !== null) {
+                    if (state.selectedUser.user == user_id) {
+                        state.selectedUser = null;
+                    }
                 }
+            })
+        },
+        unselectUser: () => {
+            useChatStore().$patch((state: any) => {
+                state.selectedUser = null;
+            })
+        },
+        messageRead: () => {
+            useChatStore().$patch((state: any) => {
+                state.selectedUser.hasNewMessages = false;
             })
         },
         sendMessage: (id: number, message: any) => {
@@ -71,28 +100,30 @@ export const useChatStore = defineStore({
         getUsersConnected() {
             return new Promise((resolve, reject) => {
                 fetchUsers().then((response: any) => {
-                    if (response.data?.length > 0) {
-                        const session: any = JSON.parse(localStorage.getItem("user")!);
-                        let currentUserConnected = response.data.filter((user: any) => user.userID !== session.userID);
-                        currentUserConnected.map((user: any) => {
-                            useFriendshipStore().$state.friends.map((item: any) => {
-                                if (item.user_id == user.user) {
-                                    useChatStore().$patch((state: any) => {
-                                        state.users.splice(0, state.users.length);
-                                        state.users.push({
-                                            ...user,
-                                            messages: [],
+                    if (response.data?.length > 0 && useFriendshipStore().$state.friends.length > 0) {
+                        useChatStore().$patch((state: any) => {
+                            state.friendsConnected.splice(0, state.friendsConnected.length);
+                            response.data.map((user: any) => {
+                                useFriendshipStore().$state.friends.map((friend: any) => {
+                                    if (friend.user_id == user.user) {
+                                        state.friendsConnected.push({
+                                            connected: user.connected,
+                                            from: 0,
                                             hasNewMessages: false,
                                             limit: 25,
-                                            from: 0,
-                                            messagesQty: 0
-                                        });
-                                    })
-                                }
+                                            messages: [],
+                                            messagesQty: 0,
+                                            picture: friend.picture_url,
+                                            user: user.user,
+                                            userID: user.userID,
+                                            username: user.username
+                                        })
+                                    }
+                                })
                             })
                         })
                     }
-                    resolve(useChatStore().$state.users);
+                    resolve(useChatStore().$state.friendsConnected);
                 }).catch(error => {
                     console.log(error);
                     reject(error);
@@ -135,8 +166,9 @@ export const useChatStore = defineStore({
             })
         },
         onPrivateMessage: (data: any) => {
+            console.log(data);
             useChatStore().$patch((state: any) => {
-                useChatStore().$state.users.map((utilisateur: any) => {
+                useChatStore().$state.friendsConnected.map((utilisateur: any) => {
                     console.log(utilisateur.userID);
                     if (utilisateur.userID == data.from) {
                         state.messages.push({
@@ -162,20 +194,21 @@ export const useChatStore = defineStore({
         },
         onUserConnnected: (data: any) => {
             useChatStore().$patch((state: any) => {
-                state.users.map((item: any) => {
-                    if (item.userID == data.userID) {
-                        item.connected = true;
+                state.friendsConnected.map((friend: any) => {
+                    if (friend.userID === data.userID) {
+                        friend.connected = true;
                     }
-                    return item;
+                    return friend;
                 })
             })
         },
         onUserDisconnected: (data: any) => {
             useChatStore().$patch((state: any) => {
-                state.users.forEach((utilisateur: any) => {
-                    if (utilisateur.userID === data) {
-                        utilisateur.connected = false;
+                state.friendsConnected.map((friend: any) => {
+                    if (friend.userID === data) {
+                        friend.connected = false;
                     }
+                    return friend;
                 });
             });
         }

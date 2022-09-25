@@ -72,10 +72,15 @@ exports.sendMessage = async (req, res, next) => {
 };
 
 exports.getUsersConnected = async (req, res, next) => {
-    const connected = await redis.get(`connected`);
-    const arr = `[${connected}]`;
-    const userConnectedData = JSON.parse(arr);
-    res.status(200).json(userConnectedData);
+    try {
+        const connected = await redis.get(`connected`);
+        const arr = `[${connected}]`;
+        const userConnectedData = JSON.parse(arr);
+        res.status(200).json(userConnectedData);
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ error: error, message: 'Un problème est survenu' });
+    }
 };
 
 exports.getMessageOfConversation = async (req, res, next) => {

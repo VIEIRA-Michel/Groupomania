@@ -47,6 +47,7 @@ export const useFriendshipStore = defineStore({
                             })
                         })
                     }
+                    console.log(response);
                     resolve(response);
                 }).catch(error => {
                     console.log(error);
@@ -98,6 +99,7 @@ export const useFriendshipStore = defineStore({
                             })
                         }
                     })
+                    console.log(response);
                     resolve(response);
                 }).catch(error => {
                     console.log(error);
@@ -138,6 +140,7 @@ export const useFriendshipStore = defineStore({
                                 }
                             });
                         })
+                        useChatStore().newFriend(req);
                     }
                     resolve(response);
                 }).catch(error => {
@@ -161,6 +164,7 @@ export const useFriendshipStore = defineStore({
                             }
                         })
                     })
+                    useChatStore().friendDeleted(id);
                     resolve(response);
                 }).catch(error => {
                     reject(error);
@@ -227,6 +231,8 @@ export const useFriendshipStore = defineStore({
                                 picture_url: response.data.results[0].picture_url,
                                 request_date: response.data.results[0].request_date,
                                 role_id: response.data.results[0].role_id,
+                                session_id: response.data.results[0].session_id,
+                                userID: response.data.results[0].userID
                             })
                         })
                     }
@@ -345,6 +351,7 @@ export const useFriendshipStore = defineStore({
                     state.isLoading = false;
 
                 })
+                useChatStore().newFriend(data.user)
             }
         },
         onFriendRemoved: (data: any) => {
@@ -375,6 +382,7 @@ export const useFriendshipStore = defineStore({
                     }
                     state.isLoading = false;
                 })
+                useChatStore().friendDeleted(data.user);
             }
         },
         onFriendRequestCanceled: (data: any) => {

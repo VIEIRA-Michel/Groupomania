@@ -8,7 +8,7 @@ import socket from "../socket";
 
 const user = computed(() => useAuthStore().$state.user);
 const typing = computed(() => useChatStore().$state.typing);
-const users = computed(() => useChatStore().$state.users);
+const users = computed(() => useChatStore().$state.friendsConnected);
 let usersOnline = computed(() => useChatStore().onlineList);
 const selectedUser = computed(() => useChatStore().$state.selectedUser);
 const change = ref(false);
@@ -39,21 +39,9 @@ function onSelectUser(utilisateur: any) {
     });
 }
 
-function unselect() {
-    useChatStore().$patch((state: any) => {
-        state.selectedUser = null;
-    })
-}
-
 function isTyping(param: any) {
     param ? socket.emit('typing', (user.value.firstname + ' ' + user.value.lastname, useAuthStore().$state.user)) : socket.emit('stoptyping', user.value.firstname + ' ' + user.value.lastname, user.value, useAuthStore().$state.user);
 };
-
-function messageRead() {
-    useChatStore().$patch((state: any) => {
-        state.selectedUser.hasNewMessages = false;
-    })
-}
 
 </script>
 <template>
@@ -71,8 +59,9 @@ function messageRead() {
             </div>
         </div>
         <div v-if="selectedUser != null" :class="[change ? 'container-center active' : 'container-center']">
-            <MessageChat v-if="selectedUser != null" :typing="typing" @typing="isTyping" @read="messageRead"
-                @moreMessages="useChatStore().fetchMoreMessages()" @return="unselect" />
+            <MessageChat v-if="selectedUser != null" :typing="typing" @typing="isTyping"
+                @read="useChatStore().messageRead()" @moreMessages="useChatStore().fetchMoreMessages()"
+                @return="useChatStore().unselectUser()" />
         </div>
     </div>
 </template>
