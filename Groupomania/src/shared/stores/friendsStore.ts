@@ -47,7 +47,6 @@ export const useFriendshipStore = defineStore({
                             })
                         })
                     }
-                    console.log(response);
                     resolve(response);
                 }).catch(error => {
                     console.log(error);
@@ -99,7 +98,6 @@ export const useFriendshipStore = defineStore({
                             })
                         }
                     })
-                    console.log(response);
                     resolve(response);
                 }).catch(error => {
                     console.log(error);
@@ -142,6 +140,7 @@ export const useFriendshipStore = defineStore({
                         })
                         useChatStore().newFriend(req);
                     }
+                    console.log(req);
                     resolve(response);
                 }).catch(error => {
                     console.log(error);
@@ -236,6 +235,7 @@ export const useFriendshipStore = defineStore({
                             })
                         })
                     }
+                    console.log(response);
                     resolve(response);
                 }).catch(error => {
                     console.log(error);
@@ -351,6 +351,7 @@ export const useFriendshipStore = defineStore({
                     state.isLoading = false;
 
                 })
+                console.log(data);
                 useChatStore().newFriend(data.user)
             }
         },

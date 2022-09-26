@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import Loading from '../components/Loading.vue';
 import Comment from '../components/Comment.vue';
-import { computed, ref, watch, reactive, watchEffect } from 'vue';
+import { computed, ref, watch, reactive, watchEffect, onBeforeMount } from 'vue';
 import { useAuthStore } from '../shared/stores/authStore';
 import { usePublicationsStore } from '../shared/stores/publicationsStore';
 import { useCommentsStore } from '../shared/stores/commentsStore';
@@ -142,22 +142,15 @@ function cancelModification(publication: any) {
 
 function updatePublication(publication: any, update: any) {
     if (pictureHasHidden.value == true) {
-        console.log('picture has hidden true ? ')
         editPost.picture = null;
     } else if (publication.previewOnEdit !== null) {
-        console.log('publication preview on edit différent de nul ??')
         update.picture = publication.previewOnEdit;
     } else if (!pictureHasHidden.value && publication.previewOnEdit == null && publication.picture) {
-        console.log('publication preview on edit est nul et publication picture existe ?')
         update.picture = publication.picture;
     }
     if (update.content || update.picture) {
         usePublicationsStore().updatePublication(publication.publication_id, update).then((response: any) => {
             usePublicationsStore().resetPreview(publication.publication_id).then((response2: any) => {
-                console.log(response)
-                // if (response.data.data[0].picture) {
-                //     document.getElementById(`${publicationIdToEdit.value}`).style.display = 'block';
-                // }
                 inputFileEdit.value = null;
             })
         })
@@ -227,8 +220,9 @@ watch(modalRequest, (value: boolean) => {
     }
 })
 
-//
-init();
+onBeforeMount(() => {
+    init();
+})
 
 </script>
 <template>

@@ -11,7 +11,7 @@ export const useOtherStore = defineStore({
     id: "otherStore",
     state: (): otherStore => ({
         information: false,
-        loading: true,  
+        loading: true,
         notifications: []
     }),
     getters: {},
@@ -33,8 +33,6 @@ export const useOtherStore = defineStore({
                     type = "a envoyé une demande d'ami"
                 } else if (type == "friendRequest accepted") {
                     type = "a accepté votre demande d'ami"
-                } else if (type == "private message") {
-                    type = "a envoyé un message"
                 }
                 if (content.user) {
                     state.notifications.push({

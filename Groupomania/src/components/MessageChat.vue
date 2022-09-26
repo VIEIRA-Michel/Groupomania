@@ -18,7 +18,6 @@ const props = defineProps<{
     typing: any
 }>();
 
-console.log(props.typing);
 function displaySender(message: any, index: number) {
     return (
         index === 0 ||
@@ -62,25 +61,11 @@ function send(event: any) {
     event?.preventDefault();
     if (selectedUser.value) {
         useChatStore().sendMessage(selectedUser.value.user, newMessage.value).then((response) => {
-            useChatStore().$patch((state: any) => {
-                state.messages.push({
-                    sender: user.value.user_id,
-                    id: response,
-                    content: newMessage.value,
-                    recipient: selectedUser.value.user,
-                });
-            })
             socket.emit("private message", {
                 id: response,
                 message: newMessage.value,
                 to: selectedUser.value.userID,
                 user: user.value
-            });
-            selectedUser.value.messages.push({
-                sender: user.value.user_id,
-                id: response,
-                content: newMessage.value,
-                recipient: selectedUser.value.user,
             });
             newMessage.value = '';
             event.target.style.height = 'auto';
@@ -96,7 +81,6 @@ function autoResize(event: any) {
 
 watchEffect(() => {
     newMessage.value.length >= 1 ? emit('typing', true) : emit('typing', false);
-    console.log(props.typing);
 })
 
 watch(selectedUser.value.messages, (nouvelleVal: any) => {

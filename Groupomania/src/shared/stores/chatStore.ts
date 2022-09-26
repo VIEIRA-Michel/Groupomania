@@ -3,6 +3,7 @@ import { defineStore } from 'pinia';
 import type { Message } from '../interfaces/message.interface';
 import { sendMsg, fetchMessages, fetchUsers, getCount } from '../services/chat.service';
 import { useAuthStore } from './authStore';
+import moment from 'moment';
 import { ref } from 'vue';
 
 export interface chatState {
@@ -11,7 +12,8 @@ export interface chatState {
     typing: boolean;
     users: [];
     selectedUser: any;
-    friendsConnected: []
+    friendsConnected: [],
+    messagesToDisplay: Message[],
 }
 
 export const useChatStore = defineStore({
@@ -22,7 +24,8 @@ export const useChatStore = defineStore({
         typing: false,
         users: [],
         selectedUser: null,
-        friendsConnected: []
+        friendsConnected: [],
+        messagesToDisplay: [] as Message[]
     }),
     getters: {
         onlineList: (state: chatState) => {
@@ -70,15 +73,37 @@ export const useChatStore = defineStore({
                 state.selectedUser.hasNewMessages = false;
             })
         },
+        removeMessageAtDisplay: () => {
+            return new Promise<void>((resolve, reject) => {
+                useChatStore().$patch((state: any) => {
+                    if (state.messagesToDisplay.length > 0) {
+                        state.messagesToDisplay[0].disapear = true;
+                        setTimeout(() => {
+                            state.messagesToDisplay.splice(0, 1);
+                            resolve();
+                        }, 400)
+                    }
+                })
+            })
+        },
         sendMessage: (id: number, message: any) => {
             return new Promise((resolve, reject) => {
                 sendMsg(id, message).then((response: any) => {
                     useChatStore().$patch((state: any) => {
                         console.log(response.data);
                         state.selectedUser.messagesQty += 1;
-                        // state.selectedUser.messages.push({
-
-                        // })
+                        state.messages.push({
+                            sender: useAuthStore().$state.user.user_id,
+                            id: response,
+                            content: message.value,
+                            recipient: state.selectedUser.user,
+                        });
+                        state.selectedUser.messages.push({
+                            sender: useAuthStore().$state.user.user_id,
+                            id: response,
+                            content: message,
+                            recipient: state.selectedUser.user,
+                        });
                     });
                     resolve(response.data.message_sended_id);
                 }).catch(error => {
@@ -166,30 +191,49 @@ export const useChatStore = defineStore({
             })
         },
         onPrivateMessage: (data: any) => {
-            console.log(data);
-            useChatStore().$patch((state: any) => {
-                useChatStore().$state.friendsConnected.map((utilisateur: any) => {
-                    console.log(utilisateur.userID);
-                    if (utilisateur.userID == data.from) {
-                        state.messages.push({
-                            sender: utilisateur.user,
-                            id: data.id,
-                            content: data.message,
-                            recipient: useAuthStore().$state.user.user_id,
-                        });
-                        utilisateur.messages.push({
-                            sender: utilisateur.user,
-                            id: data.id,
-                            content: data.message,
-                            recipient: useAuthStore().$state.user.user_id,
-                        });
-                        utilisateur.messagesQty += 1;
-                        if (utilisateur !== state.selectedUser) {
-                            utilisateur.hasNewMessages = true;
+            return new Promise<void>((resolve, reject) => {
+                let date = new Date();
+                let newDate = moment(date).format('HH:mm');
+                useChatStore().$patch((state: any) => {
+                    useChatStore().$state.friendsConnected.map((utilisateur: any) => {
+                        if (utilisateur.userID == data.from) {
+                            state.messages.push({
+                                sender: utilisateur.user,
+                                id: data.id,
+                                content: data.message,
+                                recipient: useAuthStore().$state.user.user_id,
+                            });
+                            utilisateur.messages.push({
+                                sender: utilisateur.user,
+                                id: data.id,
+                                content: data.message,
+                                recipient: useAuthStore().$state.user.user_id,
+                            });
+                            utilisateur.messagesQty += 1;
+                            if (utilisateur !== state.selectedUser) {
+                                utilisateur.hasNewMessages = true;
+                            }
+
+                            state.messagesToDisplay.push({
+                                user_id: utilisateur.user,
+                                username: utilisateur.username,
+                                picture: utilisateur.picture,
+                                message: data.message,
+                                userID: utilisateur.userID,
+                                at: newDate,
+                                disapear: false
+                            })
+                            setTimeout(() => {
+                                if (state.messagesToDisplay.length !== 0) {
+                                    useChatStore().removeMessageAtDisplay();
+                                }
+                            }, 2500)
+                            return utilisateur;
                         }
-                        return utilisateur;
-                    }
+                    })
+
                 })
+                resolve();
             })
         },
         onUserConnnected: (data: any) => {

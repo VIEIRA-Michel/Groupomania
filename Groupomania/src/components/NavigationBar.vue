@@ -5,11 +5,9 @@ import { useFriendshipStore } from '@/shared/stores/friendsStore';
 import { useChatStore } from '@/shared/stores/chatStore';
 import { useAuthStore } from '@/shared/stores/authStore';
 
-const burgerMenu = computed(() => useOtherStore().$state.burgerMenu);
 const requests = computed(() => useFriendshipStore().$state.requests);
 const user = computed(() => useAuthStore().$state.user);
 const users = computed(() => useChatStore().$state.users);
-const isConnected = computed(() => useAuthStore().$state.isConnected);
 const notifications = computed(() => useOtherStore().$state.notifications);
 
 let showNotification = ref<any>(null);

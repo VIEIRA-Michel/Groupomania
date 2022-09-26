@@ -12,6 +12,7 @@ import { useCommentsStore } from '@/shared/stores/commentsStore';
 const user = computed(() => useAuthStore().$state.user);
 const isConnected = computed(() => useAuthStore().isConnected);
 const loading = computed(() => useOtherStore().$state.loading);
+const messages = computed(() => useChatStore().$state.messagesToDisplay);
 
 onBeforeMount(() => {
     if (isConnected.value) {
@@ -39,13 +40,19 @@ onBeforeMount(() => {
                                     useChatStore().onTyping(false);
                                     break;
                                 case 'user connected':
-                                    useChatStore().onUserConnnected(args[0])
+                                    useChatStore().onUserConnnected(args[0]);
                                     break;
                                 case 'user disconnected':
                                     useChatStore().onUserDisconnected(args[0]);
                                     break;
                                 case 'private message':
-                                    useChatStore().onPrivateMessage(args[0]);
+                                    if (messages.value.length !== 0) {
+                                        useChatStore().removeMessageAtDisplay().then(() => {
+                                            useChatStore().onPrivateMessage(args[0])
+                                        });
+                                    } else {
+                                        useChatStore().onPrivateMessage(args[0])
+                                    }
                                     break;
                                 case 'like':
                                     usePublicationsStore().onLike(args[0]);
@@ -92,8 +99,7 @@ onBeforeMount(() => {
                             if (event == 'like' && args[0].publication.user_id == user.value.user_id
                                 || event == 'has commented' && args[0].comment.user_id == user.value.user_id
                                 || event == 'friendRequest sended' && args[0].request.recipient == user.value.user_id
-                                || event == 'friendRequest accepted' && args[0].response.data.results[0].user_id_sender == user.value.user_id
-                                || event == 'private message' && args[0].to == user.value.userID) {
+                                || event == 'friendRequest accepted' && args[0].response.data.results[0].user_id_sender == user.value.user_id) {
                                 useOtherStore().notificationPush(event, args[0]);
                             }
                         });
@@ -126,8 +132,121 @@ onUnmounted(() => {
     <Loading v-if="loading" />
     <router-view v-else>
     </router-view>
+    <div class="notification-container">
+        <div class="notification-container__list">
+            <div v-for="message in messages"
+                :class="[message.disapear ? 'notification-container__list__item hidden' : 'notification-container__list__item']">
+                <div class="notification-container__list__item__content">
+                    <div class="notification-container__list__item__content__avatar">
+                        <img :src="message.picture" alt="">
+                    </div>
+                    <div class="notification-container__list__item__content__body">
+                        <div class="notification-container__list__item__content__body__top">
+                            <div class="notification-container__list__item__content__body__top__username">
+                                {{ message.username}}
+                            </div>
+                            <div class="notification-container__list__item__content__body__top__date">{{ message.at }}
+                            </div>
+                        </div>
+                        <div class="notification-container__list__item__content__body__bottom">
+                            <div class="notification-container__list__item__content__body__bottom__text">
+                                <p>{{ message.message }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </template>
 
-<style>
+<style scoped lang="scss">
+@import '../styles/Utils/keyframes';
 
+* {
+    font-family: 'Lato', sans-serif;
+}
+
+.notification-container {
+    position: absolute;
+    top: 60px;
+    right: 10px;
+    width: 250px;
+
+    &__list {
+        &__item {
+            background: floralwhite;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            border: 1px solid #FD2D01;
+            -webkit-animation: text-focus-in 0.3s cubic-bezier(0.550, 0.085, 0.680, 0.530) 0.3s both;
+            animation: text-focus-in 0.3s cubic-bezier(0.550, 0.085, 0.680, 0.530) 0.3s both;
+            cursor: pointer;
+
+            &.hidden {
+                -webkit-animation: text-blur-out 0.3s cubic-bezier(0.550, 0.085, 0.680, 0.530) both;
+                animation: text-blur-out 0.3s cubic-bezier(0.550, 0.085, 0.680, 0.530) both;
+            }
+
+            &__content {
+                display: flex;
+                flex-direction: row;
+
+                &__avatar {
+                    margin: 5px;
+                    display: flex;
+                    align-items: center;
+
+                    img {
+                        width: 45px;
+                        height: 45px;
+                        border-radius: 5px;
+                        object-fit: cover;
+                    }
+                }
+
+                &__body {
+                    width: 100%;
+                    padding: 5px;
+
+                    &__top {
+                        display: flex;
+                        justify-content: space-between;
+
+                        &__username {
+                            font-weight: bold;
+                            font-size: 12px;
+                        }
+
+                        &__date {
+                            color: #FD2D01;
+                            font-size: 12px;
+                        }
+                    }
+
+                    &__bottom {
+                        &__text {
+                            margin: 5px 0;
+                            padding: 5px;
+                            background-color: #FFFFFF;
+                            border-radius: 5px;
+                            font-size: 12px;
+                            width: 170px;
+                            border: 1px solid #dbdbdb;
+
+                            p {
+                                white-space: nowrap;
+                                text-overflow: ellipsis;
+                                width: 100%;
+                                display: block;
+                                overflow: hidden;
+                            }
+                        }
+                    }
+                }
+            }
+
+        }
+    }
+}
 </style>
