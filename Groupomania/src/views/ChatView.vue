@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, onBeforeMount, ref } from 'vue';
 import UserChat from '../components/UserChat.vue';
 import MessageChat from "../components/MessageChat.vue";
 import { useAuthStore } from '../shared/stores/authStore';
@@ -14,29 +14,11 @@ const selectedUser = computed(() => useChatStore().$state.selectedUser);
 const change = ref(false);
 
 function onSelectUser(utilisateur: any) {
-    useChatStore().getCountOfMessages(utilisateur.user).then((count: any) => {
-        useChatStore().getMessagesOfConversation(utilisateur.user, utilisateur.limit, utilisateur.from).then((response: any) => {
-            if (response.length > 0) {
-                if (!useChatStore().$state.selectedUser || useChatStore().$state.selectedUser.user !== utilisateur.user) {
-                    response.forEach((message: any) => {
-                        if (message.sender == utilisateur.user || message.recipient == utilisateur.user) {
-                            utilisateur.messages.push(message)
-                        }
-                    });
-                }
-            }
-            utilisateur.messagesQty = count;
-            utilisateur.hasNewMessages = false;
-            change.value = true;
-            setTimeout(() => {
-                change.value = false;
-                useChatStore().$patch((state: any) => {
-                    state.selectedUser = utilisateur;
-                });
-            }, 200);
-
-        })
-    });
+    change.value = true;
+    setTimeout(() => {
+        change.value = false;
+        useChatStore().selectedUser(utilisateur.user);
+    }, 200);
 }
 
 function isTyping(param: any) {

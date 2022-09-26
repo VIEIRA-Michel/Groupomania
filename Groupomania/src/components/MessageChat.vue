@@ -420,6 +420,8 @@ const emit = defineEmits<{
                             padding: 10px;
                             background: #dbdbdb;
                             border: 1px solid #4E5166;
+                            -webkit-animation: fade-in 0.2s cubic-bezier(0.390, 0.575, 0.565, 1.000) 1.6s both;
+                            animation: fade-in 0.2s cubic-bezier(0.390, 0.575, 0.565, 1.000) 1.6s both;
 
                             @media (max-width: 768px) {
                                 width: 100%;
@@ -432,8 +434,8 @@ const emit = defineEmits<{
                                 background: #EFEFEF;
                                 border: 1px solid #4E5166;
                                 border-radius: 5px;
-                                -webkit-animation: fade-in 1.2s cubic-bezier(0.390, 0.575, 0.565, 1.000) 1.6s both;
-                                animation: fade-in 1.2s cubic-bezier(0.390, 0.575, 0.565, 1.000) 1.6s both;
+                                -webkit-animation: fade-in 1s cubic-bezier(0.390, 0.575, 0.565, 1.000) 1.8s both;
+                                animation: fade-in 1s cubic-bezier(0.390, 0.575, 0.565, 1.000) 1.8s both;
 
                                 @media (max-width: 768px) {
                                     width: 35%;
@@ -493,6 +495,7 @@ const emit = defineEmits<{
                                             span {
                                                 font-size: 12px;
                                                 font-weight: 300;
+                                                text-align: center;
                                             }
                                         }
                                     }

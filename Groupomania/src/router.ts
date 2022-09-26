@@ -10,21 +10,25 @@ export const router = createRouter({
             children: [
                 {
                     path: "home",
+                    name: "home",
                     beforeEnter: [isAuthenticatedGuard],
                     component: () => import('@/views/HomeView.vue'),
                 },
                 {
                     path: "friends",
+                    name: "friends",
                     beforeEnter: [isAuthenticatedGuard],
                     component: () => import('@/views/FriendsView.vue'),
                 },
                 {
                     path: "chat",
+                    name: "chat",
                     beforeEnter: [isAuthenticatedGuard],
                     component: () => import('@/views/ChatView.vue'),
                 },
                 {
                     path: "profil",
+                    name: "profil",
                     beforeEnter: [isAuthenticatedGuard],
                     component: () => import('@/views/ProfileView.vue'),
                 }

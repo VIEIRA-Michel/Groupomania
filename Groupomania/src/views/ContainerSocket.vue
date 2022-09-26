@@ -8,11 +8,17 @@ import Loading from '@/components/Loading.vue';
 import socket from '@/socket';
 import { useOtherStore } from '@/shared/stores/otherStore';
 import { useCommentsStore } from '@/shared/stores/commentsStore';
+import { router } from '@/router';
 
 const user = computed(() => useAuthStore().$state.user);
 const isConnected = computed(() => useAuthStore().isConnected);
 const loading = computed(() => useOtherStore().$state.loading);
 const messages = computed(() => useChatStore().$state.messagesToDisplay);
+
+function redirect(user_id: number) {
+    router.push({ name: 'chat' });
+    useChatStore().selectedUser(user_id);
+}
 
 onBeforeMount(() => {
     if (isConnected.value) {
@@ -134,7 +140,7 @@ onUnmounted(() => {
     </router-view>
     <div class="notification-container">
         <div class="notification-container__list">
-            <div v-for="message in messages"
+            <div v-for="message in messages" @click="redirect(message.user_id)"
                 :class="[message.disapear ? 'notification-container__list__item hidden' : 'notification-container__list__item']">
                 <div class="notification-container__list__item__content">
                     <div class="notification-container__list__item__content__avatar">

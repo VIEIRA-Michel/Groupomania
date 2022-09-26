@@ -63,6 +63,37 @@ export const useChatStore = defineStore({
                 }
             })
         },
+        selectedUser: (user: any) => {
+            if (typeof (user) == 'number') {
+                useChatStore().$patch((state: any) => {
+                    if (state.selectedUser && state.selectedUser.messages.length > 0) {
+                        state.selectedUser.messages.splice(0, state.selectedUser.messages.length);
+                    }
+                    state.friendsConnected.map((friend: any) => {
+                        if (friend.user == user) {
+                            state.selectedUser = friend;
+                            useChatStore().getCountOfMessages(user).then((count: any) => {
+                                useChatStore().getMessagesOfConversation(user, state.selectedUser.limit, state.selectedUser.from).then((response: any) => {
+                                    if (response.length > 0) {
+                                        response.map((message: any) => {
+                                            if (message.sender == user || message.recipient == user) {
+                                                state.selectedUser.messages.push(message)
+                                            }
+                                        });
+                                    }
+                                    state.selectedUser.messagesQty = count;
+                                    state.selectedUser.hasNewMessages = false;
+                                });
+                            })
+                        }
+                    })
+                })
+            } else {
+                useChatStore().$patch((state: any) => {
+                    state.selectedUser = user;
+                })
+            }
+        },
         unselectUser: () => {
             useChatStore().$patch((state: any) => {
                 state.selectedUser = null;
