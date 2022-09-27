@@ -96,57 +96,35 @@ exports.createPublication = (req, res, next) => {
     let publication = {
         content: req.body.content,
         user_id: req.user.userId,
-        created_at: today,
     };
     if (req.file) {
         publication.picture = `${req.protocol}://${req.get('host')}/images/${req.file.filename}`;
     };
-    let sql = `INSERT INTO publications (content, picture, user_id, created_at) VALUES (?, ?, ?, ?);`;
+    let sql = `INSERT INTO publications (content, picture, user_id, created_at) VALUES (?, ?, ?, NOW());`;
     connection.query(
-        sql, [publication.content, publication.picture, publication.user_id, publication.created_at], function (err, results) {
+        sql, [publication.content, publication.picture, publication.user_id], function (err, results1) {
             if (err) {
                 console.log(err)
                 res.status(500).json({ message: 'Erreur lors de la création de la publication' });
-            }
-            if (!err) {
-                sql = `SELECT id AS publication_id, content, picture, user_id, created_at as publication_created, updated_at FROM publications WHERE id = ?;`;
-                connection.query(
-                    sql, [results.insertId], function (err, results) {
-                        if (err) {
-                            console.log(err);
-                            res.status(500).json({ message: 'Erreur lors de la récupération de la publications' });
-                        } else {
-                            res.status(201).json({ message: 'Publication créée !', data: results })
-                        }
-                    }
-                )
-            }
-
-        })
-}
-
-exports.updatePublication = (req, res, next) => {
-    let publication = req.file ?
-        {
-            ...req.body,
-            picture: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`,
-        } : { ...req.body };
-
-    let sql = `UPDATE publications SET content = ?, picture = ?, updated_at = NOW() WHERE id = ?;`;
-    connection.query(
-        sql, [publication.content, publication.picture, req.params.id], function (err, results) {
-            if (err) {
-                console.log(err)
-                res.status(500).json({ message: 'Erreur lors de la modification de la publication' });
             } else {
-                sql = `SELECT id AS publication_id, content, picture, user_id, created_at, updated_at FROM publications WHERE id = ?;`;
+                sql = `INSERT INTO publication_history (publication_id, content, picture, firstname, lastname, picture_url, role_id, user_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW());`;
                 connection.query(
-                    sql, [req.params.id], function (err, results) {
+                    sql, [results1.insertId, publication.content, publication.picture, req.user.firstname, req.user.lastname, req.user.picture_url, req.user.role_id, req.user.userId], function (err, results2) {
                         if (err) {
                             console.log(err);
-                            res.status(500).json({ message: 'Erreur lors de la récupération de la publications' });
+                            res.status(500).json({ message: 'Erreur lors de la création de l\'historique de la publication' });
                         } else {
-                            res.status(200).json({ message: 'Publication modifiée !', data: results })
+                            sql = `SELECT id AS publication_id, content, picture, user_id, created_at as publication_created, updated_at FROM publications WHERE id = ?;`;
+                            connection.query(
+                                sql, [results1.insertId], function (err, results3) {
+                                    if (err) {
+                                        console.log(err);
+                                        res.status(500).json({ message: 'Erreur lors de la récupération de la publications' });
+                                    } else {
+                                        res.status(201).json({ message: 'Publication créée !', data: results3 })
+                                    }
+                                }
+                            )
                         }
                     }
                 )
@@ -155,6 +133,66 @@ exports.updatePublication = (req, res, next) => {
     )
 }
 
+exports.updatePublication = (req, res, next) => {
+    let publication = req.file ?
+        {
+            ...req.body,
+            picture: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`,
+        } : { ...req.body };
+    let sql = '';
+    let sqlVariables = [];
+    if (req.user.role_id == 2) {
+        sql = `UPDATE publications SET content = ?, picture = ?, updated_at = NOW(), modified_by_admin = ? WHERE id = ?;`;
+        sqlVariables.push(publication.content, publication.picture, true, req.params.id);
+    } else {
+        sql = `UPDATE publications SET content = ?, picture = ?, updated_at = NOW() WHERE id = ?;`;
+        sqlVariables.push(publication.content, publication.picture, req.params.id);
+    }
+    connection.query(
+        sql, sqlVariables, function (err, results) {
+            if (err) {
+                console.log(err)
+                res.status(500).json({ message: 'Erreur lors de la modification de la publication' });
+            } else {
+                sql = `INSERT INTO publication_history (publication_id, content, picture, firstname, lastname, picture_url, role_id, user_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW());`;
+                connection.query(
+                    sql, [req.params.id, publication.content, publication.picture, req.user.firstname, req.user.lastname, req.user.picture_url, req.user.role_id, req.user.userId], function (err, results) {
+                        if (err) {
+                            console.log(err);
+                            res.status(500).json({ message: 'Erreur lors de la création de l\'historique de la publication' });
+                        } else {
+                            sql = `SELECT id AS publication_id, content, picture, user_id, created_at, updated_at FROM publications WHERE id = ?;`;
+                            connection.query(
+                                sql, [req.params.id], function (err, results) {
+                                    if (err) {
+                                        console.log(err);
+                                        res.status(500).json({ message: 'Erreur lors de la récupération de la publications' });
+                                    } else {
+                                        res.status(200).json({ message: 'Publication modifiée !', data: results })
+                                    }
+                                }
+                            )
+                        }
+                    }
+                )
+            }
+        }
+    )
+}
+
+exports.getHistoryOfEdit = (req, res, next) => {
+    let sql = `SELECT * FROM publication_history WHERE publication_id = ?;`;
+    connection.query(
+        sql, [req.params.id], function (err, results) {
+            if (err) {
+                console.log(err);
+                res.status(500).json({ message: 'Erreur lors de la récupération de l\'historique de la publication' });
+            } else {
+                res.status(200).json({ history: results });
+            }
+        }
+    )
+}
 exports.deletePublication = (req, res, next) => {
     let sql = `SELECT * FROM publications WHERE id = ?;`;
     connection.query(

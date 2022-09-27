@@ -13,6 +13,7 @@ const isLoading = computed(() => usePublicationsStore().$state.isLoading);
 const numberOfPages = computed(() => usePublicationsStore().$state.numberOfPages);
 const numOfResults = computed(() => usePublicationsStore().$state.numOfResults);
 const page = computed(() => usePublicationsStore().$state.page);
+const history = computed(() => usePublicationsStore().$state.history);
 
 // create
 let selectedFile: any = ref<any>();
@@ -33,6 +34,9 @@ let buttonDisabled = ref(false);
 let modalRequest = ref(false);
 let publicationIdToDelete = ref();
 
+// modal list edit
+
+let displayHistory = ref(false);
 let editPost = reactive({
     content: '',
     picture: ''
@@ -157,6 +161,17 @@ function updatePublication(publication: any, update: any) {
     }
 }
 
+function displayHistoryOfEdit(publication_id: number) {
+    usePublicationsStore().fetchHistoryOfEdit(publication_id).then((response: any) => {
+        displayHistory.value = true;
+    })
+}
+
+function closeHistory() {
+    displayHistory.value = false;
+    usePublicationsStore().resetHistory();
+}
+
 function activateModal(publication_id: number) {
     modalRequest.value = true;
     publicationIdToDelete.value = publication_id;
@@ -197,6 +212,7 @@ function init() {
 };
 
 watch(page, (newPageValue: any) => {
+    console.log('watch');
     usePublicationsStore().fetchAllPublication(newPageValue, false).then((response: any) => {
     });
 });
@@ -206,21 +222,29 @@ watchEffect(() => {
         || editPost.content == null && editPost.picture == null && pictureHasHidden.value == true
         || editPost.content == '' && editPost.picture == null && pictureHasHidden.value == true
         || editPost.content == null && editPost.picture == '' && pictureHasHidden.value == true) {
+        console.log('watch effect');
         buttonDisabled.value = true;
     } else {
+        console.log('watch effect');
         buttonDisabled.value = false;
     }
 });
 
 watch(modalRequest, (value: boolean) => {
     if (value == true) {
+        console.log('watch');
         document.querySelector('body')!.style.overflowY = 'hidden';
     } else if (value == false) {
+        console.log('watch');
         document.querySelector('body')!.style.overflowY = 'scroll';
     }
 })
 
 onBeforeMount(() => {
+    console.log('onBeforeMount avant déclanchement init');
+    usePublicationsStore().$patch((state: any) => {
+        state.isLoading = false;
+    })
     init();
 })
 
@@ -284,13 +308,74 @@ onBeforeMount(() => {
                                         </div>
                                         <div class="post__top__details__info__date">
                                             <div>{{ publication.publication_date }}
-                                                <span v-if="publication.publication_edit"
+                                                <span @click="displayHistoryOfEdit(publication.publication_id)"
+                                                    v-if="publication.publication_edit"
                                                     class="post__top__details__info__date__edit">
                                                     <fa icon="fa-regular fa-pen-to-square" />
                                                     Modifiée -
                                                     {{ publication.publication_edit
                                                     }}
                                                 </span>
+                                                <Teleport to="body">
+                                                    <div v-if="displayHistory" @click="closeHistory" class="calc">
+                                                        <div class="modal-container-edit">
+                                                            <div class="modal-container-edit__content">
+                                                                <div class="modal-container-edit__content__header">
+                                                                    <div
+                                                                        class="modal-container-edit__content__header__title">
+                                                                        Liste des modifications
+                                                                    </div>
+                                                                </div>
+                                                                <div class="modal-container-edit__content__body">
+                                                                    <div
+                                                                        class="modal-container-edit__content__body__list">
+                                                                        <div class="modal-container-edit__content__body__list__item"
+                                                                            v-for="update in history">
+                                                                            <div
+                                                                                class="modal-container-edit__content__body__list__item__top">
+                                                                                <div
+                                                                                    class="modal-container-edit__content__body__list__item__top__details">
+                                                                                    <div
+                                                                                        class="modal-container-edit__content__body__list__item__top__details__avatar">
+                                                                                        <img :src="update.picture_url"
+                                                                                            alt="avatar" />
+                                                                                    </div>
+                                                                                    <div
+                                                                                        class="modal-container-edit__content__body__list__item__top__details__info">
+                                                                                        <div
+                                                                                            class="modal-container-edit__content__body__list__item__top__details__info__name">
+                                                                                            <span>{{ update.firstname +
+                                                                                            ' ' +
+                                                                                            update.lastname}}</span>
+                                                                                        </div>
+                                                                                        <div
+                                                                                            class="modal-container-edit__content__body__list__item__top__details__info__date">
+                                                                                            {{ update.created_at}}
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                            <div
+                                                                                class="modal-container-edit__content__body__list__item__content">
+                                                                                {{ update.content }}
+                                                                            </div>
+                                                                            <div
+                                                                                class="modal-container-edit__content__body__list__item__picture">
+                                                                                <img v-if="update.picture"
+                                                                                    :src="update.picture"
+                                                                                    alt="picture" />
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="modal-container-edit__content__footer">
+                                                                    <button @click="closeHistory" type="button"
+                                                                        data-dismiss="modal">Fermer</button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </Teleport>
                                             </div>
                                         </div>
                                     </div>
@@ -712,6 +797,12 @@ onBeforeMount(() => {
                         margin-left: 10px;
                         color: #4E5166;
                         font-style: italic;
+                        cursor: pointer;
+
+                        &:hover {
+                            text-decoration: underline;
+                            transition: 0.3s all;
+                        }
                     }
                 }
             }
@@ -1092,6 +1183,63 @@ onBeforeMount(() => {
 
             .btn.btn-secondary {
                 @include button-secondary;
+            }
+        }
+    }
+}
+
+.modal-container-edit {
+    background: #FFFFFF;
+    padding: 20px;
+    border-radius: 5px;
+    min-width: 350px;
+
+    &__content {
+        &__header {
+            margin-bottom: 20px;
+
+            &__title {
+                text-align: center;
+                color: #FD2D01;
+                font-weight: bold;
+                font-size: 15px;
+            }
+        }
+
+        &__body {
+            &__list {
+                &__item {
+                    background: floralwhite;
+                    border-radius: 5px;
+                    border: 1px solid #FD2D01;
+                    margin-bottom: 20px;
+                    padding: 10px;
+
+                    &__date {}
+
+                    &__content {}
+
+                    &__picture {}
+                }
+            }
+        }
+
+        &__footer {
+            display: flex;
+            justify-content: flex-end;
+
+            button {
+                background-color: #FFFFFF;
+                padding: 5px;
+                color: #FD2D01;
+                border: 1px solid #FD2D01;
+                border-radius: 5px;
+
+                &:hover {
+                    background-color: #FD2D01;
+                    color: #FFFFFF;
+                    transition: 0.3s all;
+                }
             }
         }
     }

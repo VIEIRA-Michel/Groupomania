@@ -4,6 +4,8 @@ DROP TABLE IF EXISTS user_status;
 
 DROP TABLE IF EXISTS publications;
 
+DROP TABLE IF EXISTS publication_history;
+
 DROP TABLE IF EXISTS publication_user_liked;
 
 DROP TABLE IF EXISTS comments;
@@ -67,7 +69,25 @@ CREATE TABLE
         user_id INTEGER,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
         created_at DATETIME,
-        updated_at DATETIME
+        updated_at DATETIME,
+        modified_by_admin BOOLEAN
+    );
+
+CREATE TABLE
+    publication_history (
+        id INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,
+        publication_id INTEGER,
+        FOREIGN KEY (publication_id) REFERENCES publications(id) ON DELETE CASCADE ON UPDATE CASCADE,
+        content TEXT(128),
+        picture TEXT(128),
+        firstname VARCHAR(128),
+        lastname VARCHAR(128),
+        picture_url VARCHAR(255),
+        role_id INTEGER,
+        FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+        user_id INTEGER,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
+        created_at DATETIME
     );
 
 CREATE TABLE

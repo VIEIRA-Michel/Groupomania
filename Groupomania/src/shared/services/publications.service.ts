@@ -89,3 +89,14 @@ export async function likeAndDislike(id: number): Promise<any> {
     })
     return response;
 }
+
+export async function getHistory(id: number): Promise<any> {
+    const response = await axios({
+        method: 'get',
+        url: `${BASE_URL}/${id}/history`,
+        headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`
+        },
+    })
+    return response;
+}

@@ -1,6 +1,6 @@
 import { useCommentsStore } from './commentsStore';
 import { defineStore } from 'pinia';
-import { fetchPublications, addPublication, fetchCountOfPublication, editPublication, removePublication, fetchLikes, likeAndDislike } from '../services/publications.service';
+import { fetchPublications, addPublication, fetchCountOfPublication, editPublication, removePublication, fetchLikes, likeAndDislike, getHistory } from '../services/publications.service';
 import type { Publication } from '../interfaces/publication.interface';
 import { useAuthStore } from '../stores/authStore';
 import socket from "../../socket";
@@ -14,8 +14,9 @@ interface PublicationState {
     isLoading: boolean;
     numOfResults: number;
     numberOfPages: number;
-    page: number;
     cache: Publication[];
+    page: number;
+    history: Publication[];
 }
 
 export const usePublicationsStore = defineStore({
@@ -25,8 +26,9 @@ export const usePublicationsStore = defineStore({
         isLoading: true,
         numOfResults: 0,
         numberOfPages: 1,
-        page: 1,
         cache: [] as Publication[],
+        page: 1,
+        history: [] as Publication[],
     }),
     getters: {
         publicationList: (state: PublicationState) => state.publications
@@ -48,6 +50,7 @@ export const usePublicationsStore = defineStore({
                 }
                 if (content || picture) {
                     addPublication(formData).then((response: any) => {
+                        console.log(response);
                         let publicationDate = moment(response.data.data[0].publication_created).format('DD/MM/YYYY à HH:mm').split(" ");
                         if (publicationDate[0] == newDateSplit[0]) {
                             publicationDate[0] = "Aujourd'hui";
@@ -102,6 +105,21 @@ export const usePublicationsStore = defineStore({
                         reject(error);
                     })
                 }
+            })
+        },
+        fetchHistoryOfEdit: (publication_id: number) => {
+            return new Promise((resolve, reject) => {
+                getHistory(publication_id).then((response: any) => {
+                    usePublicationsStore().$patch((state: any) => {
+                        state.history.splice(0, state.history.length);
+                        state.history.push(...response.data.history);
+                    })
+                    console.log(response);
+                    resolve(response);
+                }).catch(error => {
+                    console.log(error);
+                    reject(error);
+                })
             })
         },
         fetchAllPublication: (page?: number, cache?: boolean) => {
@@ -184,9 +202,15 @@ export const usePublicationsStore = defineStore({
                     usePublicationsStore().$patch((state: any) => {
                         state.isLoading = false;
                         if (!cache) {
-                            state.numberOfPages = response.numOfPages;
-                            state.numOfResults = response.numOfResults;
-                            state.page = response.page;
+                            if (response.numOfPages) {
+                                state.numberOfPages = response.numOfPages;
+                            }
+                            if (response.numOfResults) {
+                                state.numOfResults = response.numOfResults;
+                            }
+                            if (response.page) {
+                                state.page = response.page;
+                            }
                             if (state.cache.length > 0) {
                                 state.cache.splice(0, state.cache.length)
                             }
@@ -312,6 +336,11 @@ export const usePublicationsStore = defineStore({
                 })
             })
         },
+        resetHistory: () => {
+            usePublicationsStore().$patch((state: any) => {
+                state.history.splice(0, state.history.length);
+            })
+        },
         getLikes: (id: number) => {
             fetchLikes(id).then((response: any) => {
                 const user_id: any = useAuthStore().$state.user.user_id;
@@ -377,10 +406,11 @@ export const usePublicationsStore = defineStore({
             })
         },
         resetPublicationsAndCache: () => {
-            usePublicationsStore().$patch((state: any) => {
-                state.publications.splice(0, state.publications.length);
-                state.cache.splice(0, state.cache.length);
-            })
+            // usePublicationsStore().$patch((state: any) => {
+            //     state.publications.splice(0, state.publications.length);
+            //     state.cache.splice(0, state.cache.length);
+            // })
+            usePublicationsStore().$reset();
         },
         displayMenu: (publication: any) => {
             usePublicationsStore().$patch((state: any) => {

@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const publicationsController = require('../controllers/publications');
-// const checkInput = require('../middlewares/checkInput');
 const multer = require('../middlewares/multer-config');
 const sanitize = require('../middlewares/sanitizer');
 
@@ -13,7 +12,7 @@ router.get('/', publicationsController.getAllPublications);
 router.post('/:id/likes', publicationsController.likePublication);
 router.get('/count', publicationsController.getQtyOfPublications);
 router.get('/:id/likes', publicationsController.getLikes);
-// router.get('/:id', publicationsController.getOnePublication);
+router.get('/:id/history', publicationsController.getHistoryOfEdit);
 
 
 module.exports = router;
