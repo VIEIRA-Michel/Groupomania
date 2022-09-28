@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, reactive } from 'vue';
+import { computed, ref, reactive, watch } from 'vue';
 import { useAuthStore } from '../shared/stores/authStore';
 import { useRouter } from 'vue-router';
 import socket from '@/socket';
@@ -20,21 +20,13 @@ let updatedProfil = ref(false);
 let inputError = ref(false);
 let errorMessage = ref('');
 let changed = ref(false);
+let wrongFile = ref(false);
 
 function previewPicture(e: any) {
+    wrongFile.value = false;
     const image = document.getElementById('picture');
     userEdit.picture_url = e.target.files[0];
-    console.log(userEdit.picture_url);
     userEdit.picture_url ? image.src = URL.createObjectURL(userEdit.picture_url) : "";
-    changed.value = true
-}
-
-function checkForm() {
-    if (userEdit.email || userEdit.password) {
-        changed.value = true;
-    } else {
-        changed.value = false;
-    }
 }
 
 function updateProfile(userEdit?: any) {
@@ -45,27 +37,76 @@ function updateProfile(userEdit?: any) {
         errorMessage.value = 'Les emails ne correspondent pas';
         inputError.value = true;
     } else {
-        console.log(userEdit);
         if (userEdit.email == '' && userEdit.password == '' && userEdit.picture_url == user.value.picture_url) {
             errorMessage.value = 'Aucune modification n\'a été apportée';
             inputError.value = true;
         } else {
-            useAuthStore().updateProfile(userEdit).then((response: any) => {
-                if (response.status == 200) {
-                    inputError ? inputError.value = false : "";
-                    updatedProfil.value = true;
-                    setTimeout(() => {
-                        socket.emit('update profil', response, user.value);
-                        updatedProfil.value = false;
-                        router.push('/app/home');
-                    }, 2000);
+            if (userEdit.picture_url) {
+                if (userEdit.picture_url.type == 'image/jpg'
+                    || userEdit.picture_url.type == 'image/jpeg'
+                    || userEdit.picture_url.type == 'image/png'
+                    || userEdit.picture_url.type == 'image/webp') {
+                    useAuthStore().updateProfile(userEdit).then((response: any) => {
+                        if (response.status == 200) {
+                            inputError ? inputError.value = false : "";
+                            updatedProfil.value = true;
+                            setTimeout(() => {
+                                socket.emit('update profil', response, user.value);
+                                updatedProfil.value = false;
+                                router.push('/app/home');
+                            }, 2000);
+                        } else {
+                            alert('Erreur lors de la mise à jour du profil');
+                        }
+                    });
                 } else {
-                    alert('Erreur lors de la mise à jour du profil');
+                    if (typeof (userEdit.picture_url) == 'string') {
+                        useAuthStore().updateProfile(userEdit).then((response: any) => {
+                            if (response.status == 200) {
+                                inputError ? inputError.value = false : "";
+                                updatedProfil.value = true;
+                                setTimeout(() => {
+                                    socket.emit('update profil', response, user.value);
+                                    updatedProfil.value = false;
+                                    router.push('/app/home');
+                                }, 2000);
+                            } else {
+                                alert('Erreur lors de la mise à jour du profil');
+                            }
+                        });
+                    } else {
+                        wrongFile.value = true;
+                        errorMessage.value = 'Seuls les images aux formats .jpg .jpeg .png .webp sont acceptées';
+                    }
                 }
-            });
+            } else {
+                useAuthStore().updateProfile(userEdit).then((response: any) => {
+                    if (response.status == 200) {
+                        inputError ? inputError.value = false : "";
+                        updatedProfil.value = true;
+                        setTimeout(() => {
+                            socket.emit('update profil', response, user.value);
+                            updatedProfil.value = false;
+                            router.push('/app/home');
+                        }, 2000);
+                    } else {
+                        alert('Erreur lors de la mise à jour du profil');
+                    }
+                });
+            }
         }
     }
 }
+
+watch(userEdit, (value: any) => {
+    if (value.email !== '' && value.email == value.confirmEmail
+        || value.password !== '' && value.password == value.confirmPassword
+        || value.picture_url && value.picture_url !== user.value.picture_url) {
+        changed.value = true;
+    } else {
+        changed.value = false;
+    }
+})
 </script>
 <template>
     <div v-if="isConnected" class="container">
@@ -77,7 +118,7 @@ function updateProfile(userEdit?: any) {
                 <fa icon="fa-solid fa-check" />
                 <p>Profil mis à jour !</p>
             </div>
-            <div v-if="inputError" class="edit-profil__notification verifyInput">
+            <div v-if="inputError || wrongFile" class="edit-profil__notification verifyInput">
                 <fa icon="fa-solid fa-triangle-exclamation" />
                 <p>{{ errorMessage }}</p>
             </div>
@@ -89,14 +130,14 @@ function updateProfile(userEdit?: any) {
                         <input type="file" class="input-file" accept="image/*" @change="previewPicture($event)" />
                     </div>
                     <div class="edit-profil__body__content__form">
-                        <form @submit.prevent="updateProfile(userEdit)" @change="checkForm">
+                        <form @submit.prevent="updateProfile(userEdit)">
                             <div class="edit-profil__body__content__form__input">
                                 <label for="email">Email</label>
-                                <input type="text" id="email" v-model="userEdit.email" />
+                                <input type="email" id="email" v-model="userEdit.email" />
                             </div>
                             <div class="edit-profil__body__content__form__input">
                                 <label for="confirmEmail">Confirmer l'email</label>
-                                <input type="text" id="confirmEmail" v-model="userEdit.confirmEmail" />
+                                <input type="email" id="confirmEmail" v-model="userEdit.confirmEmail" />
                             </div>
                             <div class="edit-profil__body__content__form__input">
                                 <label for="password">Mot de passe</label>

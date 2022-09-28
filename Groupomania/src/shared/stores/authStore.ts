@@ -129,6 +129,7 @@ export const useAuthStore = defineStore({
                             state.user.email = response.data[0].email
                         })
                     };
+                    localStorage.getItem('user') ? localStorage.setItem('user', JSON.stringify(useAuthStore().user)) : "";
                     resolve(response);
                 }).catch(error => {
                     console.log(error);
