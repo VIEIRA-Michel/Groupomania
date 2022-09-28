@@ -15,13 +15,15 @@ const numOfResults = computed(() => usePublicationsStore().$state.numOfResults);
 const page = computed(() => usePublicationsStore().$state.page);
 const history = computed(() => usePublicationsStore().$state.history);
 
+
 // create
 let selectedFile: any = ref<any>();
 let displayPicture = ref(false);
 let content = ref<string>('');
 let previewPicture = reactive({
     picture: ''
-})
+});
+let wrongFile = ref(false);
 
 // edit
 let inputFileEdit = ref<any>();
@@ -29,6 +31,7 @@ let tmpPicture = ref<string>('');
 let pictureHasHidden = ref(false);
 let publicationIdToEdit = ref<string>('');
 let buttonDisabled = ref(false);
+let wrongFileEdit = ref(false);
 
 // delete
 let modalRequest = ref(false);
@@ -43,6 +46,7 @@ let editPost = reactive({
 });
 
 function onPickFile(event: any) {
+    wrongFile.value = false;
     const image: any = document.getElementById('picture');
     previewPicture.picture = event.target.files[0];
     selectedFile.value = document.getElementById("file").value;
@@ -57,17 +61,32 @@ function autoResize(event: any) {
 
 function createPublication(event: any) {
     if (previewPicture.picture && content.value) {
-        usePublicationsStore().addNewPublication(content.value, previewPicture.picture).then((response: any) => {
-            previewPicture.picture = '';
-            content.value = '';
-            removePicture('create');
-        });
+        if (previewPicture.picture.type == 'image/jpg'
+            || previewPicture.picture.type == 'image/jpeg'
+            || previewPicture.picture.type == 'image/png'
+            || previewPicture.picture.type == 'image/webp') {
+            usePublicationsStore().addNewPublication(content.value, previewPicture.picture).then((response: any) => {
+                previewPicture.picture = '';
+                content.value = '';
+                removePicture('create');
+            });
+        } else {
+            wrongFile.value = true;
+        }
     } else if (previewPicture.picture) {
-        usePublicationsStore().addNewPublication(null, previewPicture.picture).then((response: any) => {
-            previewPicture.picture = '';
-            removePicture('create');
-        });
-    } else if (content.value) {
+        if (previewPicture.picture.type == 'image/jpg'
+            || previewPicture.picture.type == 'image/jpeg'
+            || previewPicture.picture.type == 'image/png'
+            || previewPicture.picture.type == 'image/webp') {
+            usePublicationsStore().addNewPublication(null, previewPicture.picture).then((response: any) => {
+                previewPicture.picture = '';
+                removePicture('create');
+            });
+        } else {
+            wrongFile.value = true;
+        }
+    } else if (!previewPicture.picture && content.value
+        || previewPicture.picture == null && content.value) {
         usePublicationsStore().addNewPublication(content.value, null).then((response: any) => {
             content.value = '';
         });
@@ -82,6 +101,7 @@ function chooseFile(option: string) {
     }
 }
 function activeEditMode(publication: any) {
+    wrongFileEdit.value = false;
     usePublicationsStore().activateEditMode(publication.publication_id).then((response: any) => {
         pictureHasHidden.value = false;
         publicationIdToEdit.value = publication.publication_id.toString();
@@ -114,15 +134,19 @@ function removePicture(option: string, publication_id?: number) {
         previewPicture.picture = null;
         selectedFile.value = null;
         displayPicture.value = false;
+        wrongFile.value = false;
     } else if (option == 'edit') {
         usePublicationsStore().resetPreview(publication_id!).then((response: any) => {
-            document.getElementById("file-edit").value = "";
+            if (document.getElementById("file-edit")?.value) {
+                document.getElementById("file-edit").value = "";
+            }
             inputFileEdit.value = null;
             editPost.picture = null;
             if (pictureHasHidden.value) {
                 pictureHasHidden.value = false;
             }
         })
+        wrongFileEdit.value = false;
     }
 
 }
@@ -144,18 +168,39 @@ function cancelModification(publication: any) {
     })
 }
 
-function updatePublication(publication: any, update: any) {
+function updatePublication(publication: any) {
     if (pictureHasHidden.value == true) {
-        editPost.picture = null;
+        editPost.picture = '';
     } else if (publication.previewOnEdit !== null) {
-        update.picture = publication.previewOnEdit;
+        editPost.picture = publication.previewOnEdit;
     } else if (!pictureHasHidden.value && publication.previewOnEdit == null && publication.picture) {
-        update.picture = publication.picture;
+        editPost.picture = publication.picture;
     }
-    if (update.content || update.picture) {
-        usePublicationsStore().updatePublication(publication.publication_id, update).then((response: any) => {
+    if (editPost.picture) {
+        if (editPost.picture.type == 'image/jpg'
+            || editPost.picture.type == 'image/jpeg'
+            || editPost.picture.type == 'image/png'
+            || editPost.picture.type == 'image/webp') {
+            usePublicationsStore().updatePublication(publication.publication_id, editPost).then((response: any) => {
+                usePublicationsStore().resetPreview(publication.publication_id).then((response2: any) => {
+                    removePicture('edit', publication.publication_id);
+                })
+            })
+        } else {
+            console.log(editPost.picture)
+            if (typeof (editPost.picture) == 'string') {
+                editPost.picture = '';
+                usePublicationsStore().updatePublication(publication.publication_id, editPost).then((response: any) => {
+                    usePublicationsStore().resetPreview(publication.publication_id).then((response2: any) => {
+                    })
+                })
+            } else {
+                wrongFileEdit.value = true;
+            }
+        }
+    } else {
+        usePublicationsStore().updatePublication(publication.publication_id, editPost).then((response: any) => {
             usePublicationsStore().resetPreview(publication.publication_id).then((response2: any) => {
-                inputFileEdit.value = null;
             })
         })
     }
@@ -222,26 +267,26 @@ watchEffect(() => {
         || editPost.content == null && editPost.picture == null && pictureHasHidden.value == true
         || editPost.content == '' && editPost.picture == null && pictureHasHidden.value == true
         || editPost.content == null && editPost.picture == '' && pictureHasHidden.value == true) {
-        console.log('watch effect');
+        // console.log('watch effect');
         buttonDisabled.value = true;
     } else {
-        console.log('watch effect');
+        // console.log('watch effect');
         buttonDisabled.value = false;
     }
 });
 
 watch(modalRequest, (value: boolean) => {
     if (value == true) {
-        console.log('watch');
+        // console.log('watch');
         document.querySelector('body')!.style.overflowY = 'hidden';
     } else if (value == false) {
-        console.log('watch');
+        // console.log('watch');
         document.querySelector('body')!.style.overflowY = 'scroll';
     }
 })
 
 onBeforeMount(() => {
-    console.log('onBeforeMount avant déclanchement init');
+    // console.log('onBeforeMount avant déclanchement init');
     usePublicationsStore().$patch((state: any) => {
         state.isLoading = false;
     })
@@ -276,6 +321,11 @@ onBeforeMount(() => {
                                     Choisir un
                                     fichier</div>
                             </div>
+                            <span v-if="wrongFile" class="picture-message-alert">Seuls
+                                les images
+                                aux formats .jpg .jpeg
+                                .png .webp sont
+                                acceptées</span>
                         </form>
                     </div>
                 </div>
@@ -436,6 +486,11 @@ onBeforeMount(() => {
                                         <div @click="chooseFile('edit')"
                                             class="create_post__content__details__button__choose post-edit">Choisir un
                                             fichier</div>
+                                        <span v-if="wrongFileEdit" class="picture-message-alert">Seuls
+                                            les images
+                                            aux formats .jpg .jpeg
+                                            .png .webp sont
+                                            acceptées</span>
                                     </template>
                                     <template v-else>
                                         <p v-if="publication.content">{{ publication.content }}</p>
@@ -455,7 +510,7 @@ onBeforeMount(() => {
                         <div v-if="publication.editMode" class="post__button">
                             <div class="post__button__list">
                                 <button @click="cancelModification(publication)" class="cancel">Annuler</button>
-                                <button @click="updatePublication(publication, editPost)"
+                                <button @click="updatePublication(publication)"
                                     :class="[buttonDisabled ? 'submit disabled' : 'submit']">Sauvegarder</button>
                             </div>
                         </div>
@@ -573,6 +628,16 @@ onBeforeMount(() => {
 
             form {
                 width: 100%;
+
+                .picture-message-alert {
+                    background: #FF7A79;
+                    border-radius: 5px;
+                    border: 1px solid #FD2D01;
+                    color: #FFFFFF;
+                    font-size: 12px;
+                    padding: 5px;
+                    font-weight: normal;
+                }
             }
 
             &__text {
@@ -908,6 +973,16 @@ onBeforeMount(() => {
             p {
                 width: 95%;
                 overflow-wrap: break-word;
+            }
+
+            .picture-message-alert {
+                background: #FF7A79;
+                border-radius: 5px;
+                border: 1px solid #FD2D01;
+                color: #FFFFFF;
+                font-size: 12px;
+                padding: 5px;
+                font-weight: normal;
             }
         }
 
