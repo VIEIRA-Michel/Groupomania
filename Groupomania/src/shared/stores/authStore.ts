@@ -12,6 +12,7 @@ export interface IAuthStore {
     user: any | null;
     invalidEmail: boolean;
     invalidPassword: boolean;
+    errorMessage: string | null;
 }
 
 export const useAuthStore = defineStore({
@@ -20,7 +21,8 @@ export const useAuthStore = defineStore({
         isConnected: false,
         user: {},
         invalidEmail: false,
-        invalidPassword: false
+        invalidPassword: false,
+        errorMessage: null
     }),
     getters: {
         isAuthenticated(state): boolean | null {
@@ -39,13 +41,36 @@ export const useAuthStore = defineStore({
                 if (lastname && firstname && email && password && confirmPassword) {
                     if (password === confirmPassword) {
                         signUp(lastname, firstname, email, password).then((response: any) => {
+                            useAuthStore().$patch((state: any) => {
+                                state.errorMessage = null;
+                            })
                             resolve(response);
                         }).catch(error => {
-                            console.log(error);
+                            let text = ''
+                            if (error.response.data.length > 0) {
+                                text = 'Le mot de passe doit comporter '
+                                let arrError: any = [];
+                                error.response.data.forEach((element: any) => {
+                                    if (element == 'uppercase') {
+                                        arrError.push('1 majuscule');
+                                    } else if (element == 'digits') {
+                                        arrError.push('2 chiffres ');
+                                    } else if (element == 'lowercase') {
+                                        arrError.push('1 minuscule ');
+                                    }
+                                });
+                                text = text + arrError.join(' et ');
+                                useAuthStore().displayErrorMessage(text);
+                            }
                             reject(error);
                         })
                     }
                 }
+            })
+        },
+        displayErrorMessage(message: string) {
+            useAuthStore().$patch((state: any) => {
+                state.errorMessage = message;
             })
         },
         login(email: string, password: string) {

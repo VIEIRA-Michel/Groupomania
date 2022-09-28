@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
 import { useAuthStore } from '../shared/stores/authStore';
 import { useRouter } from 'vue-router';
 const router = useRouter();
 
 const invalidEmail = computed(() => useAuthStore().$state.invalidEmail);
 const invalidPassword = computed(() => useAuthStore().$state.invalidPassword);
+const errorMessage = computed(() => useAuthStore().$state.errorMessage);
 
 let hasAccount = ref(true);
 let userInput = reactive({
@@ -20,26 +21,24 @@ let loginInput = reactive({
     password: ''
 });
 
-async function login() {
-    try {
-        useAuthStore().login(loginInput.email, loginInput.password).then((response) => {
-            router.push('/app/home');
-        });
-    } catch (error) {
-        throw error;
-    }
+function login() {
+    useAuthStore().login(loginInput.email, loginInput.password).then((response) => {
+        router.push('/app/home');
+    });
 }
 
-async function register() {
-    try {
-        useAuthStore().register(userInput.lastname, userInput.firstname, userInput.email, userInput.password, userInput.confirmPassword).then((response) => {
-            hasAccount.value = true;
-        });
-    } catch (error) {
-        throw error;
+function register() {
+    if (userInput.password !== userInput.confirmPassword) {
+        useAuthStore().displayErrorMessage('Les mots de passe ne correspondent pas');
+    } else {
+        if (userInput.password.length >= 8 && userInput.password.length <= 12) {
+            useAuthStore().register(userInput.lastname, userInput.firstname, userInput.email, userInput.password, userInput.confirmPassword).then((response) => {
+                router.push('/app/home');
+                hasAccount.value = true;
+            });
+        }
     }
 }
-
 </script>
 <template>
     <div class="home">
@@ -64,14 +63,14 @@ async function register() {
                         <div class="container__content__form__login">
                             <label for="email">Email</label>
                             <input type="email" id="email" :class="[invalidEmail ? 'invalidInput' : 'default']"
-                                v-model="loginInput.email" />
+                                v-model="loginInput.email" required />
                             <p v-if="invalidEmail" class="invalidText">Adresse email incorrecte</p>
                         </div>
                         <div class="container__content__form__login">
                             <label for="password">Mot de passe</label>
                             <input type="password" id="password"
                                 v-bind:class="[invalidPassword ? 'invalidInput' : 'default']"
-                                v-model="loginInput.password" />
+                                v-model="loginInput.password" required />
                             <p v-if="invalidPassword" class="invalidText">Mot de passe incorrect</p>
                         </div>
                         <div class="container__content__form__login">
@@ -84,27 +83,38 @@ async function register() {
                     </form>
                 </div>
                 <div v-else class="container__content__form">
-                    <form
-                        @submit.prevent="register">
-                        <div class="container__content__form__register">
-                            <label for="lastname">Nom</label>
-                            <input type="text" id="lastname" v-model="userInput.lastname" />
+                    <ul class="container__content__form__alert" v-if="errorMessage">
+                        {{ errorMessage }}
+                    </ul>
+                    <form @submit.prevent="register">
+                        <div class="container__content__form__information">
+                            <div class="container__content__form__information__lastname">
+                                <label for="lastname">Nom</label>
+                                <input type="text" id="lastname" v-model="userInput.lastname" required />
+                            </div>
+                            <div class="container__content__form__information__firstname">
+                                <label for="firstname">Prénom</label>
+                                <input type="text" id="firstname" v-model="userInput.firstname" required />
+                            </div>
+                            <div class="container__content__form__information__email">
+                                <label for="email">Email</label>
+                                <input type="email" id="email" v-model="userInput.email" required />
+                            </div>
                         </div>
-                        <div class="container__content__form__register">
-                            <label for="firstname">Prénom</label>
-                            <input type="text" id="firstname" v-model="userInput.firstname" />
-                        </div>
-                        <div class="container__content__form__register">
-                            <label for="email">Email</label>
-                            <input type="email" id="email" v-model="userInput.email" />
-                        </div>
-                        <div class="container__content__form__register">
-                            <label for="password">Mot de passe</label>
-                            <input type="password" id="password" v-model="userInput.password" />
-                        </div>
-                        <div class="container__content__form__register">
-                            <label for="confirmPassword">Confirmation du mot de passe</label>
-                            <input type="password" id="confirmPassword" v-model="userInput.confirmPassword" />
+                        <div class="container__content__form__password">
+                            <div class="container__content__form__password__input">
+                                <label for="password">Mot de passe</label>
+                                <input type="password" id="password" v-model="userInput.password" required />
+                                <ul class="message">La longueur du mot de passe doit être comprise entre 8 et 12
+                                    caractères et doit contenir au minimum :
+                                    <li>1 minuscule 1 majuscule 2 chiffres</li>
+                                </ul>
+                            </div>
+                            <div class="container__content__form__password__confirm-input">
+                                <label for="confirmPassword">Confirmation du mot de passe</label>
+                                <input type="password" id="confirmPassword" v-model="userInput.confirmPassword"
+                                    required />
+                            </div>
                         </div>
                         <div class="container__content__form__register">
                             <button>S'enregistrer</button>
@@ -206,6 +216,7 @@ async function register() {
             flex-direction: column;
             align-items: center;
             padding: 20px;
+            width: 38%;
             -webkit-animation: slide-out-blurred-bottom 0.8s cubic-bezier(0.755, 0.050, 0.855, 0.060) 0.8s reverse both;
             animation: slide-out-blurred-bottom 0.8s cubic-bezier(0.755, 0.050, 0.855, 0.060) 0.8s reverse both;
 
@@ -216,77 +227,102 @@ async function register() {
 
             &__form {
                 border-radius: 5px;
-                background: #FFFFFF;
+                background: floralwhite;
                 border: 1px solid #FD2D01;
                 padding: 20px;
+                width: 305px;
                 -webkit-animation: focus-in-expand 0.4s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
                 animation: focus-in-expand 0.4s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
-
-
-
 
                 form {
                     display: flex;
                     flex-direction: column;
                 }
 
-                &__login {
-
-                    margin-bottom: 15px;
+                &__alert {
+                    background-color: #FF7A79;
+                    color: #FFFFFF !important;
+                    padding: 5px;
                     display: flex;
                     flex-direction: column;
+                    margin-bottom: 10px;
+                    font-size: 12px;
+                    border-radius: 5px;
+                    border: 1px solid #FD2D01;
+                }
 
-                    .invalidInput {
-                        border: #FD2D01 2px ridge;
-                        -webkit-animation: shake-horizontal 0.4s cubic-bezier(0.455, 0.030, 0.515, 0.955) both;
-                        animation: shake-horizontal 0.4s cubic-bezier(0.455, 0.030, 0.515, 0.955) both;
-                    }
+                &__information {
+                    width: 100%;
+                    display: flex;
+                    justify-content: space-between;
+                    flex-direction: column;
 
-                    .default {
-                        border: 2px ridge #4E5166;
-                    }
-
-                    .invalidText {
-                        color: #FD2D01;
-                        margin-top: 5px;
-                    }
-
-                    label {
-                        font-weight: 800;
+                    &__lastname,
+                    &__firstname,
+                    &__email {
+                        display: flex;
+                        flex-direction: column;
                         text-align: center;
+                        font-weight: 300;
+                        margin-bottom: 10px;
+
+                        input {
+                            text-align: center;
+                            border: 1px solid #dbdbdb;
+                            border-radius: 5px;
+                        }
                     }
 
-                    input {
-                        border-radius: 5px;
-                        height: 20px;
+                }
+
+                &__password {
+                    &__input {
                         text-align: center;
+                        display: flex;
+                        flex-direction: column;
+                        width: 100%;
+                        font-weight: 300;
+                        margin-bottom: 10px;
+
+                        input {
+                            text-align: center;
+                            border: 1px solid #dbdbdb;
+                            border-radius: 5px 5px 0 0;
+                        }
+
+                        .message {
+                            background-color: #f5f5f5;
+                            border-bottom: 1px solid #dbdbdb;
+                            border-left: 1px solid #dbdbdb;
+                            border-right: 1px solid #dbdbdb;
+                            border-radius: 0 0 5px 5px;
+                            padding: 5px;
+                            color: #4E5166;
+                            font-size: 12px;
+                        }
                     }
 
-                    button {
-                        background-color: #FFFFFF;
-                        border-color: #FD2D01;
-                        color: #FD2D01;
-                        padding: 10px;
-                        border: 1px solid #FD2D01;
-                        border-radius: 5px;
-                        cursor: pointer;
-                        transition: all 0.3s ease-in-out;
+                    &__confirm-input {
+                        width: 100%;
+                        text-align: center;
+                        font-weight: 300;
+                        display: flex;
+                        flex-direction: column;
+                        margin-bottom: 10px;
 
-                        &:hover {
-                            background-color: #FD2D01;
-                            color: #FFFFFF;
+                        input {
+                            text-align: center;
+                            border: 1px solid #dbdbdb;
+                            border-radius: 5px;
                         }
                     }
                 }
 
-                &__message {
-                    cursor: pointer;
-                }
 
                 &__register {
                     display: flex;
                     flex-direction: column;
-
+                    width: 100%;
                     margin-bottom: 15px;
                     display: flex;
                     flex-direction: column;
@@ -322,6 +358,57 @@ async function register() {
                         }
                     }
                 }
+
+                &__login {
+                    font-weight: 300;
+                    margin-bottom: 15px;
+                    text-align: center;
+                    display: flex;
+                    flex-direction: column;
+
+                    input {
+                        text-align: center;
+                    }
+
+                    .invalidInput {
+                        border: 1px solid #FD2D01;
+                        border-radius: 5px;
+                        -webkit-animation: shake-horizontal 0.4s cubic-bezier(0.455, 0.030, 0.515, 0.955) both;
+                        animation: shake-horizontal 0.4s cubic-bezier(0.455, 0.030, 0.515, 0.955) both;
+                    }
+
+                    .default {
+                        border-radius: 5px;
+                        border: 1px solid #dbdbdb;
+                        text-align: center;
+                    }
+
+                    .invalidText {
+                        color: #FD2D01;
+                        margin-top: 5px;
+                    }
+
+                    button {
+                        background-color: #FFFFFF;
+                        border-color: #FD2D01;
+                        color: #FD2D01;
+                        padding: 10px;
+                        border: 1px solid #FD2D01;
+                        border-radius: 5px;
+                        cursor: pointer;
+                        transition: all 0.3s ease-in-out;
+
+                        &:hover {
+                            background-color: #FD2D01;
+                            color: #FFFFFF;
+                        }
+                    }
+                }
+
+                &__message {
+                    cursor: pointer;
+                    text-align: center;
+                }
             }
         }
 
@@ -351,127 +438,6 @@ async function register() {
 .home_picture {
     img {
         position: absolute;
-    }
-}
-
-
-.welcome {
-    max-width: 1440px;
-    margin: 0 auto;
-
-    .welcome__content {
-        padding: 0 20px;
-        text-align: center;
-        margin-top: 100px;
-
-        &__container {
-            display: flex;
-            flex-direction: row;
-            align-items: center;
-            justify-content: center;
-            margin-top: 50px;
-
-            &__button {
-                background-color: #FD2D01;
-                border-color: #FD2D01;
-                color: #fff;
-                font-size: 1.5rem;
-                padding: 10px 20px;
-                border-radius: 5px;
-                border-width: 1px;
-                border-style: solid;
-                cursor: pointer;
-                transition: all 0.3s ease-in-out;
-                margin: 0 10px;
-
-                &:hover {
-                    background-color: #FFD7D7;
-                    border-color: #FFD7D7;
-                    color: #fff;
-                }
-            }
-        }
-
-        h1 {
-            font-size: 2.5rem;
-            font-weight: bold;
-            margin-bottom: 20px;
-        }
-
-        p {
-            font-size: 1.5rem;
-            line-height: 1.5;
-            margin-bottom: 20px;
-        }
-    }
-}
-
-.calc {
-    position: absolute;
-    top: 0;
-    background-color: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(2px);
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-}
-
-.modal-container {
-    background-color: #FFF;
-    color: #4E5166;
-    padding: 40px;
-    border-radius: 5px;
-    width: 300px;
-    height: 300px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    backdrop-filter: blur(2px);
-    transition: all 0.3s ease-in-out;
-    transform: translateY(-100px);
-    transform-origin: center;
-
-    h2 {
-        font-size: 1.5rem;
-        margin-bottom: 20px;
-
-        span {
-            color: #FD2D01;
-        }
-    }
-
-    &__form {
-        display: flex;
-        flex-direction: column;
-
-        &__row {
-            display: flex;
-            flex-direction: column;
-
-            &:nth-child(6) {
-                margin-top: 20px;
-                display: flex;
-                align-items: center;
-
-                button {
-                    background-color: #FD2D01;
-                    border-color: #FD2D01;
-                    color: #fff;
-                    font-size: 1.5rem;
-                    padding: 10px 20px;
-                    border-radius: 5px;
-                    border-width: 1px;
-                    border-style: solid;
-                    cursor: pointer;
-                    transition: all 0.3s ease-in-out;
-                    margin: 0 10px;
-                }
-            }
-        }
     }
 }
 </style>

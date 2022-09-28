@@ -109,10 +109,26 @@ export const usePublicationsStore = defineStore({
         },
         fetchHistoryOfEdit: (publication_id: number) => {
             return new Promise((resolve, reject) => {
+                let date = new Date();
+                let newDate = moment(date).format('DD/MM/YYYY HH:mm:ss');
+                let newDateSplit = newDate.split(" ");
                 getHistory(publication_id).then((response: any) => {
                     usePublicationsStore().$patch((state: any) => {
                         state.history.splice(0, state.history.length);
-                        state.history.push(...response.data.history);
+                        response.data.history.forEach((item: any) => {
+                            let editDate = moment(item.created_at).format('DD/MM/YYYY à HH:mm').split(" ");
+                            if (editDate[0] == newDateSplit[0]) {
+                                editDate[0] = "Aujourd'hui";
+                            } else if (parseInt(editDate[0]) == parseInt(newDateSplit[0]) - 1) {
+                                editDate[0] = "Hier";
+                            } else if (parseInt(editDate[0]) == parseInt(newDateSplit[0]) - 2) {
+                                editDate[0] = "Avant-hier";
+                            }
+                            state.history.push({
+                                ...item,
+                                edit_date: editDate.join(" "),
+                            })
+                        });
                     })
                     console.log(response);
                     resolve(response);

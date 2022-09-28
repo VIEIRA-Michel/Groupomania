@@ -15,7 +15,6 @@ const numOfResults = computed(() => usePublicationsStore().$state.numOfResults);
 const page = computed(() => usePublicationsStore().$state.page);
 const history = computed(() => usePublicationsStore().$state.history);
 
-
 // create
 let selectedFile: any = ref<any>();
 let displayPicture = ref(false);
@@ -38,7 +37,6 @@ let modalRequest = ref(false);
 let publicationIdToDelete = ref();
 
 // modal list edit
-
 let displayHistory = ref(false);
 let editPost = reactive({
     content: '',
@@ -52,12 +50,12 @@ function onPickFile(event: any) {
     selectedFile.value = document.getElementById("file").value;
     previewPicture.picture ? image.src = URL.createObjectURL(previewPicture.picture) : "";
     displayPicture.value = true;
-}
+};
 
 function autoResize(event: any) {
     event.target.style.height = 'auto';
     event.target.style.height = event.target.scrollHeight + 'px';
-}
+};
 
 function createPublication(event: any) {
     if (previewPicture.picture && content.value) {
@@ -99,7 +97,8 @@ function chooseFile(option: string) {
     } else if (option == 'edit') {
         document.getElementById("file-edit").click();
     }
-}
+};
+
 function activeEditMode(publication: any) {
     wrongFileEdit.value = false;
     usePublicationsStore().activateEditMode(publication.publication_id).then((response: any) => {
@@ -110,14 +109,16 @@ function activeEditMode(publication: any) {
             tmpPicture.value = publication.picture;
         }
     });
-}
+};
+
 function editPickFile(event: any, publication: any) {
     pictureHasHidden.value = false;
     usePublicationsStore().previewMode(publication.publication_id, event.target.files[0]).then((response: any) => {
         inputFileEdit.value = document.getElementById("file-edit").value;
         publication.previewOnEdit ? document.getElementById(`${publication.publication_id.toString()}`).src = URL.createObjectURL(publication.previewOnEdit) : "";
     })
-}
+};
+
 function hideImageOnPost(publication: any) {
     tmpPicture.value = '';
     if (inputFileEdit.value) {
@@ -127,7 +128,8 @@ function hideImageOnPost(publication: any) {
         usePublicationsStore().resetPreview(publication.publication_id);
     }
     pictureHasHidden.value = true;
-}
+};
+
 function removePicture(option: string, publication_id?: number) {
     if (option == 'create') {
         document.getElementById("file").value = "";
@@ -149,7 +151,7 @@ function removePicture(option: string, publication_id?: number) {
         wrongFileEdit.value = false;
     }
 
-}
+};
 
 function cancelModification(publication: any) {
     usePublicationsStore().activateEditMode(publication.publication_id, 'deactivate').then((response: any) => {
@@ -166,7 +168,7 @@ function cancelModification(publication: any) {
         }
         inputFileEdit.value = null;
     })
-}
+};
 
 function updatePublication(publication: any) {
     if (pictureHasHidden.value == true) {
@@ -204,23 +206,24 @@ function updatePublication(publication: any) {
             })
         })
     }
-}
+};
 
 function displayHistoryOfEdit(publication_id: number) {
     usePublicationsStore().fetchHistoryOfEdit(publication_id).then((response: any) => {
         displayHistory.value = true;
     })
-}
+};
 
 function closeHistory() {
     displayHistory.value = false;
     usePublicationsStore().resetHistory();
-}
+};
 
 function activateModal(publication_id: number) {
     modalRequest.value = true;
     publicationIdToDelete.value = publication_id;
-}
+};
+
 function deletePublication(id: number) {
     modalRequest.value = false;
     if (page.value < numberOfPages.value && usePublicationsStore().$state.cache.length == 0 && publications.value.length < numOfResults.value) {
@@ -234,7 +237,7 @@ function deletePublication(id: number) {
             socket.emit('delete publication', id, user.value);
         });
     }
-}
+};
 
 function likePublication(publication: any) {
     usePublicationsStore().likePublication(publication.publication_id).then((response: any) => {
@@ -244,12 +247,12 @@ function likePublication(publication: any) {
             socket.emit('remove like', { publication, user: user.value });
         }
     });
-}
+};
 
 function changePage(operation: string) {
     usePublicationsStore().resetPublicationsAndCache();
     usePublicationsStore().changePage(operation);
-}
+};
 
 function init() {
     usePublicationsStore().resetPublicationsAndCache();
@@ -267,31 +270,26 @@ watchEffect(() => {
         || editPost.content == null && editPost.picture == null && pictureHasHidden.value == true
         || editPost.content == '' && editPost.picture == null && pictureHasHidden.value == true
         || editPost.content == null && editPost.picture == '' && pictureHasHidden.value == true) {
-        // console.log('watch effect');
-        buttonDisabled.value = true;
+        buttonDisabled.value = true
     } else {
-        // console.log('watch effect');
-        buttonDisabled.value = false;
+        buttonDisabled.value = false
     }
 });
 
 watch(modalRequest, (value: boolean) => {
     if (value == true) {
-        // console.log('watch');
-        document.querySelector('body')!.style.overflowY = 'hidden';
+        document.querySelector('body')!.style.overflowY = 'hidden'
     } else if (value == false) {
-        // console.log('watch');
-        document.querySelector('body')!.style.overflowY = 'scroll';
+        document.querySelector('body')!.style.overflowY = 'scroll'
     }
-})
+});
 
 onBeforeMount(() => {
-    // console.log('onBeforeMount avant déclanchement init');
     usePublicationsStore().$patch((state: any) => {
-        state.isLoading = false;
+        state.isLoading = false
     })
     init();
-})
+});
 
 </script>
 <template>
@@ -369,13 +367,12 @@ onBeforeMount(() => {
                                                 <Teleport to="body">
                                                     <div v-if="displayHistory" @click="closeHistory" class="calc">
                                                         <div class="modal-container-edit">
-                                                            <div class="modal-container-edit__content">
-                                                                <div class="modal-container-edit__content__header">
-                                                                    <div
-                                                                        class="modal-container-edit__content__header__title">
-                                                                        Liste des modifications
-                                                                    </div>
+                                                            <div class="modal-container-edit__header">
+                                                                <div class="modal-container-edit__header__title">
+                                                                    Liste des modifications
                                                                 </div>
+                                                            </div>
+                                                            <div class="modal-container-edit__content">
                                                                 <div class="modal-container-edit__content__body">
                                                                     <div
                                                                         class="modal-container-edit__content__body__list">
@@ -387,20 +384,23 @@ onBeforeMount(() => {
                                                                                     class="modal-container-edit__content__body__list__item__top__details">
                                                                                     <div
                                                                                         class="modal-container-edit__content__body__list__item__top__details__avatar">
-                                                                                        <img :src="update.picture_url"
+                                                                                        <img :src="update.user_id == publication.user_id ? publication.picture_url : 'https://media.istockphoto.com/vectors/default-profile-picture-avatar-photo-placeholder-vector-illustration-vector-id1223671392?k=20&m=1223671392&s=170667a&w=0&h=kEAA35Eaz8k8A3qAGkuY8OZxpfvn9653gDjQwDHZGPE='"
                                                                                             alt="avatar" />
                                                                                     </div>
                                                                                     <div
                                                                                         class="modal-container-edit__content__body__list__item__top__details__info">
                                                                                         <div
                                                                                             class="modal-container-edit__content__body__list__item__top__details__info__name">
-                                                                                            <span>{{ update.firstname +
+                                                                                            <span>{{ update.user_id ==
+                                                                                            publication.user_id ?
+                                                                                            publication.firstname +
                                                                                             ' ' +
-                                                                                            update.lastname}}</span>
+                                                                                            publication.lastname :
+                                                                                            'Administrateur'}}</span>
                                                                                         </div>
                                                                                         <div
                                                                                             class="modal-container-edit__content__body__list__item__top__details__info__date">
-                                                                                            {{ update.created_at}}
+                                                                                            {{ update.edit_date}}
                                                                                         </div>
                                                                                     </div>
                                                                                 </div>
@@ -418,10 +418,10 @@ onBeforeMount(() => {
                                                                         </div>
                                                                     </div>
                                                                 </div>
-                                                                <div class="modal-container-edit__content__footer">
-                                                                    <button @click="closeHistory" type="button"
-                                                                        data-dismiss="modal">Fermer</button>
-                                                                </div>
+                                                            </div>
+                                                            <div class="modal-container-edit__footer">
+                                                                <button @click="closeHistory" type="button"
+                                                                    data-dismiss="modal">Fermer</button>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -957,7 +957,7 @@ onBeforeMount(() => {
         display: flex;
         flex-direction: column;
         align-items: flex-start;
-        padding: 10px 0 0 0;
+        margin: 10px;
 
         &__text {
             margin: 0px 10px 20px;
@@ -993,22 +993,13 @@ onBeforeMount(() => {
             object-fit: cover;
             border-top: 1px solid #dbdbdb;
             border-bottom: 1px solid #dbdbdb;
+            border-radius: 5px;
             background: #FFFFFF;
 
             &.hidden {
                 display: none;
             }
         }
-
-        // img {
-        //     width: 100%;
-        //     height: 100%;
-        //     max-height: 353px;
-        //     object-fit: cover;
-        //     border-top: 1px solid #dbdbdb;
-        //     border-bottom: 1px solid #dbdbdb;
-        //     background: #FFFFFF;
-        // }
 
         &__details {
 
@@ -1269,17 +1260,26 @@ onBeforeMount(() => {
     border-radius: 5px;
     min-width: 350px;
 
-    &__content {
-        &__header {
-            margin-bottom: 20px;
+    &__header {
+        margin-bottom: 20px;
 
-            &__title {
-                text-align: center;
-                color: #FD2D01;
-                font-weight: bold;
-                font-size: 15px;
-            }
+        &__title {
+            text-align: center;
+            color: #FD2D01;
+            font-weight: bold;
+            font-size: 15px;
         }
+    }
+
+    &__content {
+        height: 100%;
+        max-height: 350px;
+        overflow-y: scroll;
+        margin-bottom: 20px;
+        border: 1px solid #dbdbdb;
+        border-radius: 5px;
+        background: #F5F5F5;
+
 
         &__body {
             &__list {
@@ -1287,34 +1287,79 @@ onBeforeMount(() => {
                     background: floralwhite;
                     border-radius: 5px;
                     border: 1px solid #FD2D01;
-                    margin-bottom: 20px;
-                    padding: 10px;
+                    margin: 20px;
+                    padding: 10px 10px 0 10px;
 
-                    &__date {}
+                    &__top {
+                        &__details {
+                            display: flex;
 
-                    &__content {}
+                            &__avatar {
+                                img {
+                                    width: 40px;
+                                    height: 40px;
+                                    border-radius: 5px;
+                                    object-fit: cover;
+                                }
+                            }
 
-                    &__picture {}
+                            &__info {
+                                margin-left: 10px;
+
+                                &__name {
+                                    font-weight: bold;
+                                }
+
+                                &__date {
+                                    font-size: 12px;
+                                    color: #FD2D01;
+                                }
+                            }
+                        }
+                    }
+
+
+                    &__content {
+                        margin-top: 10px;
+                        background: #FFFFFF;
+                        border: 1px solid #dbdbdb;
+                        border-radius: 5px;
+                        padding: 5px;
+                    }
+
+                    &__picture {
+                        max-width: 328px;
+                        margin-top: 10px;
+                        margin-bottom: 8px;
+
+                        img {
+                            width: 100%;
+                            object-fit: cover;
+                            border-radius: 5px;
+                        }
+                    }
                 }
             }
         }
 
-        &__footer {
-            display: flex;
-            justify-content: flex-end;
+    }
 
-            button {
-                background-color: #FFFFFF;
-                padding: 5px;
-                color: #FD2D01;
-                border: 1px solid #FD2D01;
-                border-radius: 5px;
+    &__footer {
+        display: flex;
+        justify-content: flex-end;
 
-                &:hover {
-                    background-color: #FD2D01;
-                    color: #FFFFFF;
-                    transition: 0.3s all;
-                }
+        button {
+            background-color: #FFFFFF;
+            padding: 5px;
+            color: #FD2D01;
+            border: 1px solid #FD2D01;
+            border-radius: 5px;
+            cursor: pointer;
+
+            &:hover {
+                background-color: #FD2D01;
+                color: #FFFFFF;
+                transition: 0.3s all;
             }
         }
     }

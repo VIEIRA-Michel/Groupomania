@@ -107,9 +107,9 @@ exports.createPublication = (req, res, next) => {
                 console.log(err)
                 res.status(500).json({ message: 'Erreur lors de la création de la publication' });
             } else {
-                sql = `INSERT INTO publication_history (publication_id, content, picture, firstname, lastname, picture_url, role_id, user_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW());`;
+                sql = `INSERT INTO publication_history (publication_id, content, picture, role_id, user_id, created_at) VALUES (?, ?, ?, ?, ?, NOW());`;
                 connection.query(
-                    sql, [results1.insertId, publication.content, publication.picture, req.user.firstname, req.user.lastname, req.user.picture_url, req.user.role_id, req.user.userId], function (err, results2) {
+                    sql, [results1.insertId, publication.content, publication.picture, req.user.role_id, req.user.userId], function (err, results2) {
                         if (err) {
                             console.log(err);
                             res.status(500).json({ message: 'Erreur lors de la création de l\'historique de la publication' });
@@ -154,9 +154,9 @@ exports.updatePublication = (req, res, next) => {
                 console.log(err)
                 res.status(500).json({ message: 'Erreur lors de la modification de la publication' });
             } else {
-                sql = `INSERT INTO publication_history (publication_id, content, picture, firstname, lastname, picture_url, role_id, user_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW());`;
+                sql = `INSERT INTO publication_history (publication_id, content, picture, role_id, user_id, created_at) VALUES (?, ?, ?, ?, ?, NOW());`;
                 connection.query(
-                    sql, [req.params.id, publication.content, publication.picture, req.user.firstname, req.user.lastname, req.user.picture_url, req.user.role_id, req.user.userId], function (err, results) {
+                    sql, [req.params.id, publication.content, publication.picture, req.user.role_id, req.user.userId], function (err, results) {
                         if (err) {
                             console.log(err);
                             res.status(500).json({ message: 'Erreur lors de la création de l\'historique de la publication' });
