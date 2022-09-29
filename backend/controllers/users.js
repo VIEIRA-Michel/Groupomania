@@ -154,7 +154,6 @@ exports.updateProfil = (req, res, next) => {
                         if (results[0].picture_url !== null) {
                             const filename = results[0].picture_url.split('/images/')[1];
                             fs.unlink(`images/${filename}`, () => {
-                                console.log('Image supprimée');
                             });
                         }
                         arrSql.push('picture_url = ?');
@@ -260,3 +259,83 @@ exports.getAllFriendsOfUser = (req, res, next) => {
         }
     )
 }
+
+exports.getAllNotifications = (req, res, next) => {
+    let allResults = [];
+    let sql = `SELECT * FROM publications WHERE user_id = ?;`;
+    connection.query(
+        sql, [req.user.userId], function (err, results1) {
+            if (err) {
+                console.log(err);
+                reject(err);
+                // res.status(500).json({ message: 'Erreur lors de la récupération des notifications' });
+            } else if (results1 !== undefined || results1.length > 0) {
+                sql = `SELECT users.id as user_id, users.lastname, users.firstname, users.picture_url, users.role_id, users.session_id, users.userID, comments.id as comment_id, comments.user_id as comment_user_id, comments.publication_id as comment_publication_id, comments.content, comments.created_at FROM comments LEFT JOIN users ON comments.user_id = users.id WHERE `;
+                let arr = [];
+                let sqlVariables = [];
+                results1.forEach(element => {
+                    arr.push(`publication_id = ?`);
+                    sqlVariables.push(element.id);
+                })
+                sql = sql + arr.join(' OR ');
+                connection.query(
+                    sql, sqlVariables, function (err, results2) {
+                        if (err) {
+                            console.log(err);
+                            // res.status(500).json({ message: 'Erreur lors de la récupération des notifications' });
+                        } else if (results2 !== undefined || results2.length > 0) {
+                            console.log('result2', results2);
+                            results2.forEach(element => {
+                                allResults.push(element);
+                            })
+                        }
+                    }
+                )
+                sql = `SELECT users.id as user_id, users.lastname, users.firstname, users.picture_url, users.role_id, users.session_id, users.userID, publication_user_liked.id as like_id, publication_user_liked.publication_id as publication_id, publication_user_liked.created_at as liked_on FROM publication_user_liked LEFT JOIN users ON publication_user_liked.user_id = users.id WHERE `;
+                sql = sql + arr.join(' OR ');
+                connection.query(
+                    sql, sqlVariables, function (err, results3) {
+                        if (err) {
+                            console.log(err);
+                            // res.status(500).json({ message: 'Erreur lors de la récupération des notifications' });
+                        } else if (results3 !== undefined || results3.length > 0) {
+                            console.log('result3', results3)
+                            results3.forEach(element => {
+                                allResults.push(element);
+                            })
+                        }
+                    }
+                )
+            }
+        }
+    )
+    sql = `SELECT users.id as user_id, users.lastname, users.firstname, users.picture_url, users.role_id, users.session_id, users.userID, requests_friendship.id as request_id, requests_friendship.user_id_sender as sender, requests_friendship.user_id_recipient as recipient, requests_friendship.request_date, requests_friendship.approve_date, requests_friendship.denied_date FROM users LEFT JOIN requests_friendship ON requests_friendship.user_id_recipient = users.id WHERE requests_friendship.user_id_sender = ? AND requests_friendship.approve_date IS NOT NULL AND users.account_disabled IS NULL`;
+    connection.query(
+        sql, [req.user.userId], function (err, results4) {
+            if (err) {
+                console.log(err);
+                res.status(500).json({ message: 'Erreur lors de la récupération des notifications' });
+            } else if (results4 !== undefined || results4.length > 0) {
+                console.log('results4', results4);
+                results4.forEach(element => {
+                    allResults.push(element);
+                })
+            }
+        }
+    )
+    sql = `SELECT users.id as user_id, users.lastname, users.firstname, users.picture_url, users.role_id, users.session_id, users.userID, requests_friendship.id as request_id, requests_friendship.user_id_sender as sender, requests_friendship.user_id_recipient as recipient, requests_friendship.request_date, requests_friendship.approve_date, requests_friendship.denied_date FROM users LEFT JOIN requests_friendship ON requests_friendship.user_id_sender = users.id WHERE requests_friendship.user_id_recipient = ? AND users.account_disabled IS NULL`;
+    connection.query(
+        sql, [req.user.userId], function (err, results5) {
+            if (err) {
+                console.log(err);
+                res.status(500).json({ message: 'Erreur lors de la récupération des notifications' });
+            } else if (results5 !== undefined || results5.length > 0) {
+                console.log('results5', results5);
+                results5.forEach(element => {
+                    allResults.push(element);
+                })
+                // res.status(200).json(allResults);
+            }
+        }
+    )
+};

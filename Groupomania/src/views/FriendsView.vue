@@ -24,12 +24,13 @@ function removeFriend(user_id: number) {
 
 function addToFriends(user_id: any) {
     useFriendshipStore().sendFriendRequest(user_id).then((response: any) => {
+        console.log(response);
         let req = ref({
             approve_date: response.data.results[0].approve_date,
             denied_date: response.data.results[0].denied_date,
             email: useAuthStore().$state.user.email,
             firstname: useAuthStore().$state.user.firstname,
-            idRequest: response.data.results[0].id,
+            idRequest: response.data.results[0].requestId,
             lastname: useAuthStore().$state.user.lastname,
             picture_url: useAuthStore().$state.user.picture_url,
             recipient: response.data.results[0].user_id_recipient,

@@ -108,6 +108,7 @@ export const useFriendshipStore = defineStore({
         acceptOrDeclineRequest: (req: any, answer: string) => {
             return new Promise((resolve, reject) => {
                 acceptOrDecline(req.sender, answer).then((response: any) => {
+                    console.log(response);
                     if (answer == 'refused') {
                         useFriendshipStore().$patch((state: any) => {
                             state.requests.map((item: any) => {

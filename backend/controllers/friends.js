@@ -75,9 +75,9 @@ exports.replyToRequest = (req, res, next) => {
             }
             else {
                 if (req.body.response == 'accepted') {
-                    let sql = `UPDATE requests_friendship SET approve_date = NOW() WHERE user_id_sender = ?;`;
+                    let sql = `UPDATE requests_friendship SET approve_date = NOW() WHERE id = ?;`;
                     connection.query(
-                        sql, [req.params.id], function (err, results) {
+                        sql, [results[0].id], function (err, results) {
                             if (err) {
                                 console.log(err);
                                 res.status(500).json({ message: 'Erreur lors de la réponse à la demande d\'amitié !' });

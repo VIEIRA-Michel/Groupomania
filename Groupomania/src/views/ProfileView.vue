@@ -22,6 +22,10 @@ let errorMessage = ref('');
 let changed = ref(false);
 let wrongFile = ref(false);
 
+function changePicture() {
+    document.getElementById("file").click();
+}
+
 function previewPicture(e: any) {
     wrongFile.value = false;
     const image = document.getElementById('picture');
@@ -125,9 +129,10 @@ watch(userEdit, (value: any) => {
             <div class="edit-profil__body">
                 <div class="edit-profil__body__content">
                     <div class="edit-profil__body__content__picture">
-                        <img :src="user.picture_url" alt="profil picture" id="picture" />
-                        <fa icon="fa-solid fa-pen" />
-                        <input type="file" class="input-file" accept="image/*" @change="previewPicture($event)" />
+                        <img :src="user.picture_url" alt="profil picture" id="picture" @click="changePicture" />
+                        <fa icon="fa-solid fa-pen" @click="changePicture" />
+                        <input type="file" class="input-file" id="file" accept="image/*"
+                            @change="previewPicture($event)" />
                     </div>
                     <div class="edit-profil__body__content__form">
                         <form @submit.prevent="updateProfile(userEdit)">
@@ -260,6 +265,7 @@ watch(userEdit, (value: any) => {
                         height: 80px;
                         border-radius: 45px;
                         object-fit: cover;
+                        cursor: pointer;
                     }
 
                     svg {
@@ -272,9 +278,9 @@ watch(userEdit, (value: any) => {
                         border-radius: 50%;
                         transform: translate(-50%, -50%);
                         color: #4E5166;
-                        font-size: 20px;
                         font-size: 15px;
-                        opacity: 1;
+                        z-index: 1;
+                        cursor: pointer;
                     }
 
                     .input-file {
@@ -289,7 +295,6 @@ watch(userEdit, (value: any) => {
                         width: 15px;
                         height: 15px;
                         opacity: 0;
-                        z-index: 10;
                     }
                 }
 

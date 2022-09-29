@@ -8,7 +8,7 @@ import { ref } from 'vue';
 
 export interface chatState {
     newmessage: null;
-    messages: Message[];
+    // messages: Message[];
     typing: boolean;
     users: [];
     selectedUser: any;
@@ -20,7 +20,7 @@ export const useChatStore = defineStore({
     id: "chat",
     state: (): chatState => ({
         newmessage: null,
-        messages: [] as Message[],
+        // messages: [] as Message[],
         typing: false,
         users: [],
         selectedUser: null,
@@ -65,6 +65,7 @@ export const useChatStore = defineStore({
         },
         selectedUser: (user: any) => {
             if (typeof (user) == 'number') {
+                console.log('type number');
                 useChatStore().$patch((state: any) => {
                     if (state.selectedUser && state.selectedUser.messages.length > 0) {
                         state.selectedUser.messages.splice(0, state.selectedUser.messages.length);
@@ -123,12 +124,6 @@ export const useChatStore = defineStore({
                     useChatStore().$patch((state: any) => {
                         console.log(response.data);
                         state.selectedUser.messagesQty += 1;
-                        state.messages.push({
-                            sender: useAuthStore().$state.user.user_id,
-                            id: response,
-                            content: message.value,
-                            recipient: state.selectedUser.user,
-                        });
                         state.selectedUser.messages.push({
                             sender: useAuthStore().$state.user.user_id,
                             id: response,
@@ -159,6 +154,7 @@ export const useChatStore = defineStore({
                     if (response.data?.length > 0 && useFriendshipStore().$state.friends.length > 0) {
                         useChatStore().$patch((state: any) => {
                             state.friendsConnected.splice(0, state.friendsConnected.length);
+                            console.log(response.data);
                             response.data.map((user: any) => {
                                 useFriendshipStore().$state.friends.map((friend: any) => {
                                     if (friend.user_id == user.user) {
@@ -228,32 +224,28 @@ export const useChatStore = defineStore({
                 useChatStore().$patch((state: any) => {
                     useChatStore().$state.friendsConnected.map((utilisateur: any) => {
                         if (utilisateur.userID == data.from) {
-                            state.messages.push({
-                                sender: utilisateur.user,
-                                id: data.id,
-                                content: data.message,
-                                recipient: useAuthStore().$state.user.user_id,
-                            });
-                            utilisateur.messages.push({
-                                sender: utilisateur.user,
-                                id: data.id,
-                                content: data.message,
-                                recipient: useAuthStore().$state.user.user_id,
-                            });
-                            utilisateur.messagesQty += 1;
-                            if (utilisateur !== state.selectedUser) {
-                                utilisateur.hasNewMessages = true;
+                            if (state.selectedUser !== null && utilisateur.user == state.selectedUser.user) {
+                                utilisateur.messages.push({
+                                    sender: utilisateur.user,
+                                    id: data.id,
+                                    content: data.message,
+                                    recipient: useAuthStore().$state.user.user_id,
+                                });
+                                utilisateur.messagesQty += 1;
                             }
 
-                            state.messagesToDisplay.push({
-                                user_id: utilisateur.user,
-                                username: utilisateur.username,
-                                picture: utilisateur.picture,
-                                message: data.message,
-                                userID: utilisateur.userID,
-                                at: newDate,
-                                disapear: false
-                            })
+                            if (state.selectedUser == null || state.selectedUser.user !== utilisateur.user) {
+                                utilisateur.hasNewMessages = true;
+                                state.messagesToDisplay.push({
+                                    user_id: utilisateur.user,
+                                    username: utilisateur.username,
+                                    picture: utilisateur.picture,
+                                    message: data.message,
+                                    userID: utilisateur.userID,
+                                    at: newDate,
+                                    disapear: false
+                                })
+                            }
                             setTimeout(() => {
                                 if (state.messagesToDisplay.length !== 0) {
                                     useChatStore().removeMessageAtDisplay();

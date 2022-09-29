@@ -9,5 +9,6 @@ router.put('/disabled', userController.disabledProfil);
 router.get('/:id/publications', publicationsController.getPublicationsOfOnePerson);
 router.get('/me', userController.me);
 router.get('/:id/friends', userController.getAllFriendsOfUser);
+router.get('/notifications', userController.getAllNotifications);
 
 module.exports = router;

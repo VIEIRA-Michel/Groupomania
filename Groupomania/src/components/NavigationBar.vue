@@ -23,15 +23,17 @@ const emit = defineEmits<{
 }>();
 
 function toggleNotification() {
-    if (showProfileMenu.value == true) {
-        showProfileMenu.value = false;
-    }
-    if (showNotification.value == null || showNotification.value == false) {
-        showNotification.value = true;
-        newNotification.value = false;
-    } else {
-        showNotification.value = false;
-    }
+    useAuthStore().getAllNotifications().then((response: any) => {
+        if (showProfileMenu.value == true) {
+            showProfileMenu.value = false;
+        }
+        if (showNotification.value == null || showNotification.value == false) {
+            showNotification.value = true;
+            newNotification.value = false;
+        } else {
+            showNotification.value = false;
+        }
+    });
 }
 
 function toggleProfileMenu() {

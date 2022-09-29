@@ -89,7 +89,7 @@ watch(selectedUser.value.messages, (nouvelleVal: any) => {
         msgDom.value[0].scrollTop = msgDom.value[0].scrollHeight;
         // console.log(msgDom.value[0].scrollHeight);
         // document.querySelector('ul')?.lastChild?.scrollIntoView();
-        console.log(document.querySelector('ul')?.lastElementChild?.scrollHeight);
+        // console.log(document.querySelector('ul')?.lastElementChild?.scrollHeight);
         emit('read');
     }, 1);
 })
@@ -180,7 +180,7 @@ const emit = defineEmits<{
     <div class="container-center__body">
         <div class="container-center__body__chat">
             <div class="container-center__body__chat__button">
-                <button v-if="selectedUser.messages.length !== selectedUser.messagesQty" @click="emit('moreMessages')"
+                <button v-if="selectedUser.messages.length < selectedUser.messagesQty" @click="emit('moreMessages')"
                     class="container-center__body__chat__button__more">
                     Charger plus de messages
                 </button>

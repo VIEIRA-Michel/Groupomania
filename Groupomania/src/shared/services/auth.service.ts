@@ -39,6 +39,17 @@ export async function fetchInformation(): Promise<any> {
     return response;
 }
 
+export async function fetchNotifications(): Promise<any> {
+    const response = await axios({
+        method: 'get',
+        url: `${BASE_URL}/user/notifications`,
+        headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+        }
+    });
+    return response;
+}
+
 export async function editProfile(data: FormData): Promise<any> {
     const response = await axios({
         method: 'put',

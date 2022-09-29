@@ -405,7 +405,7 @@ onBeforeMount(() => {
                                                                                     </div>
                                                                                 </div>
                                                                             </div>
-                                                                            <div
+                                                                            <div v-if="update.content"
                                                                                 class="modal-container-edit__content__body__list__item__content">
                                                                                 {{ update.content }}
                                                                             </div>
@@ -592,7 +592,7 @@ onBeforeMount(() => {
 
     &__top {
         display: flex;
-        padding: 10px 0 0 10px;
+        margin: 10px 0 0 10px;
 
         &__details {
             display: flex;
@@ -600,7 +600,7 @@ onBeforeMount(() => {
 
             &__avatar {
                 border-radius: 50%;
-                margin-right: 0.5rem;
+                margin-right: 10px;
 
                 img {
                     width: 40px;
@@ -617,7 +617,7 @@ onBeforeMount(() => {
         width: 100%;
         flex-direction: column-reverse;
         align-items: flex-start;
-        padding: 10px 0 0 0;
+        margin: 10px 10px 0 0;
 
         &__details {
             display: flex;
@@ -641,7 +641,7 @@ onBeforeMount(() => {
             }
 
             &__text {
-                width: 94%;
+                width: 96%;
                 display: block;
                 overflow: hidden;
                 resize: none;
@@ -658,13 +658,18 @@ onBeforeMount(() => {
                 @media (max-width: 768px) {
                     width: 90%;
                 }
+
+                &.post-edit {
+                    width: initial;
+                }
             }
 
             &__file {
                 margin: 10px 0px;
-                width: 240px;
+                // width: 240px;
+                display: none;
                 z-index: 0;
-                cursor: pointer;
+                opacity: 0;
             }
 
             &__picture {
@@ -715,17 +720,16 @@ onBeforeMount(() => {
                 }
 
                 &__choose {
-                    width: 114px;
                     display: flex;
                     justify-content: center;
                     align-items: center;
-                    height: 25.5px;
+                    padding: 5px;
                     font-size: 13px;
                     background: #dbdbdb;
                     color: #4E5166;
                     border-radius: 5px;
-                    position: absolute;
                     cursor: pointer;
+                    margin: 10px 0;
                     border: 1px solid transparent;
 
                     &:hover {
@@ -735,9 +739,7 @@ onBeforeMount(() => {
                     }
 
                     &.post-edit {
-                        position: absolute;
-                        top: 102px;
-                        width: 114px;
+                        // width: 108px;
                     }
                 }
 
@@ -960,11 +962,12 @@ onBeforeMount(() => {
         margin: 10px;
 
         &__text {
-            margin: 0px 10px 20px;
+            // margin: 0px 10px 20px;
             display: flex;
             flex-direction: column;
             color: #4E5166;
-            width: 96%;
+            // width: 96%;
+            width: 100%;
 
             span {
                 font-weight: bold;

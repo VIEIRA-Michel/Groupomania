@@ -93,7 +93,8 @@ CREATE TABLE
         user_id INTEGER,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
         publication_id INTEGER,
-        FOREIGN KEY (publication_id) REFERENCES publications(id) ON DELETE CASCADE ON UPDATE CASCADE
+        FOREIGN KEY (publication_id) REFERENCES publications(id) ON DELETE CASCADE ON UPDATE CASCADE,
+        created_at DATETIME
     );
 
 CREATE TABLE

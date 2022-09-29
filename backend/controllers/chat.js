@@ -115,6 +115,7 @@ exports.getMessageOfConversation = async (req, res, next) => {
             res.status(200).json(conv);
         }
     } else {
+        console.log('on rentre dans le else');
         let limitValue = parseInt(req.query.limit);
         let from = parseInt(req.query.from);
         let sql = `SELECT * FROM messages WHERE (sender = ? AND recipient = ?) OR (sender = ? AND recipient = ?) ORDER BY id DESC LIMIT ? OFFSET ?;`;

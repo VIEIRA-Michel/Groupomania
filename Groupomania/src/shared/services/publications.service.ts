@@ -1,14 +1,14 @@
 import type { Publication } from '../interfaces/publication.interface';
 import axios from 'axios';
 
-let BASE_URL = 'http://localhost:3000/api/publications';
+let BASE_URL = 'http://localhost:3000/api';
 
 export async function fetchPublications(page?: number): Promise<Publication[]> {
     let url = '';
     if (page) {
-        url = `${BASE_URL}/?page=${page}`;
+        url = `${BASE_URL}/publications/?page=${page}`;
     } else {
-        url = `${BASE_URL}`;
+        url = `${BASE_URL}/publications`;
     }
     const response = await axios({
         method: 'get',
@@ -24,7 +24,7 @@ export async function fetchPublications(page?: number): Promise<Publication[]> {
 export async function addPublication(data: any): Promise<any> {
     const response = await axios({
         method: 'post',
-        url: BASE_URL,
+        url: `${BASE_URL}/publications`,
         headers: {
             Authorization: `Bearer ${localStorage.getItem('token')}`
         },
@@ -36,7 +36,7 @@ export async function addPublication(data: any): Promise<any> {
 export async function fetchCountOfPublication(): Promise<number> {
     const response = await axios({
         method: 'get',
-        url: `${BASE_URL}/count`,
+        url: `${BASE_URL}/publications/count`,
         headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -48,7 +48,7 @@ export async function fetchCountOfPublication(): Promise<number> {
 export async function editPublication(id: number, data: any): Promise<any> {
     const response = await axios({
         method: 'put',
-        url: `${BASE_URL}/${id}`,
+        url: `${BASE_URL}/publications/${id}`,
         headers: {
             Authorization: `Bearer ${localStorage.getItem('token')}`
         },
@@ -60,7 +60,7 @@ export async function editPublication(id: number, data: any): Promise<any> {
 export async function removePublication(id: number): Promise<any> {
     const response = await axios({
         method: 'delete',
-        url: `${BASE_URL}/${id}`,
+        url: `${BASE_URL}/publications/${id}`,
         headers: {
             Authorization: `Bearer ${localStorage.getItem('token')}`
         },
@@ -71,7 +71,7 @@ export async function removePublication(id: number): Promise<any> {
 export async function fetchLikes(id: number): Promise<any> {
     const response = await axios({
         method: 'get',
-        url: `${BASE_URL}/${id}/likes`,
+        url: `${BASE_URL}/publications/${id}/likes`,
         headers: {
             Authorization: `Bearer ${localStorage.getItem('token')}`
         },
@@ -82,7 +82,7 @@ export async function fetchLikes(id: number): Promise<any> {
 export async function likeAndDislike(id: number): Promise<any> {
     const response = await axios({
         method: 'post',
-        url: `${BASE_URL}/${id}/likes`,
+        url: `${BASE_URL}/publications/${id}/likes`,
         headers: {
             Authorization: `Bearer ${localStorage.getItem('token')}`
         },
@@ -93,7 +93,7 @@ export async function likeAndDislike(id: number): Promise<any> {
 export async function getHistory(id: number): Promise<any> {
     const response = await axios({
         method: 'get',
-        url: `${BASE_URL}/${id}/history`,
+        url: `${BASE_URL}/publications/${id}/history`,
         headers: {
             Authorization: `Bearer ${localStorage.getItem('token')}`
         },

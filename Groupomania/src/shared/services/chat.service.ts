@@ -1,12 +1,12 @@
 import axios from 'axios';
 import type { Message } from '../interfaces/message.interface';
 
-let BASE_URL = 'http://localhost:3000/api/user';
+let BASE_URL = 'http://localhost:3000/api';
 
 export async function sendMsg(id: number, message: any): Promise<any> {
     const response = await axios({
         method: 'post',
-        url: `${BASE_URL}/${id}/messages`,
+        url: `${BASE_URL}/user/${id}/messages`,
         headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -19,10 +19,9 @@ export async function sendMsg(id: number, message: any): Promise<any> {
 }
 
 export async function fetchMessages(id: number, limit: number, from: number): Promise<Message[]> {
-    // console.log('service', limit, from);
     const response = await axios({
         method: 'get',
-        url: `${BASE_URL}/${id}/messages/?limit=${limit}&from=${from}`,
+        url: `${BASE_URL}/user/${id}/messages/?limit=${limit}&from=${from}`,
         headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -34,7 +33,7 @@ export async function fetchMessages(id: number, limit: number, from: number): Pr
 export async function fetchUsers(): Promise<any> {
     const response = await axios({
         method: 'get',
-        url: `${BASE_URL}/connected`,
+        url: `${BASE_URL}/user/connected`,
         headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -46,7 +45,7 @@ export async function fetchUsers(): Promise<any> {
 export async function getCount(id: number): Promise<any> {
     const response = await axios({
         method: 'get',
-        url: `${BASE_URL}/${id}/messages/count`,
+        url: `${BASE_URL}/user/${id}/messages/count`,
         headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${localStorage.getItem('token')}`

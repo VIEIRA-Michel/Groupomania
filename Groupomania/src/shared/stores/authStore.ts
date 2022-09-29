@@ -1,6 +1,6 @@
 import { defineStore, storeToRefs } from 'pinia';
 import socket from "../../socket";
-import { signUp, signIn, fetchInformation, editProfile } from "../services/auth.service";
+import { signUp, signIn, fetchInformation, editProfile, fetchNotifications } from "../services/auth.service";
 import { useChatStore } from './chatStore';
 import { useCommentsStore } from './commentsStore';
 import { useFriendshipStore } from './friendsStore';
@@ -61,6 +61,8 @@ export const useAuthStore = defineStore({
                                 });
                                 text = text + arrError.join(' et ');
                                 useAuthStore().displayErrorMessage(text);
+                            } else {
+                                useAuthStore().displayErrorMessage(error.response.data.message);
                             }
                             reject(error);
                         })
@@ -134,6 +136,14 @@ export const useAuthStore = defineStore({
                 }).catch(error => {
                     console.log(error);
                     reject(error);
+                })
+            })
+        },
+        getAllNotifications: () => {
+            return new Promise<void>((resolve, reject) => {
+                fetchNotifications().then((response: any) => {
+                    console.log(response);
+                    resolve();
                 })
             })
         },

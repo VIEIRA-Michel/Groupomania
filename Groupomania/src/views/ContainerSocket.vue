@@ -178,6 +178,8 @@ onUnmounted(() => {
     top: 60px;
     right: 10px;
     width: 250px;
+    z-index: 10;
+    filter: drop-shadow(0 0 0.75rem #FFFFFF);
 
     &__list {
         &__item {

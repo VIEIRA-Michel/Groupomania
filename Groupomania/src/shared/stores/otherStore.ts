@@ -22,8 +22,6 @@ export const useOtherStore = defineStore({
             })
         },
         notificationPush: (type: string, content: any): void => {
-            console.log(type);
-            console.log(content);
             useOtherStore().$patch((state: any) => {
                 if (type == "like") {
                     type = "a aimé votre publication"
