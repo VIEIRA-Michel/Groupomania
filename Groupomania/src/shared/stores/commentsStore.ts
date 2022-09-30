@@ -55,7 +55,6 @@ export const useCommentsStore = defineStore({
                 let newDate = moment(date).format('DD/MM/YYYY HH:mm:ss');
                 let newDateSplit = newDate.split(" ");
                 fetchComments(id, limit, from).then((response: any) => {
-                    console.log(response);
                     if (response.comments.length > 0) {
                         response.comments.map((comment: any) => {
                             let commentDate = moment(comment.comment_created_at).format('DD/MM/YYYY à HH:mm').split(" ");
@@ -72,7 +71,6 @@ export const useCommentsStore = defineStore({
                             state.publications.map((post: any) => {
                                 if (post.publication_id == response.comments[0].publication_id) {
                                     response.comments.map((comment: any) => {
-                                        console.log(comment);
                                         post.comments.find((item: any) => item.comment_id == comment.comment_id) ? "" : post.comments.push(comment);
                                     })
                                 }
@@ -97,32 +95,29 @@ export const useCommentsStore = defineStore({
                 console.log(error);
             })
         },
-        deleteComment: (publication_id: number, id: number) => {
-            removeComment(publication_id, id).then((response: any) => {
+        deleteComment: (comment: any) => {
+            removeComment(comment.publication_id, comment.comment_id).then((response: any) => {
                 let state = ref<any>();
                 state.value = usePublicationsStore().$state.publications.map((publication: any) => {
-                    if (publication.publication_id == publication_id) {
+                    if (publication.publication_id == comment.publication_id) {
                         if (publication.comments!.length > 0) {
                             publication.numberOfComments = publication.numberOfComments! - 1;
-                            publication.comments!.splice(publication.comments!.findIndex((item: any) => item.comment_id === id), 1);
+                            publication.comments!.splice(publication.comments!.findIndex((item: any) => item.comment_id === comment.comment_id), 1);
                         }
                     }
                     return publication;
                 });
-                socket.emit('delete comment', { publication_id, id }, useAuthStore().$state.user);
+                socket.emit('delete comment', { comment, user: useAuthStore().$state.user });
             }).catch(error => {
                 console.log(error);
             })
         },
         createComment: (publication_id: number, comment: string) => {
-            console.log(publication_id);
             return new Promise((resolve, reject) => {
                 let date = new Date();
                 let newDate = moment(date).format('DD/MM/YYYY HH:mm:ss');
                 let newDateSplit = newDate.split(" ");
                 addComment(publication_id, comment).then((response: any) => {
-                    console.log(response);
-
                     let commentDate = moment(response.data.data[0].comment_created_at).format('DD/MM/YYYY à HH:mm').split(" ");
                     if (commentDate[0] == newDateSplit[0]) {
                         commentDate[0] = "Aujourd'hui";
@@ -146,6 +141,7 @@ export const useCommentsStore = defineStore({
                         picture: response.data.data[0].picture,
                         picture_url: response.data.data[0].picture_url,
                         publication_content: response.data.data[0].publication_content,
+                        publication_picture: response.data.data[0].picture,
                         publication_created: response.data.data[0].publication_created,
                         publication_id: response.data.data[0].publication_id,
                         publication_updated_at: response.data.data[0].publication_updated_at,
@@ -198,11 +194,10 @@ export const useCommentsStore = defineStore({
         onDeleteComment: (data: any) => {
             usePublicationsStore().$patch((state: any) => {
                 state.publications.map((item: any) => {
-                    if (item.publication_id == data.publication_id) {
+                    if (item.publication_id == data.comment.publication_id) {
                         item.comments = item.comments.filter((itemComment: any) => {
-                            return itemComment.comment_id != data.id;
+                            return itemComment.comment_id != data.comment.comment_id;
                         });
-                        console.log(item);
                         item.numberOfComments = item.numberOfComments - 1;
                     }
                     return item;

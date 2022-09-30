@@ -5,7 +5,6 @@ const jwt = require('jsonwebtoken');
 const fs = require('fs');
 require('dotenv').config();
 const crypto = require("crypto");
-const { resolve } = require('path');
 const randomId = () => crypto.randomBytes(8).toString("hex");
 
 exports.signup = (req, res, next) => {
@@ -24,9 +23,8 @@ exports.signup = (req, res, next) => {
             connection.query(
                 sql, [user.picture_url, user.lastname, user.firstname, user.email, user.password, user.session, user.userID], function (err, results) {
                     if (err) {
-                        res.status(500).json({ message: 'Adresse email déjà utilisée' });
-                    }
-                    if (!err) {
+                        res.status(500).json({ message: 'Adresse email déjà utilisée' })
+                    } else {
                         (async () => {
                             await redis.set(
                                 `user:${results.insertId}`,
@@ -47,9 +45,9 @@ exports.signup = (req, res, next) => {
                                         user: results.insertId,
                                         username: user.firstname + ' ' + user.lastname,
                                         picture: user.picture_url,
-                                        connected: false,
+                                        connected: false
                                     })
-                                );
+                                )
                             } else {
                                 await redis.append(`connected`, ',');
                                 await redis.append(`connected`, JSON.stringify({
@@ -57,20 +55,17 @@ exports.signup = (req, res, next) => {
                                     user: results.insertId,
                                     username: user.firstname + ' ' + user.lastname,
                                     picture: user.picture_url,
-                                    connected: false,
-                                }));
-                            }
-
+                                    connected: false
+                                }))
+                            };
                             const getStringResult = await redis.get(`user:${results.insertId}`);
                             res.status(201).json({ message: 'Utilisateur enregistré ! ' })
-                        })();
+                        })()
                     }
                 }
             )
-
-
         })
-        .catch(error => res.status(500).json({ message: error }));
+        .catch(error => res.status(500).json({ message: error }))
 };
 
 exports.login = (req, res, next) => {
@@ -81,14 +76,14 @@ exports.login = (req, res, next) => {
     connection.query(
         sql, [user.email], function (err, results) {
             if (err) {
-                console.log(err);
+                console.log(err)
             } else {
                 if (results.length !== 0) {
                     bcrypt.compare(req.body.password, results[0].password)
                         .then(valid => {
                             if (!valid) {
-                                return res.status(401).json({ error: 'Mot de passe incorrect !' });
-                            }
+                                return res.status(401).json({ error: 'Mot de passe incorrect !' })
+                            };
                             (async () => {
                                 const getStringResult = await redis.get(`user:${results[0].id}`);
                                 res.status(200).json({
@@ -115,12 +110,11 @@ exports.login = (req, res, next) => {
                                     },
                                     redis: JSON.parse(getStringResult)
                                 })
-                            })();
+                            })()
                         }).catch(error => res.status(500).json({ message: error }))
                 } else {
-                    res.status(401).json({ message: `L'adresse email n'existe pas !` });
+                    res.status(401).json({ message: `L'adresse email n'existe pas !` })
                 }
-
             }
         }
     )
@@ -132,64 +126,56 @@ exports.updateProfil = (req, res, next) => {
         sql, [req.user.userId], function (err, results) {
             if (err) {
                 console.log(err);
-                res.status(500).json({ message: 'Erreur lors de la récupération du profil' });
+                res.status(500).json({ message: 'Erreur lors de la récupération du profil' })
             } else {
                 if (results.length === 0) {
-                    res.status(404).json({ message: 'Utilisateur introuvable' });
+                    res.status(404).json({ message: 'Utilisateur introuvable' })
                 } else {
                     let profile = req.file ?
                         {
                             ...req.body,
-                            picture: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`,
+                            picture: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
                         } : {
-                            ...req.body,
+                            ...req.body
                         };
-
                     let arrSql = [];
                     let arrSqlValue = [];
                     if (profile.email) {
                         arrSql.push('email = ?');
-                        arrSqlValue.push(profile.email);
-                    }
+                        arrSqlValue.push(profile.email)
+                    };
                     if (req.file) {
                         if (results[0].picture_url !== null) {
                             const filename = results[0].picture_url.split('/images/')[1];
                             fs.unlink(`images/${filename}`, () => {
-                            });
-                        }
+                            })
+                        };
                         arrSql.push('picture_url = ?');
-                        arrSqlValue.push(profile.picture);
-
-                    }
-
+                        arrSqlValue.push(profile.picture)
+                    };
                     if (profile.password) {
                         bcrypt.hash(profile.password, 10)
                             .then(hash => {
                                 arrSql.push('password = ?');
-                                arrSqlValue.push(hash);
-                            }).catch(error => res.status(500).json({ message: error }));
-                    }
-
+                                arrSqlValue.push(hash)
+                            }).catch(error => res.status(500).json({ message: error }))
+                    };
                     let reqSql = `UPDATE users SET ` + arrSql.join(', ') + ` WHERE id = ?;`;
                     arrSqlValue.push(req.user.userId);
                     connection.query(
                         reqSql, arrSqlValue, function (err, results) {
                             if (err) {
                                 console.log(err);
-                                res.status(500).json({ message: 'Erreur lors de la modification du profil' });
+                                res.status(500).json({ message: 'Erreur lors de la modification du profil' })
                             } else {
                                 sql = `SELECT id, picture_url, firstname, lastname, email, session_id, userID FROM users WHERE id = ?;`;
                                 connection.query(
                                     sql, [req.user.userId], function (err, results) {
                                         if (err) {
                                             console.log(err);
-                                            res.status(500).json({ message: 'Erreur lors de la récupération du profil' });
+                                            res.status(500).json({ message: 'Erreur lors de la récupération du profil' })
                                         } else {
-                                            if (results.length === 0) {
-                                                res.status(404).json({ message: 'Utilisateur introuvable' });
-                                            } else {
-                                                res.status(200).json(results);
-                                            }
+                                            res.status(200).json(results)
                                         }
                                     }
                                 )
@@ -202,34 +188,16 @@ exports.updateProfil = (req, res, next) => {
     )
 };
 
-exports.disabledProfil = (req, res, next) => {
-    let sql = `UPDATE users SET account_disabled = ? WHERE id = ?;`;
-    connection.query(
-        sql, [req.body.disabled, req.user.userId], function (err, results) {
-            if (err) {
-                console.log(err)
-                res.status(500).json({ message: 'Erreur lors de la désactivation du profil' });
-            } else {
-                if (req.body.disabled === true) {
-                    console.log('le resultat', results);
-                    res.status(200).json({ message: 'Profil désactiver ! ' })
-                }
-            }
-
-        }
-    )
-};
-
 exports.me = (req, res, next) => {
     let sql = `SELECT id, picture_url, lastname, firstname, email, birthday, session_id, userID, role_id FROM users WHERE id = ?;`;
     connection.query(
         sql, [req.user.userId], function (err, results) {
             if (err) {
-                console.log(err)
-                res.status(500).json({ message: 'Erreur lors de la récupération du profil' });
+                console.log(err);
+                res.status(500).json({ message: 'Erreur lors de la récupération du profil' })
             } else {
                 if (results.length === 0) {
-                    res.status(404).json({ message: 'Utilisateur introuvable' });
+                    res.status(404).json({ message: 'Utilisateur introuvable' })
                 } else {
                     res.status(200).json({
                         user_id: results[0].id,
@@ -240,10 +208,11 @@ exports.me = (req, res, next) => {
                         session_id: results[0].session_id,
                         userID: results[0].userID,
                         role_id: results[0].role_id
-                    });
+                    })
                 }
-            };
-        })
+            }
+        }
+    )
 };
 
 exports.getAllFriendsOfUser = (req, res, next) => {
@@ -267,8 +236,9 @@ exports.getAllNotifications = (req, res, next) => {
     let promise1 = new Promise((resolve, reject) => {
         connection.query(
             sql, [req.user.userId], function (err, results1) {
-                if (err) throw err;
-                else {
+                if (err) {
+                    res.status(500).json({ message: 'Erreur lors de la récupération des publications' })
+                } else {
                     resolve(results1)
                 }
             }
@@ -276,7 +246,7 @@ exports.getAllNotifications = (req, res, next) => {
     });
     promise1.then((results1) => {
         if (results1 !== undefined || results1.length > 0) {
-            sql = `SELECT users.id as user_id, users.lastname, users.firstname, users.picture_url, users.role_id, users.session_id, users.userID, comments.id as comment_id, comments.user_id as comment_user_id, comments.publication_id as comment_publication_id, comments.content, comments.created_at FROM comments LEFT JOIN users ON comments.user_id = users.id WHERE `;
+            sql = `SELECT users.id as user_id, users.lastname, users.firstname, users.picture_url, users.role_id, users.session_id, users.userID, comments.id as comment_id, comments.user_id as comment_user_id, comments.publication_id as comment_publication_id, comments.content, comments.created_at, publications.picture as publication_picture, publications.content as publication_content FROM comments LEFT JOIN users ON comments.user_id = users.id LEFT JOIN publications ON comments.publication_id = publications.id WHERE `;
             let arr = [];
             let sqlVariables = [];
             results1.forEach(element => {
@@ -287,8 +257,10 @@ exports.getAllNotifications = (req, res, next) => {
             let promise2 = new Promise((resolve, reject) => {
                 connection.query(
                     sql, sqlVariables, function (err, results2) {
-                        if (err) throw err;
-                        else {
+                        if (err) {
+                            console.log(err);
+                            res.status(500).json({ message: 'Erreur lors de la récupération des commentaires' })
+                        } else {
                             resolve(results2)
                         }
                     }
@@ -300,17 +272,19 @@ exports.getAllNotifications = (req, res, next) => {
                         allResults.push({
                             ...element,
                             type: 'comment',
-                            content: 'a commenté votre publication'
+                            message: 'a commenté votre publication'
                         })
                     })
                 };
-                sql = `SELECT users.id as user_id, users.lastname, users.firstname, users.picture_url, users.role_id, users.session_id, users.userID, publication_user_liked.id as like_id, publication_user_liked.publication_id as publication_id, publication_user_liked.created_at FROM publication_user_liked LEFT JOIN users ON publication_user_liked.user_id = users.id WHERE `;
+                sql = `SELECT users.id as user_id, users.lastname, users.firstname, users.picture_url, users.role_id, users.session_id, users.userID, publication_user_liked.id as like_id, publication_user_liked.publication_id as publication_id, publication_user_liked.created_at, publications.content as publication_content, publications.picture as publication_picture FROM publication_user_liked LEFT JOIN users ON publication_user_liked.user_id = users.id LEFT JOIN publications ON publication_user_liked.publication_id = publications.id WHERE `;
                 sql = sql + arr.join(' OR ');
                 let promise3 = new Promise((resolve, reject) => {
                     connection.query(
                         sql, sqlVariables, function (err, results3) {
-                            if (err) throw err;
-                            else {
+                            if (err) {
+                                console.log(err);
+                                res.status(500).json({ message: 'Erreur lors de la récupération des likes' })
+                            } else {
                                 resolve(results3)
                             }
                         }
@@ -322,7 +296,7 @@ exports.getAllNotifications = (req, res, next) => {
                             allResults.push({
                                 ...element,
                                 type: 'like',
-                                content: 'a aimé votre publication'
+                                message: 'a aimé votre publication'
                             })
                         })
                     };
@@ -330,8 +304,10 @@ exports.getAllNotifications = (req, res, next) => {
                     let promise4 = new Promise((resolve, reject) => {
                         connection.query(
                             sql, [req.user.userId], function (err, results4) {
-                                if (err) throw err;
-                                else {
+                                if (err) {
+                                    console.log(err);
+                                    res.status(500).json({ message: 'Erreur lors de la récupération des demandes d\'amis' })
+                                } else {
                                     resolve(results4)
                                 }
                             }
@@ -343,7 +319,7 @@ exports.getAllNotifications = (req, res, next) => {
                                 allResults.push({
                                     ...element,
                                     type: 'friendship',
-                                    content: 'à accepter votre demande d\'ami',
+                                    message: 'a accepté votre demande d\'ami',
                                     created_at: element.approve_date
                                 })
                             })
@@ -352,8 +328,10 @@ exports.getAllNotifications = (req, res, next) => {
                         let promise5 = new Promise((resolve, reject) => {
                             connection.query(
                                 sql, [req.user.userId], function (err, results5) {
-                                    if (err) throw err;
-                                    else {
+                                    if (err) {
+                                        console.log(err);
+                                        res.status(500).json({ message: 'Erreur lors de la récupération des demandes d\'amis' })
+                                    } else {
                                         resolve(results5)
                                     }
                                 }
@@ -365,13 +343,13 @@ exports.getAllNotifications = (req, res, next) => {
                                     allResults.push({
                                         ...element,
                                         type: 'friendship',
-                                        content: 'vous a envoyé une demande d\'ami',
+                                        message: 'vous a envoyé une demande d\'ami',
                                         created_at: element.request_date
-                                    });
+                                    })
                                 })
                             };
                             allResults.sort(function (a, b) {
-                                return new Date(b.created_at) - new Date(a.created_at);
+                                return new Date(b.created_at) - new Date(a.created_at)
                             });
                             res.status(200).json(allResults)
                         })
@@ -380,4 +358,4 @@ exports.getAllNotifications = (req, res, next) => {
             })
         }
     })
-}
+};

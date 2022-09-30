@@ -108,7 +108,6 @@ export const useFriendshipStore = defineStore({
         acceptOrDeclineRequest: (req: any, answer: string) => {
             return new Promise((resolve, reject) => {
                 acceptOrDecline(req.sender, answer).then((response: any) => {
-                    console.log(response);
                     if (answer == 'refused') {
                         useFriendshipStore().$patch((state: any) => {
                             state.requests.map((item: any) => {
@@ -141,7 +140,6 @@ export const useFriendshipStore = defineStore({
                         })
                         useChatStore().newFriend(req);
                     }
-                    console.log(req);
                     resolve(response);
                 }).catch(error => {
                     console.log(error);
@@ -300,11 +298,11 @@ export const useFriendshipStore = defineStore({
             }
         },
         onFriendRequestRefused: (data: any) => {
-            if (data.target == useAuthStore().$state.user.user_id) {
+            if (data.target.sender == useAuthStore().$state.user.user_id) {
                 useFriendshipStore().$patch((state: any) => {
                     if (state.invitSendedTo.length > 0) {
                         state.invitSendedTo.map((item: any) => {
-                            if (item.id == data.user) {
+                            if (item.id == data.user.user_id) {
                                 state.invitSendedTo.splice(state.invitSendedTo.indexOf(item), 1);
 
                             }
@@ -312,8 +310,7 @@ export const useFriendshipStore = defineStore({
                     }
                     if (state.searchResults.length > 0) {
                         state.searchResults.map((item: any) => {
-                            console.log(item);
-                            if (item.user_id == data.user) {
+                            if (item.user_id == data.user.user_id) {
                                 item.pending = false;
                                 item.isFriend = false;
 
@@ -352,23 +349,22 @@ export const useFriendshipStore = defineStore({
                     state.isLoading = false;
 
                 })
-                console.log(data);
                 useChatStore().newFriend(data.user)
             }
         },
         onFriendRemoved: (data: any) => {
-            if (useAuthStore().$state.user.user_id == data.target) {
+            if (useAuthStore().$state.user.user_id == data.target.user_id) {
                 useFriendshipStore().$patch((state: any) => {
                     if (state.friends.length > 0) {
                         state.friends.map((item: any) => {
-                            if (item.user_id == data.user) {
+                            if (item.user_id == data.user.user_id) {
                                 state.friends.splice(state.friends.indexOf(item), 1);
                             }
                         })
                     }
                     if (state.searchResults.length > 0) {
                         state.searchResults.map((item: any) => {
-                            if (item.user_id == data.user) {
+                            if (item.user_id == data.user.user_id) {
                                 item.isFriend = false;
                             }
                         })
@@ -376,7 +372,7 @@ export const useFriendshipStore = defineStore({
                     if (useChatStore().$state.users.length > 0) {
                         useChatStore().$patch((state: any) => {
                             state.users.map((item: any) => {
-                                if (item.user == data.user) {
+                                if (item.user == data.user.user_id) {
                                     state.users.splice(state.users.indexOf(item), 1);
                                 }
                             })
@@ -384,15 +380,15 @@ export const useFriendshipStore = defineStore({
                     }
                     state.isLoading = false;
                 })
-                useChatStore().friendDeleted(data.user);
+                useChatStore().friendDeleted(data.user.user_id);
             }
         },
         onFriendRequestCanceled: (data: any) => {
-            if (useAuthStore().user.user_id == data.target) {
+            if (useAuthStore().user.user_id == data.request.user_id) {
                 useFriendshipStore().$patch((state: any) => {
                     if (state.requests.length > 0) {
                         state.requests.map((item: any) => {
-                            if (item.sender == data.user) {
+                            if (item.sender == data.user.user_id) {
                                 state.requests.splice(state.requests.indexOf(item), 1);
                             }
                         })

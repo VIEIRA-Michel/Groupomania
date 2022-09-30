@@ -7,6 +7,7 @@ import socket from "../../socket";
 import { ref } from 'vue';
 import moment from 'moment';
 import { useFriendshipStore } from './friendsStore';
+import { useOtherStore } from './otherStore';
 
 
 interface PublicationState {

@@ -54,7 +54,7 @@ function createComment(event: any) {
                     </div>
                     <div class="post__button">
                         <fa v-if="props.user.email == com.email || props.user.role_id == 2"
-                            @click="useCommentsStore().deleteComment(com.publication_id, com.comment_id)"
+                            @click="useCommentsStore().deleteComment(com)"
                             icon="fa-solid fa-trash-can" />
                     </div>
                 </div>

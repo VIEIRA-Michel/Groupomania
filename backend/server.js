@@ -183,10 +183,6 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.onAny((event, ...args) => {
-    console.log('bouh', event, args)
-  });
-
   socket.on('typing', (data) => {
     socket.broadcast.emit('typing', data)
   });

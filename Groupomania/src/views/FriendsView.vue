@@ -15,10 +15,10 @@ let modalRequest = ref(false);
 let userToBeDeleted = ref(null);
 let invitToBeCanceled = ref(null);
 
-function removeFriend(user_id: number) {
-    useFriendshipStore().removeFriend(user_id).then((response: any) => {
+function removeFriend(utilisateur: number) {
+    useFriendshipStore().removeFriend(utilisateur.user_id).then((response: any) => {
         open.value = false;
-        socket.emit('friend removed', { user: useAuthStore().$state.user.user_id, target: user_id }, useAuthStore().$state.user);
+        socket.emit('friend removed', { user: useAuthStore().$state.user, target: utilisateur });
     });
 }
 
@@ -48,7 +48,7 @@ function replyToRequest(invitation: any, reply: string) {
         if (reply == 'accepted') {
             socket.emit('friendRequest accepted', { response, user: useAuthStore().$state.user });
         } else {
-            socket.emit('friendRequest refused', { user: useAuthStore().$state.user.user_id, target: invitation.sender }, useAuthStore().$state.user);
+            socket.emit('friendRequest refused', { user: useAuthStore().$state.user, target: invitation });
         }
     })
 }
@@ -60,10 +60,10 @@ function searchUser() {
     });
 };
 
-function cancelRequest(user_id: number) {
-    useFriendshipStore().cancelRequest(user_id).then((response) => {
+function cancelRequest(utilisateur: any) {
+    useFriendshipStore().cancelRequest(utilisateur.user_id).then((response) => {
         modalRequest.value = false;
-        socket.emit('friendRequest canceled', { user: useAuthStore().$state.user.user_id, target: user_id }, useAuthStore().$state.user);
+        socket.emit('friendRequest canceled', { user: useAuthStore().$state.user, request: utilisateur });
     });
 }
 
@@ -143,7 +143,7 @@ watch(modalRequest, (value: boolean) => {
                                             <div class="modal-container__content__footer">
                                                 <button @click="modalRequest = false" type="button"
                                                     class="btn btn-secondary" data-dismiss="modal">Annuler</button>
-                                                <button @click="cancelRequest(invitToBeCanceled.user_id)" type="button"
+                                                <button @click="cancelRequest(invitToBeCanceled)" type="button"
                                                     class="btn btn-primary">Retirer ma demande</button>
                                             </div>
                                         </div>
@@ -229,7 +229,7 @@ watch(modalRequest, (value: boolean) => {
                                     <div class="modal-container__content__footer">
                                         <button @click="open = false" type="button" class="btn btn-secondary"
                                             data-dismiss="modal">Annuler</button>
-                                        <button @click="removeFriend(userToBeDeleted.user_id)" type="button"
+                                        <button @click="removeFriend(userToBeDeleted)" type="button"
                                             class="btn btn-primary">Retirer
                                             {{ userToBeDeleted.firstname }}</button>
                                     </div>

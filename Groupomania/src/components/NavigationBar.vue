@@ -9,6 +9,7 @@ const requests = computed(() => useFriendshipStore().$state.requests);
 const user = computed(() => useAuthStore().$state.user);
 const users = computed(() => useChatStore().$state.users);
 const notifications = computed(() => useOtherStore().$state.notifications);
+const notificationsCount = computed(() => useOtherStore().$state.notificationsCount);
 
 let showNotification = ref<any>(null);
 let newNotification = ref(false);
@@ -23,17 +24,16 @@ const emit = defineEmits<{
 }>();
 
 function toggleNotification() {
-    useAuthStore().getAllNotifications().then((response: any) => {
-        if (showProfileMenu.value == true) {
-            showProfileMenu.value = false;
-        }
-        if (showNotification.value == null || showNotification.value == false) {
-            showNotification.value = true;
-            newNotification.value = false;
-        } else {
-            showNotification.value = false;
-        }
-    });
+    if (showProfileMenu.value == true) {
+        showProfileMenu.value = false;
+    }
+    if (showNotification.value == null || showNotification.value == false) {
+        showNotification.value = true;
+        newNotification.value = false;
+        useOtherStore().notificationRead();
+    } else {
+        showNotification.value = false;
+    }
 }
 
 function toggleProfileMenu() {
@@ -85,27 +85,65 @@ watch(useOtherStore().$state.notifications, (newNotif) => {
                         <div class="notification-alert__content__icon">
                             <fa icon="fa-solid fa-bell"
                                 :class="[ showNotification == null && newNotification || showNotification == false && newNotification ? 'active' : '']" />
+                            <span v-if="props.isConnected && notificationsCount > 0"> {{ notificationsCount }}</span>
                         </div>
                     </div>
-                    <div :class="[showNotification ? 'notification-alert__list active' : 'notification-alert__list']">
-                        <div v-for="notif in notifications" class="notification-alert__list__item">
-                            <div v-if="showNotification" class="event">
-                                <div class="event__avatar">
-                                    <img :src="notif.picture_url" alt="avatar" />
-                                </div>
-                                <div class="event__text">
-                                    <div class="event__text__username">
-                                        {{ notif.firstname + ' ' + notif.lastname }}
+                    <div
+                        :class="[showNotification && notifications.length == 0 ? 'notification-alert__container empty' : showNotification ? 'notification-alert__container active' : 'notification-alert__container']">
+                        <div class="notification-alert__container__list">
+                            <div v-if="showNotification" v-for="notif in notifications"
+                                class="notification-alert__container__list__item">
+                                <div v-if="showNotification" class="event">
+                                    <div class="event__avatar">
+                                        <img :src="notif.picture_url" alt="avatar" />
                                     </div>
-                                    <div class="event__text__type">
-                                        <p>{{ notif.type }}</p>
+                                    <div class="event__text">
+                                        <div class="event__text__top">
+                                            <div class="event__text__top__username">
+                                                {{ notif.firstname + ' ' + notif.lastname }}
+                                            </div>
+                                            <div class="event__text__top__date">
+                                                {{ notif.date }}
+                                            </div>
+                                        </div>
+                                        <div class="event__text__type">
+                                            <p>{{ notif.message }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div v-if="notif.type == 'comment' || notif.type == 'like'"
+                                    class="notification-alert__container__list__item__content">
+                                    <div class="notification-alert__container__list__item__content__publication">
+                                        <div
+                                            class="notification-alert__container__list__item__content__publication__top">
+                                            <div
+                                                class="notification-alert__container__list__item__content__publication__top__avatar">
+                                                <img :src="user.picture_url" alt="avatar" />
+                                            </div>
+                                            <div
+                                                class="notification-alert__container__list__item__content__publication__top__username">
+                                                {{ user.firstname + ' ' + user.lastname }}
+                                            </div>
+                                        </div>
+                                        <div
+                                            class="notification-alert__container__list__item__content__publication__bottom">
+                                            <div v-if="notif.publication_content"
+                                                class="notification-alert__container__list__item__content__publication__bottom__text">
+                                                {{ notif.publication_content }}
+                                            </div>
+                                            <div v-if="notif.publication_picture"
+                                                class="notification-alert__container__list__item__content__publication__bottom__picture">
+                                                <img :src="notif.publication_picture" alt="publication picture">
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                        <div v-if="showNotification && notifications.length <=0" class="notification-alert__text">
-                            <div class="event__text">
-                                <p>Aucune notification</p>
+                            <div v-if="showNotification && notifications.length <=0"
+                                class="notification-alert__container__text">
+                                <div class="event__text">
+                                    <p>Aucune notification</p>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -300,6 +338,7 @@ header {
                         justify-content: center;
                         align-items: center;
 
+
                         svg {
                             font-size: 20px;
 
@@ -307,6 +346,17 @@ header {
                                 -webkit-animation: wobble-hor-top 1.5s infinite both;
                                 animation: wobble-hor-top 1.5s infinite both;
                             }
+                        }
+
+                        span {
+                            padding: 0px 4px;
+                            background: pink;
+                            border-radius: 50%;
+                            position: absolute;
+                            bottom: -5px;
+                            left: 25px;
+                            color: #FD2D01;
+                            border: 1px solid #FFFFFF;
                         }
                     }
                 }
@@ -317,40 +367,112 @@ header {
                     border: 1px solid #4E5166;
                 }
 
-                &__list {
+                &__container {
                     width: 0px;
                     height: 0px;
                     position: absolute;
                     top: 54px;
                     right: 0px;
+                    background: #F5F5F5;
+                    // padding: 10px;
 
-                    &__item {
-                        margin: 10px;
+                    &__list {
+                        &__item {
+                            padding: 10px;
+                            background: #FFFFFF;
+                            border: 1px solid #dbdbdb;
+                            border-radius: 5px;
+                            margin: 10px;
+
+                            &__content {
+                                background-color: floralwhite;
+                                padding: 10px;
+                                border-radius: 5px;
+                                margin-top: 10px;
+                                border: 1px solid #FD2D01;
+                                -webkit-animation: text-focus-in 0.4s cubic-bezier(0.550, 0.085, 0.680, 0.530) both;
+                                animation: text-focus-in 0.4s cubic-bezier(0.550, 0.085, 0.680, 0.530) both;
+
+                                &__publication {
+                                    &__top {
+                                        display: flex;
+                                        flex-direction: row;
+                                        align-items: center;
+                                        margin-bottom: 10px;
+
+                                        &__avatar {
+                                            img {
+                                                width: 20px;
+                                                height: 20px;
+                                                object-fit: cover;
+                                                border-radius: 5px;
+                                            }
+                                        }
+
+                                        &__username {
+                                            margin-left: 5px;
+                                            font-size: 12px;
+                                            font-weight: 700;
+                                        }
+                                    }
+
+                                    &__bottom {
+                                        &__text {
+                                            background: #F5F5F5;
+                                            border: 1px solid #dbdbdb;
+                                            border-radius: 5px;
+                                            font-size: 12px;
+                                            padding: 5px;
+                                        }
+
+                                        &__picture {
+                                            img {
+                                                margin-top: 10px;
+                                                width: 100%;
+                                                height: 150px;
+                                                object-fit: cover;
+                                                border-radius: 5px;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
 
                     &.active {
-                        width: 250px;
+                        width: 350px;
+                        height: 250px;
+                        // background: #FFFFFF;
+                        border: 1px solid #dbdbdb;
+                        border-radius: 5px;
+                        overflow-y: scroll;
+                        transition: 0.3s all;
+                        cursor: default;
+                    }
+
+                    &.empty {
+                        text-align: center;
+                        width: 350px;
                         height: 250px;
                         background: #FFFFFF;
                         border: 1px solid #dbdbdb;
                         border-radius: 5px;
-                        overflow-y: scroll;
                         transition: 0.3s all;
                     }
                 }
 
                 .event {
-                    margin-top: 10px;
                     display: flex;
                     flex-direction: row;
-                    align-items: center;
+                    align-items: flex-start;
                     -webkit-animation: text-focus-in 0.4s cubic-bezier(0.550, 0.085, 0.680, 0.530) both;
                     animation: text-focus-in 0.4s cubic-bezier(0.550, 0.085, 0.680, 0.530) both;
 
                     &__avatar {
                         img {
-                            width: 30px;
-                            height: 30px;
+                            width: 40px;
+                            height: 40px;
                             object-fit: cover;
                             border-radius: 5px;
                         }
@@ -358,14 +480,30 @@ header {
 
                     &__text {
                         margin-left: 10px;
+                        width: 100%;
 
-                        &__username {
-                            font-size: 12px;
-                            font-weight: 400;
+                        p {
+                            margin-top: 10px;
+                        }
+
+                        &__top {
+                            display: flex;
+                            justify-content: space-between;
+
+                            &__username {
+                                font-size: 15px;
+                                font-weight: 700;
+                            }
+
+                            &__date {
+                                font-size: 12px;
+                                color: #FD2D01;
+                            }
                         }
 
                         &__type {
-                            font-size: 10px;
+                            margin-top: 5px;
+                            font-size: 12px;
                             font-weight: 300;
                             color: #4E5166;
                         }

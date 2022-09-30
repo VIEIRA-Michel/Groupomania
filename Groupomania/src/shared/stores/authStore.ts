@@ -6,6 +6,7 @@ import { useCommentsStore } from './commentsStore';
 import { useFriendshipStore } from './friendsStore';
 import { useOtherStore } from './otherStore';
 import { usePublicationsStore } from './publicationsStore';
+import moment from 'moment';
 
 export interface IAuthStore {
     isConnected: boolean | null;
@@ -84,7 +85,9 @@ export const useAuthStore = defineStore({
                         user: response.data.user,
                         isConnected: true,
                     });
-                    resolve(response);
+                    useAuthStore().getMyInformations().then(() => {
+                        resolve(response);
+                    });
                 }).catch((error => {
                     console.log(error);
                     if (error.response.data.message == `L'adresse email n'existe pas !`) {
@@ -117,7 +120,7 @@ export const useAuthStore = defineStore({
             useOtherStore().$reset();
         },
         getMyInformations: () => {
-            return new Promise((resolve, reject) => {
+            return new Promise<void>((resolve, reject) => {
                 let token = localStorage.getItem('token');
                 token ? useAuthStore().$patch({
                     isConnected: true,
@@ -132,7 +135,9 @@ export const useAuthStore = defineStore({
                         socket.auth = { username: session.firstname + ' ' + session.lastname, picture: session.picture_url, user: session.user_id, sessionID: session.session_id };
                         socket.connect();
                     }
-                    resolve(response);
+                    useAuthStore().getAllNotifications().then(() => {
+                        resolve(response);
+                    });
                 }).catch(error => {
                     console.log(error);
                     reject(error);
@@ -141,8 +146,26 @@ export const useAuthStore = defineStore({
         },
         getAllNotifications: () => {
             return new Promise<void>((resolve, reject) => {
+                let date = new Date();
+                let newDate = moment(date).format('DD/MM/YYYY HH:mm:ss');
+                let newDateSplit = newDate.split(" ");
                 fetchNotifications().then((response: any) => {
-                    console.log(response);
+                    response.data.forEach((element: any) => {
+                        let date = moment(element.created_at).format('DD/MM/YYYY à HH:mm').split(" ");
+                        if (date[0] == newDateSplit[0]) {
+                            date[0] = "Aujourd'hui";
+                        } else if (parseInt(date[0]) == parseInt(newDateSplit[0]) - 1) {
+                            date[0] = "Hier";
+                        } else if (parseInt(date[0]) == parseInt(newDateSplit[0]) - 2) {
+                            date[0] = "Avant-hier";
+                        }
+                        useOtherStore().$patch((state: any) => {
+                            state.notifications.push({
+                                ...element,
+                                date: date.join(" ")
+                            });
+                        })
+                    })
                     resolve();
                 })
             })

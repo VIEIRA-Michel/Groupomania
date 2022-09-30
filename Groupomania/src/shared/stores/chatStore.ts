@@ -154,7 +154,6 @@ export const useChatStore = defineStore({
                     if (response.data?.length > 0 && useFriendshipStore().$state.friends.length > 0) {
                         useChatStore().$patch((state: any) => {
                             state.friendsConnected.splice(0, state.friendsConnected.length);
-                            console.log(response.data);
                             response.data.map((user: any) => {
                                 useFriendshipStore().$state.friends.map((friend: any) => {
                                     if (friend.user_id == user.user) {
