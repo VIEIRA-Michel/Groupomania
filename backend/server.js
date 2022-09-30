@@ -7,7 +7,7 @@ require('dotenv').config();
 
 const io = new Server(server, {
   cors: {
-    origin: '*',
+    origin: '*'
   }
 });
 
@@ -15,19 +15,19 @@ const normalizePort = val => {
   const port = parseInt(val, 10);
 
   if (isNaN(port)) {
-    return val;
-  }
+    return val
+  };
   if (port >= 0) {
-    return port;
-  }
-  return false;
+    return port
+  };
+  return false
 };
 const port = normalizePort(process.env.PORT || '3000');
 app.set('port', port);
 
 const errorHandler = error => {
   if (error.syscall !== 'listen') {
-    throw error;
+    throw error
   }
   const address = server.address();
   const bind = typeof address === 'string' ? 'pipe ' + address : 'port: ' + port;
@@ -46,14 +46,14 @@ const errorHandler = error => {
 };
 
 (async () => {
-  await redis.connect(); // if using node-redis client.
+  await redis.connect()
 })();
 
 server.on('error', errorHandler);
 server.on('listening', () => {
   const address = server.address();
   const bind = typeof address === 'string' ? 'pipe ' + address : 'port ' + port;
-  console.log('Listening on ' + bind);
+  console.log('Listening on ' + bind)
 });
 
 io.use((socket, next) => {
@@ -69,16 +69,16 @@ io.use((socket, next) => {
         socket.user = sessionData.user;
         socket.username = sessionData.username;
         socket.picture = sessionData.picture;
-        return next();
+        return next()
       }
-    })();
+    })()
   }
-})
+});
 
 io.on('connection', (socket) => {
   socket.emit("session", {
     sessionID: socket.sessionID,
-    userID: socket.userID,
+    userID: socket.userID
   });
 
   socket.join(socket.userID);
@@ -90,10 +90,10 @@ io.on('connection', (socket) => {
     const userConnectedData = JSON.parse(arr);
     for (let i = 0; i < userConnectedData.length; i++) {
       if (userConnectedData[i].connected) {
-        users.push(userConnectedData[i]);
+        users.push(userConnectedData[i])
       }
     }
-    socket.emit("users", users);
+    socket.emit("users", users)
   })();
 
   socket.broadcast.emit("user connected", {
@@ -101,7 +101,7 @@ io.on('connection', (socket) => {
     user: socket.user,
     username: socket.username,
     picture: socket.picture,
-    connected: true,
+    connected: true
   });
 
   (async () => {
@@ -111,14 +111,14 @@ io.on('connection', (socket) => {
     let userConnectedDataFiltered = "";
     for (let i = 0; i < userConnectedData.length; i++) {
       if (userConnectedData[i].userID == socket.userID) {
-        userConnectedData[i].connected = true;
+        userConnectedData[i].connected = true
       }
       if (userConnectedDataFiltered != "") {
-        userConnectedDataFiltered += ",";
+        userConnectedDataFiltered += ","
       }
-      userConnectedDataFiltered += JSON.stringify(userConnectedData[i]);
+      userConnectedDataFiltered += JSON.stringify(userConnectedData[i])
     }
-    await redis.set(`connected`, userConnectedDataFiltered);
+    await redis.set(`connected`, userConnectedDataFiltered)
   })();
 
   socket.on("private message", ({ id, message, to, user }) => {
@@ -128,7 +128,7 @@ io.on('connection', (socket) => {
       message,
       to,
       user
-    });
+    })
   });
 
   socket.on("disconnect", async () => {
@@ -145,12 +145,12 @@ io.on('connection', (socket) => {
         for (let i = 0; i < userConnectedData.length; i++) {
           if (userConnectedData[i].userID == socket.userID) {
             userConnectedData[i].connected = false;
-            user = userConnectedData[i].user;
+            user = userConnectedData[i].user
           }
           if (userConnectedDataFiltered != "") {
-            userConnectedDataFiltered += ",";
+            userConnectedDataFiltered += ","
           }
-          userConnectedDataFiltered += JSON.stringify(userConnectedData[i]);
+          userConnectedDataFiltered += JSON.stringify(userConnectedData[i])
         }
         const userInformation = await redis.get(`user:${user}`);
         const arrInformation = `[${userInformation}]`;
@@ -159,28 +159,32 @@ io.on('connection', (socket) => {
         userInformationData[0].conversations.map((conv) => {
           conv.split("-").map((id) => {
             if (parseInt(id) !== user) {
-              arrayIdConversation.push(parseInt(id));
+              arrayIdConversation.push(parseInt(id))
             }
-          });
-        })
+          })
+        });
         userConnectedData.map(async (item) => {
           for (let i = 0; i < arrayIdConversation.length; i++) {
             if (item.user === arrayIdConversation[i]) {
               if (!item.connected) {
                 let idConversation = '';
                 if (item.user < user) {
-                  idConversation = `${item.user}-${user}`;
+                  idConversation = `${item.user}-${user}`
                 } else {
-                  idConversation = `${user}-${item.user}`;
+                  idConversation = `${user}-${item.user}`
                 }
-                await redis.del(`conversation:${idConversation}`);
+                await redis.del(`conversation:${idConversation}`)
               }
             }
           }
-        })
-        await redis.set(`connected`, userConnectedDataFiltered);
+        });
+        await redis.set(`connected`, userConnectedDataFiltered)
       })();
     }
+  });
+
+  socket.onAny((event, ...args) => {
+    console.log('bouh', event, args)
   });
 
   socket.on('typing', (data) => {
@@ -221,10 +225,10 @@ io.on('connection', (socket) => {
   });
   socket.on('friend removed', (data) => {
     socket.broadcast.emit('friend removed', data)
-  })
+  });
   socket.on('friendRequest canceled', (data) => {
     socket.broadcast.emit('friendRequest canceled', data)
-  })
+  });
   socket.on('update profil', (data) => {
     (async () => {
       const user = await redis.get(`user:${data.data[0].id}`);
@@ -236,17 +240,17 @@ io.on('connection', (socket) => {
       let userConnectedDataFiltered = "";
       for (let i = 0; i < userConnectedData.length; i++) {
         if (userConnectedData[i].userID == data.data[0].userID) {
-          userConnectedData[i].picture = data.data[0].picture_url;
+          userConnectedData[i].picture = data.data[0].picture_url
         }
         if (userConnectedDataFiltered != "") {
-          userConnectedDataFiltered += ",";
+          userConnectedDataFiltered += ","
         }
-        userConnectedDataFiltered += JSON.stringify(userConnectedData[i]);
-      }
+        userConnectedDataFiltered += JSON.stringify(userConnectedData[i])
+      };
       await redis.set(`connected`, userConnectedDataFiltered);
       await redis.set(`user:${data.data[0].id}`, JSON.stringify(userData));
-      socket.broadcast.emit('update profil', data);
-    })();
+      socket.broadcast.emit('update profil', data)
+    })()
   })
 });
 

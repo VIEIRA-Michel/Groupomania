@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const friendsController = require('../controllers/friends')
+const friendsController = require('../controllers/friends');
 
 router.get('/', friendsController.getAllFriends);
 router.get('/search', friendsController.searchUser);

@@ -998,6 +998,7 @@ onBeforeMount(() => {
             border-bottom: 1px solid #dbdbdb;
             border-radius: 5px;
             background: #FFFFFF;
+            margin-top: 10px;
 
             &.hidden {
                 display: none;
@@ -1261,7 +1262,7 @@ onBeforeMount(() => {
     background: #FFFFFF;
     padding: 20px;
     border-radius: 5px;
-    min-width: 350px;
+    width: 350px;
 
     &__header {
         margin-bottom: 20px;
