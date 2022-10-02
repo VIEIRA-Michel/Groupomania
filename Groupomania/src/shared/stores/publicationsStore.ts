@@ -196,7 +196,7 @@ export const usePublicationsStore = defineStore({
                                         comments: [],
                                         numberOfComments: 0,
                                         publication_date: publicationDate.join(" "),
-                                        publication_edit: publicationEdit.join(" "),
+                                        publication_edit: publicationEdit ? publicationEdit.join(" ") : null,
                                         limit: 5,
                                         from: 0,
                                         previewOnEdit: null,
@@ -345,6 +345,13 @@ export const usePublicationsStore = defineStore({
                             }
                             state.numberOfPages = Math.floor(state.numOfResults / 5 - 0.2) + 1;
                         };
+                    })
+                    useOtherStore().$patch((state: any) => {
+                        state.notifications.map((item: any) => {
+                            if (item.publication_id == id) {
+                                state.notifications.splice(state.notifications.indexOf(item), 1);
+                            }
+                        })
                     })
                     resolve(response);
                 }).catch(error => {

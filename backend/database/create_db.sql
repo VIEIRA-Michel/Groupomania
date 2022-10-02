@@ -94,7 +94,8 @@ CREATE TABLE
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
         publication_id INTEGER,
         FOREIGN KEY (publication_id) REFERENCES publications(id) ON DELETE CASCADE ON UPDATE CASCADE,
-        created_at DATETIME
+        created_at DATETIME,
+        type VARCHAR(50) DEFAULT 'like'
     );
 
 CREATE TABLE
@@ -105,7 +106,8 @@ CREATE TABLE
         publication_id INTEGER,
         FOREIGN KEY (publication_id) REFERENCES publications(id) ON DELETE CASCADE ON UPDATE CASCADE,
         content TEXT,
-        created_at DATETIME
+        created_at DATETIME,
+        type VARCHAR(50) DEFAULT 'comment'
     );
 
 CREATE TABLE
@@ -117,7 +119,8 @@ CREATE TABLE
         FOREIGN KEY (user_id_recipient) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
         request_date DATETIME,
         approve_date DATETIME,
-        denied_date DATETIME
+        denied_date DATETIME,
+        type VARCHAR(50) DEFAULT 'friendship'
     );
 
 CREATE TABLE

@@ -150,7 +150,28 @@ export const useAuthStore = defineStore({
                 let newDate = moment(date).format('DD/MM/YYYY HH:mm:ss');
                 let newDateSplit = newDate.split(" ");
                 fetchNotifications().then((response: any) => {
+                    console.log(response);
                     response.data.forEach((element: any) => {
+                        if (element.type == 'like' || element.type == 'comment') {
+                            element.publication_id = element.param1;
+                            element.publication_picture = element.param2;
+                            element.publication_content = element.param3;
+
+                            if (element.type == 'like') {
+                                element.like_id = element.id;
+                                element.message = 'a aimé votre publication';
+                            } else {
+                                element.comment_id = element.id;
+                                element.message = 'a commenté votre publication';
+                            }
+                        } else if (element.type == 'friendship') {
+                            element.idRequest = element.id;
+                            if (element.created_at > element.param2) {
+                                element.message = 'a accepté votre demande d\'ami';
+                            } else {
+                                element.message = 'vous a envoyé une demande d\'ami';
+                            }
+                        }
                         let date = moment(element.created_at).format('DD/MM/YYYY à HH:mm').split(" ");
                         if (date[0] == newDateSplit[0]) {
                             date[0] = "Aujourd'hui";

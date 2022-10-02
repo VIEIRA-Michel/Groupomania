@@ -182,14 +182,7 @@ export const useChatStore = defineStore({
             })
         },
         getCountOfMessages: (conversation_id: number) => {
-            return new Promise((resolve, reject) => {
-                getCount(conversation_id).then((response: any) => {
-                    resolve(response.data.count);
-                }).catch(error => {
-                    console.log(error);
-                    reject(error);
-                })
-            })
+            return getCount(conversation_id)
         },
         fetchMoreMessages: () => {
             return new Promise((resolve, reject) => {

@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import { useAuthStore } from '../stores/authStore';
 import { fetchRequests, fetchFriends, acceptOrDecline, deleteFriend, searchFriend, addFriend, cancelReq, checkReq } from '../services/friends.service';
 import { useChatStore } from './chatStore';
+import { useOtherStore } from './otherStore';
 
 interface FriendshipState {
     friends: any[];
@@ -159,6 +160,13 @@ export const useFriendshipStore = defineStore({
                         state.searchResults.map((item: any) => {
                             if (item.user_id == id) {
                                 item.isFriend = false;
+                            }
+                        })
+                    })
+                    useOtherStore().$patch((state: any) => {
+                        state.notifications.map((item: any) => {
+                            if (item.type == 'friendship' && item.user_id == id || item.type == 'friends' && item.user_id == id) {
+                                state.notifications.splice(state.notifications.indexOf(item), 1);
                             }
                         })
                     })

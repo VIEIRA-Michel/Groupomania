@@ -150,7 +150,17 @@ exports.deleteFriend = (req, res, next) => {
                 console.log(err);
                 res.status(500).json({ message: 'Erreur lors de la suppression de l\'amitié !' })
             } else {
-                res.status(200).json({ message: 'Vous n\'êtes plus ami avec cet utilisateur désormais !' })
+                sql = `DELETE FROM messages WHERE sender = ? AND recipient = ? OR sender = ? AND recipient = ?`;
+                connection.query(
+                    sql, [req.user.userId, req.params.id, req.params.id, req.user.userId], function (err, results) {
+                        if (err) {
+                            console.log(err);
+                            res.status(500).json({ message: 'Erreur lors de la suppression de l\'amitié !' })
+                        } else {
+                            res.status(200).json({ message: 'Les messages ont bien été supprimé !' })
+                        }
+                    }
+                )
             }
         }
     )
