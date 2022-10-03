@@ -9,7 +9,7 @@ const requests = computed(() => useFriendshipStore().$state.requests);
 const user = computed(() => useAuthStore().$state.user);
 const users = computed(() => useChatStore().$state.users);
 const notifications = computed(() => useOtherStore().$state.notifications);
-const notificationsCount = computed(() => useOtherStore().$state.notificationsCount);
+const notificationsCount = computed(() => useOtherStore().getCountOfNotificationNotRead);
 
 let showNotification = ref<any>(null);
 let newNotification = ref(false);
@@ -43,9 +43,12 @@ function toggleProfileMenu() {
     showProfileMenu.value = !showProfileMenu.value;
 }
 
-watch(useOtherStore().$state.notifications, (newNotif) => {
+watch(notificationsCount, (newNotif) => {
     if (showNotification.value == false || showNotification.value == null) {
         newNotification.value = true;
+    }
+    if (newNotif == 0) {
+        newNotification.value = false;
     }
 })
 
@@ -442,8 +445,8 @@ header {
 
                     &.active {
                         width: 350px;
-                        height: 250px;
-                        // background: #FFFFFF;
+                        height: 235px;
+                        // height: 250px;
                         border: 1px solid #dbdbdb;
                         border-radius: 5px;
                         overflow-y: scroll;

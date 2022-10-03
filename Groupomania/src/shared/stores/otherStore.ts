@@ -1,12 +1,10 @@
 import { defineStore } from 'pinia';
-import { useAuthStore } from './authStore';
 import moment from 'moment';
 
 export interface otherStore {
     information: boolean;
     loading: boolean;
     notifications: [];
-    notificationsCount: number;
 }
 
 export const useOtherStore = defineStore({
@@ -15,9 +13,18 @@ export const useOtherStore = defineStore({
         information: false,
         loading: true,
         notifications: [],
-        notificationsCount: 0,
     }),
-    getters: {},
+    getters: {
+        getCountOfNotificationNotRead: () => {
+            let count = 0;
+            useOtherStore().$state.notifications.forEach((notification: any) => {
+                if (notification.read == false) {
+                    count++
+                }
+            })
+            return count;
+        }
+    },
     actions: {
         loadedResources: (): void => {
             useOtherStore().$patch({
@@ -31,78 +38,67 @@ export const useOtherStore = defineStore({
             newDateSplit[0] = "Aujourd'hui à ";
             let today = newDateSplit.join(" ");
             useOtherStore().$patch((state: any) => {
-                if (type == "like") {
-                    type = "like";
-                    content.message = "a aimé votre publication"
-                } else if (type == "has commented") {
-                    type = "comment";
-                    content.message = "a commenté votre publication"
-                } else if (type == "friendRequest sended") {
-                    type = "friendship invitation";
-                    content.message = "vous a envoyé une demande d'ami"
-                } else if (type == "friendRequest accepted") {
-                    type = "friends";
-                    content.message = "a accepté votre demande d'ami"
-                }
-                if (content.user && type == "friendship invitation") {
+                if (content.user && type == "friendRequest sended") {
                     console.log(content);
                     state.notifications.unshift({
-                        type: type,
+                        type: "friendship invitation",
                         user_id: content.request.sender,
                         idRequest: content.request.idRequest,
                         firstname: content.user.firstname,
                         lastname: content.user.lastname,
                         picture_url: content.user.picture_url,
-                        message: content.message,
-                        date: today
+                        message: "vous a envoyé une demande d'ami",
+                        date: today,
+                        read: false
                     })
-                    state.notificationsCount += 1;
-                } else if (content.user && type == "friends") {
+                } else if (content.user && type == "friendRequest accepted") {
                     state.notifications.unshift({
-                        type: type,
+                        type: "friends",
                         user_id: content.response.data.results[0].user_id_recipient,
                         idRequest: content.response.data.results[0].requestId,
                         firstname: content.response.data.results[0].firstname,
                         lastname: content.response.data.results[0].lastname,
                         picture_url: content.response.data.results[0].picture_url,
-                        message: content.message,
-                        date: today
+                        message: "a accepté votre demande d'ami",
+                        date: today,
+                        read: false
                     })
                 } else if (content.user && type == "like") {
+                    console.log(content);
                     state.notifications.unshift({
-                        type: type,
+                        type: "like",
                         user_id: content.user.user_id,
                         firstname: content.user.firstname,
                         lastname: content.user.lastname,
                         picture_url: content.user.picture_url,
-                        message: content.message,
+                        message: "a aimé votre publication",
                         date: today,
+                        like_id: content.publication.like_id,
                         publication_id: content.publication.publication_id ? content.publication.publication_id : null,
                         publication_content: content.publication.content ? content.publication.content : null,
                         publication_picture: content.publication.picture ? content.publication.picture : null,
+                        read: false
                     })
-                    state.notificationsCount += 1;
-                } else if (content.user && type == "comment") {
+                } else if (content.user && type == "has commented") {
                     state.notifications.unshift({
-                        type: type,
+                        type: "comment",
                         user_id: content.user.user_id,
                         firstname: content.user.firstname,
                         lastname: content.user.lastname,
                         picture_url: content.user.picture_url,
-                        message: content.message,
+                        message: "a commenté votre publication",
                         date: today,
                         comment_id: content.comment.comment_id,
                         publication_id: content.comment.publication_id,
                         publication_content: content.comment.publication_content,
                         publication_picture: content.comment.picture,
+                        read: false
                     })
-                    state.notificationsCount += 1;
                 }
             })
         },
         notificationRemove: (type: string, content: any): void => {
-            console.log('type', type);
-            console.log('content', content);
+            console.log('notification remove');
             if (type == "remove like") {
                 useOtherStore().$patch((state: any) => {
                     state.notifications.map((item: any) => {
@@ -110,16 +106,15 @@ export const useOtherStore = defineStore({
                             state.notifications.splice(state.notifications.indexOf(item), 1);
                         }
                     })
-                    state.notificationsCount -= 1;
                 })
             } else if (type == "delete comment") {
                 useOtherStore().$patch((state: any) => {
                     state.notifications.map((item: any) => {
-                        if (item.comment_id == content.comment_id && item.type == "comment") {
+                        console.log(content);
+                        if (item.comment_id == content.comment.comment_id && item.type == "comment") {
                             state.notifications.splice(state.notifications.indexOf(item), 1);
                         }
                     })
-                    state.notificationsCount -= 1;
                 })
             } else if (type == "friendRequest canceled") {
                 useOtherStore().$patch((state: any) => {
@@ -128,7 +123,6 @@ export const useOtherStore = defineStore({
                             state.notifications.splice(state.notifications.indexOf(item), 1);
                         }
                     })
-                    state.notificationsCount -= 1;
                 })
             } else if (type == "friend removed") {
                 useOtherStore().$patch((state: any) => {
@@ -140,13 +134,27 @@ export const useOtherStore = defineStore({
                             state.notifications.splice(state.notifications.indexOf(item), 1);
                         }
                     })
-                    state.notificationsCount -= 1;
                 })
             }
         },
+        removeAllLinks: (publication_id: number) => {
+            useOtherStore().$patch((state: any) => {
+                state.notifications.map((item: any) => {
+                    if (item.publication_id == publication_id && item.type == 'like') {
+                        state.notifications.splice(state.notifications.indexOf(item), 1);
+                    }
+                    if (item.publication == publication_id && item.type == 'comment') {
+                        state.notifications.splice(state.notifications.indexOf(item), 1);
+                    }
+                    return item;
+                })
+            })
+        },
         notificationRead: () => {
             useOtherStore().$patch((state: any) => {
-                state.notificationsCount = 0;
+                state.notifications.map((item: any) => {
+                    item.read = true
+                })
             })
         }
     }

@@ -6,6 +6,7 @@ import { useAuthStore } from '../shared/stores/authStore';
 import { usePublicationsStore } from '../shared/stores/publicationsStore';
 import { useCommentsStore } from '../shared/stores/commentsStore';
 import socket from '../socket';
+import { useOtherStore } from '@/shared/stores/otherStore';
 
 const user = computed(() => useAuthStore().$state.user);
 const publications = computed(() => usePublicationsStore().$state.publications);
@@ -230,11 +231,13 @@ function deletePublication(id: number) {
         usePublicationsStore().fetchAllPublication(page.value + 1, true).then((response: any) => {
             usePublicationsStore().deletePublication(id).then((response: any) => {
                 socket.emit('delete publication', id, user.value);
+                useOtherStore().removeAllLinks(id);
             });
         })
     } else {
         usePublicationsStore().deletePublication(id).then((response: any) => {
             socket.emit('delete publication', id, user.value);
+            useOtherStore().removeAllLinks(id);
         });
     }
 };
@@ -242,6 +245,7 @@ function deletePublication(id: number) {
 function likePublication(publication: any) {
     usePublicationsStore().likePublication(publication.publication_id).then((response: any) => {
         if (response.data.liked == true) {
+            publication = { ...publication, like_id: response.data.results.insertId };
             socket.emit('like', { publication, user: user.value });
         } else {
             socket.emit('remove like', { publication, user: user.value });

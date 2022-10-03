@@ -7,7 +7,9 @@ const router = useRouter();
 const invalidEmail = computed(() => useAuthStore().$state.invalidEmail);
 const invalidPassword = computed(() => useAuthStore().$state.invalidPassword);
 const errorMessage = computed(() => useAuthStore().$state.errorMessage);
+const warningMessage = computed(() => useAuthStore().$state.warningLimiter);
 
+const modalAlert = ref(false);
 let hasAccount = ref(true);
 let userInput = reactive({
     lastname: '',
@@ -24,6 +26,12 @@ let loginInput = reactive({
 function login() {
     useAuthStore().login(loginInput.email, loginInput.password).then((response) => {
         router.push('/app/home');
+        useAuthStore().removeWarningMessage();
+    }).catch((error) => {
+        console.log(error);
+        if (error.response.status === 429) {
+            modalAlert.value = true;
+        }
     });
 }
 
@@ -35,9 +43,19 @@ function register() {
             useAuthStore().register(userInput.lastname, userInput.firstname, userInput.email, userInput.password, userInput.confirmPassword).then((response) => {
                 router.push('/app/home');
                 hasAccount.value = true;
-            });
+            }).catch((error) => {
+                console.log(error);
+                if (error.response.status === 429) {
+                    console.log('je passe ici');
+                    modalAlert.value = !modalAlert.value;
+                }
+            })
         }
     }
+}
+
+function closeModal() {
+    modalAlert.value = false;
 }
 </script>
 <template>
@@ -76,6 +94,23 @@ function register() {
                         <div class="container__content__form__login">
                             <button>Connexion</button>
                         </div>
+                        <Teleport to="body">
+                            <div v-if="modalAlert" @click="modalAlert = false" class="calc">
+                                <div @click.stop class="modal-container">
+                                    <div class="modal-container__content">
+                                        <div class="modal-container__content__header">
+                                            <div class="modal-container__content__header__title">
+                                                {{ warningMessage }}
+                                            </div>
+                                        </div>
+                                        <div class="modal-container__content__footer">
+                                            <button @click="closeModal" type="button"
+                                                class="btn btn-primary">Fermer</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </Teleport>
                         <div class="container__content__form__message">
                             Vous n'avez pas encore de compte ? <span v-if="hasAccount"
                                 @click="hasAccount = false">Inscrivez-vous gratuitement</span>
@@ -438,6 +473,67 @@ function register() {
 .home_picture {
     img {
         position: absolute;
+    }
+}
+
+.calc {
+    position: fixed;
+    top: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 99;
+}
+
+.modal-container {
+    background-color: #FFF;
+    color: #4E5166;
+    padding: 20px;
+    border-radius: 5px;
+    width: 300px;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: flex-start;
+    backdrop-filter: blur(2px);
+    transition: all 0.3s ease-in-out;
+    transform: translateY(-100px);
+    transform-origin: center;
+
+    &__content {
+        width: 100%;
+
+        &__header {
+
+            &__title {
+                margin-bottom: 20px;
+                margin-top: 0;
+
+                span {
+                    color: $color-primary;
+                    font-weight: 600;
+                }
+            }
+        }
+
+        &__footer {
+            display: flex;
+            justify-content: flex-end;
+
+            .btn.btn-primary {
+                @include button-primary;
+                margin-left: 10px;
+            }
+
+            .btn.btn-secondary {
+                @include button-secondary;
+            }
+        }
     }
 }
 </style>

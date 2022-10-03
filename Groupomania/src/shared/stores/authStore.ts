@@ -14,6 +14,7 @@ export interface IAuthStore {
     invalidEmail: boolean;
     invalidPassword: boolean;
     errorMessage: string | null;
+    warningLimiter: string | null;
 }
 
 export const useAuthStore = defineStore({
@@ -23,7 +24,8 @@ export const useAuthStore = defineStore({
         user: {},
         invalidEmail: false,
         invalidPassword: false,
-        errorMessage: null
+        errorMessage: null,
+        warningLimiter: null,
     }),
     getters: {
         isAuthenticated(state): boolean | null {
@@ -48,20 +50,27 @@ export const useAuthStore = defineStore({
                             resolve(response);
                         }).catch(error => {
                             let text = ''
+                            console.log(error.response.data);
                             if (error.response.data.length > 0) {
                                 text = 'Le mot de passe doit comporter '
                                 let arrError: any = [];
-                                error.response.data.forEach((element: any) => {
-                                    if (element == 'uppercase') {
-                                        arrError.push('1 majuscule');
-                                    } else if (element == 'digits') {
-                                        arrError.push('2 chiffres ');
-                                    } else if (element == 'lowercase') {
-                                        arrError.push('1 minuscule ');
-                                    }
-                                });
-                                text = text + arrError.join(' et ');
-                                useAuthStore().displayErrorMessage(text);
+                                if (typeof (error.response.data) !== 'string') {
+                                    error.response.data.forEach((element: any) => {
+                                        if (element == 'uppercase') {
+                                            arrError.push('1 majuscule');
+                                        } else if (element == 'digits') {
+                                            arrError.push('2 chiffres ');
+                                        } else if (element == 'lowercase') {
+                                            arrError.push('1 minuscule ');
+                                        }
+                                    });
+                                    text = text + arrError.join(' et ');
+                                    useAuthStore().displayErrorMessage(text);
+                                } else if (error.response.status == 429) {
+                                    useAuthStore().$patch((state: any) => {
+                                        state.warningLimiter = error.response.data
+                                    })
+                                }
                             } else {
                                 useAuthStore().displayErrorMessage(error.response.data.message);
                             }
@@ -89,7 +98,6 @@ export const useAuthStore = defineStore({
                         resolve(response);
                     });
                 }).catch((error => {
-                    console.log(error);
                     if (error.response.data.message == `L'adresse email n'existe pas !`) {
                         useAuthStore().$reset();
                         useAuthStore().$patch({
@@ -101,8 +109,19 @@ export const useAuthStore = defineStore({
                             invalidPassword: true,
                         });
                     }
+                    if (error.response.status == 429) {
+                        useAuthStore().$patch((state: any) => {
+                            console.log(error.response.data);
+                            state.warningLimiter = error.response.data
+                        })
+                    };
                     reject(error);
                 }))
+            })
+        },
+        removeWarningMessage() {
+            useAuthStore().$patch((state: any) => {
+                state.warningLimiter = null;
             })
         },
         logout() {
@@ -183,6 +202,7 @@ export const useAuthStore = defineStore({
                         useOtherStore().$patch((state: any) => {
                             state.notifications.push({
                                 ...element,
+                                read: true,
                                 date: date.join(" ")
                             });
                         })
@@ -250,7 +270,7 @@ export const useAuthStore = defineStore({
                         return item;
                     })
                 }
-            })
+            });
             useChatStore().$patch((state: any) => {
                 if (state.users.length > 0) {
                     state.users.map((item: any) => {
@@ -259,8 +279,24 @@ export const useAuthStore = defineStore({
                         }
                         return item;
                     })
+                };
+                if (state.friendsConnected.length > 0) {
+                    state.friendsConnected.map((item: any) => {
+                        if (item.user == data.data[0].id) {
+                            item.picture = data.data[0].picture_url
+                        }
+                    })
                 }
-            })
+            });
+            useOtherStore().$patch((state: any) => {
+                if (state.notifications.length > 0) {
+                    state.notifications.map((item: any) => {
+                        if (item.user_id == data.data[0].id) {
+                            item.picture_url = data.data[0].picture_url;
+                        }
+                    })
+                }
+            });
             usePublicationsStore().$patch((state: any) => {
                 if (state.publications.length > 0) {
                     state.publications.map((item: any) => {

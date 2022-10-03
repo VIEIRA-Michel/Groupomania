@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { useCommentsStore } from '../shared/stores/commentsStore';
 import { ref } from 'vue';
+
 let inputComment = ref("");
+let modalComment = ref(false);
 
 const props = defineProps({
     numberOfComments: Number,
@@ -29,6 +31,15 @@ function createComment(event: any) {
     };
 }
 
+function activateModal() {
+    modalComment.value = true;
+}
+
+function deleteComment(comment: any) {
+    useCommentsStore().deleteComment(comment)
+    modalComment.value = false;
+}
+
 </script>
 <template>
     <div class="container-post">
@@ -53,10 +64,30 @@ function createComment(event: any) {
                         </div>
                     </div>
                     <div class="post__button">
-                        <fa v-if="props.user.email == com.email || props.user.role_id == 2"
-                            @click="useCommentsStore().deleteComment(com)"
+                        <fa v-if="props.user.email == com.email || props.user.role_id == 2" @click="activateModal"
                             icon="fa-solid fa-trash-can" />
                     </div>
+                    <Teleport to="body">
+                        <div v-if="modalComment" @click="modalComment = false" class="calc">
+                            <div @click.stop class="modal-container">
+
+                                <div class="modal-container__content">
+                                    <div class="modal-container__content__header">
+                                        <div class="modal-container__content__header__title">
+                                            Êtes-vous certains de vouloir supprimer ce
+                                            commentaire ?
+                                        </div>
+                                    </div>
+                                    <div class="modal-container__content__footer">
+                                        <button @click="modalComment = false" type="button" class="btn btn-secondary"
+                                            data-dismiss="modal">Annuler</button>
+                                        <button @click="deleteComment(com)" type="button"
+                                            class="btn btn-primary">Supprimer</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </Teleport>
                 </div>
             </div>
         </div>
@@ -81,6 +112,7 @@ function createComment(event: any) {
 </template>
 <style scoped lang="scss">
 @import '../styles/Utils/variables';
+@import '../styles/Components/buttons';
 
 .container-post {
     border-top: 1px solid #dbdbdb;
@@ -172,6 +204,20 @@ function createComment(event: any) {
 
         &__button {
             cursor: pointer;
+
+            svg {
+                padding: 5px;
+                color: #FD2D01;
+                border-radius: 5px;
+                background: #ffffff;
+                border: 1px solid #FD2D01;
+
+                &:hover {
+                    background: #FD2D01;
+                    color: #ffffff;
+                    transition: all 0.3s;
+                }
+            }
         }
     }
 
@@ -188,8 +234,6 @@ function createComment(event: any) {
         }
     }
 }
-
-
 
 .create_post {
     display: flex;
@@ -261,6 +305,66 @@ function createComment(event: any) {
                     cursor: pointer;
                     margin-left: 10px;
                 }
+            }
+        }
+    }
+}
+
+.calc {
+    position: fixed;
+    top: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-container {
+    background-color: #FFF;
+    color: #4E5166;
+    padding: 20px;
+    border-radius: 5px;
+    width: 300px;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: flex-start;
+    backdrop-filter: blur(2px);
+    transition: all 0.3s ease-in-out;
+    transform: translateY(-100px);
+    transform-origin: center;
+
+    &__content {
+        width: 100%;
+
+        &__header {
+
+            &__title {
+                margin-bottom: 20px;
+                margin-top: 0;
+
+                span {
+                    color: $color-primary;
+                    font-weight: 600;
+                }
+            }
+        }
+
+        &__footer {
+            display: flex;
+            justify-content: flex-end;
+
+            .btn.btn-primary {
+                @include button-primary;
+                margin-left: 10px;
+            }
+
+            .btn.btn-secondary {
+                @include button-secondary;
             }
         }
     }

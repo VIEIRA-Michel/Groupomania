@@ -319,6 +319,15 @@ export const usePublicationsStore = defineStore({
                             }
                         })
                     })
+                    useOtherStore().$patch((state: any) => {
+                        state.notifications.map((item: any) => {
+                            if (item.publication_id == id) {
+                                item.publication_content = response.data.data[0].content;
+                                item.publication_picture = response.data.data[0].picture;
+                            }
+                            return item;
+                        })
+                    })
                     resolve(response);
                     socket.emit('edit publication', response.data.data[0], useAuthStore().$state.user);
                 }).catch(error => {
@@ -345,13 +354,6 @@ export const usePublicationsStore = defineStore({
                             }
                             state.numberOfPages = Math.floor(state.numOfResults / 5 - 0.2) + 1;
                         };
-                    })
-                    useOtherStore().$patch((state: any) => {
-                        state.notifications.map((item: any) => {
-                            if (item.publication_id == id) {
-                                state.notifications.splice(state.notifications.indexOf(item), 1);
-                            }
-                        })
                     })
                     resolve(response);
                 }).catch(error => {
@@ -522,6 +524,7 @@ export const usePublicationsStore = defineStore({
             });
         },
         onDeletePublication: (data: any) => {
+            console.log('on rentre la dedans ?');
             usePublicationsStore().$patch((state: any) => {
                 state.publications.map((item: any) => {
                     if (item.publication_id == data) {
