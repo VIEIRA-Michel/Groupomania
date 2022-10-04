@@ -31,6 +31,10 @@ export const useCommentsStore = defineStore({
                                     return post;
                                 })
                             })
+                        }).catch((error) => {
+                            if (error.response.status == 429) {
+                                useAuthStore().displayWarning(error.response.data);
+                            };
                         })
 
                     }
@@ -80,6 +84,9 @@ export const useCommentsStore = defineStore({
                     resolve(response);
                 }).catch(error => {
                     console.log(error);
+                    if (error.response.status == 429) {
+                        useAuthStore().displayWarning(error.response.data);
+                    };
                     reject(error);
                 })
             })
@@ -93,6 +100,9 @@ export const useCommentsStore = defineStore({
                 })
             }).catch(error => {
                 console.log(error);
+                if (error.response.status == 429) {
+                    useAuthStore().displayWarning(error.response.data);
+                };
             })
         },
         deleteComment: (comment: any) => {
@@ -110,6 +120,9 @@ export const useCommentsStore = defineStore({
                 socket.emit('delete comment', { comment, user: useAuthStore().$state.user });
             }).catch(error => {
                 console.log(error);
+                if (error.response.status == 429) {
+                    useAuthStore().displayWarning(error.response.data);
+                };
             })
         },
         createComment: (publication_id: number, comment: string) => {
@@ -164,6 +177,9 @@ export const useCommentsStore = defineStore({
                     resolve(response);
                 }).catch(error => {
                     console.log(error);
+                    if (error.response.status == 429) {
+                        useAuthStore().displayWarning(error.response.data);
+                    };
                     reject(error);
                 })
             })
@@ -174,7 +190,15 @@ export const useCommentsStore = defineStore({
                     if (item.publication_id == publication.publication_id) {
                         item.from = item.from + item.limit;
                         item.limit = item.limit + item.limit;
-                        item.comments.length >= item.from ? useCommentsStore().getAllComments(publication.publication_id, item.limit, item.from) : null;
+                        if (item.comments.length >= item.from) {
+                            useCommentsStore().getAllComments(publication.publication_id, item.limit, item.from).then((response: any) => {
+                                console.log('nice');
+                            }).catch(error => {
+                                if (error.response.status == 429) {
+                                    useAuthStore().displayWarning(error.response.data);
+                                };
+                            });
+                        }
                     }
                     return item;
                 })

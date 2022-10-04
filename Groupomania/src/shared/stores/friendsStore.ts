@@ -51,6 +51,9 @@ export const useFriendshipStore = defineStore({
                     resolve(response);
                 }).catch(error => {
                     console.log(error);
+                    if (error.response.status == 429) {
+                        useAuthStore().displayWarning(error.response.data);
+                    };
                     reject(error);
                 })
             })
@@ -102,6 +105,9 @@ export const useFriendshipStore = defineStore({
                     resolve(response);
                 }).catch(error => {
                     console.log(error);
+                    if (error.response.status == 429) {
+                        useAuthStore().displayWarning(error.response.data);
+                    };
                     reject(error);
                 })
             })
@@ -144,6 +150,9 @@ export const useFriendshipStore = defineStore({
                     resolve(response);
                 }).catch(error => {
                     console.log(error);
+                    if (error.response.status == 429) {
+                        useAuthStore().displayWarning(error.response.data);
+                    };
                     reject(error);
                 })
             })
@@ -174,8 +183,16 @@ export const useFriendshipStore = defineStore({
                     resolve(response);
                 }).catch(error => {
                     reject(error);
+                    if (error.response.status == 429) {
+                        useAuthStore().displayWarning(error.response.data);
+                    };
                     console.log(error);
                 })
+            })
+        },
+        resetFriendlist: () => {
+            useFriendshipStore().$patch((state) => {
+                state.friendsOfUser.splice(0, state.friendsOfUser.length)
             })
         },
         searchUser: (search: string) => {
@@ -215,6 +232,9 @@ export const useFriendshipStore = defineStore({
                     resolve(response);
                 }).catch(error => {
                     console.log(error);
+                    if (error.response.status == 429) {
+                        useAuthStore().displayWarning(error.response.data);
+                    };
                     reject(error)
                 })
             })
@@ -246,6 +266,9 @@ export const useFriendshipStore = defineStore({
                     resolve(response);
                 }).catch(error => {
                     console.log(error);
+                    if (error.response.status == 429) {
+                        useAuthStore().displayWarning(error.response.data);
+                    };
                     reject(error);
                 })
             })
@@ -268,6 +291,9 @@ export const useFriendshipStore = defineStore({
                     resolve(response);
                 }).catch(error => {
                     console.log(error);
+                    if (error.response.status == 429) {
+                        useAuthStore().displayWarning(error.response.data);
+                    };
                     reject(error);
                 })
             })
@@ -284,6 +310,9 @@ export const useFriendshipStore = defineStore({
                     resolve(response);
                 }).catch(error => {
                     console.log(error);
+                    if (error.response.status == 429) {
+                        useAuthStore().displayWarning(error.response.data);
+                    };
                     reject(error);
                 })
             })

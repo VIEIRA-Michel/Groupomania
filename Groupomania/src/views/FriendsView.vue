@@ -4,27 +4,46 @@ import { useAuthStore } from '../shared/stores/authStore';
 import { useFriendshipStore } from '../shared/stores/friendsStore';
 import socket from '../socket';
 
+// isConnected va nous permettre de savoir si nous sommes connectés ou non
 const isConnected = computed(() => useAuthStore().$state.isConnected);
+
+// requests va nous permettre de récupérer la liste de nos demandes d'amis reçu
 const requests = computed(() => useFriendshipStore().$state.requests);
+
+// friends va nous permettre de récupérer la liste de nos amis
 const friends = computed(() => useFriendshipStore().$state.friends);
+
+// usersFound va nous permettre de récupérer la liste d'utilisateurs trouvés qui correspondent à notre recherche
 const usersFound = computed(() => useFriendshipStore().$state.searchResults);
 
+// search va nous permettre de récupérer la valeur de notre saisie dans la barre de recherche
 const search = ref('');
+
+// open va nous permettre de faire apparaître la modal de confirmation lors de l'action permettant la suppression d'un ami
 let open = ref(false);
+
+// modalRequest va nous permettre de faire apparaître la modal de confirmation lors de l'action permettant l'annulation d'une demande d'ami envoyée
 let modalRequest = ref(false);
+
+// userToBeDeleted va nous permettre de récupérer l'utilisateur que nous souhaitons supprimer de notre liste d'amis
 let userToBeDeleted = ref(null);
+
+// invitToBeCanceled va nous permettre de récupérer l'utilisateur dont nous souhaitons annuler la demande d'ami
 let invitToBeCanceled = ref(null);
 
+// Cette fonction va nous permettre de transmettre l'id de notre ami à la fonction présente dans le store communiquant directement à l'api
 function removeFriend(utilisateur: number) {
     useFriendshipStore().removeFriend(utilisateur.user_id).then((response: any) => {
+        // Si tout s'est bien passé on réinitialise la valeur de open afin que la modal puisse de nouveau s'ouvrir dans le cas où nous souhaiterions supprimé par la suite un autre ami
         open.value = false;
+        // Et on émet ensuite l'évènement en lien afin de prévenir le serveur que nous avons supprimé un ami
         socket.emit('friend removed', { user: useAuthStore().$state.user, target: utilisateur });
     });
 }
 
+// Cette fonction va nous permettre de transmettre l'id de l'utilisateur que nous souhaitons ajouter à notre liste d'amis
 function addToFriends(user_id: any) {
     useFriendshipStore().sendFriendRequest(user_id).then((response: any) => {
-        console.log(response);
         let req = ref({
             approve_date: response.data.results[0].approve_date,
             denied_date: response.data.results[0].denied_date,
@@ -39,12 +58,15 @@ function addToFriends(user_id: any) {
             session_id: response.data.results[0].session_id,
             userID: useAuthStore().$state.user.userID,
         })
+        // Et on émet ensuite l'évènement en lien afin de prévenir le serveur que nous avons envoyé une demande d'ami
         socket.emit('friendRequest sended', { request: req.value, user: useAuthStore().$state.user });
     })
 }
 
+// Cette fonction va nous permettre de transmettre notre réponse à la demande d'ami reçu
 function replyToRequest(invitation: any, reply: string) {
     useFriendshipStore().acceptOrDeclineRequest(invitation, reply).then((response) => {
+        // Si tout s'est bien passé on émet l'évènement en lien afin de prévenir le serveur que nous avons accepté ou refusé une demande d'ami
         if (reply == 'accepted') {
             socket.emit('friendRequest accepted', { response, user: useAuthStore().$state.user });
         } else {
@@ -53,30 +75,49 @@ function replyToRequest(invitation: any, reply: string) {
     })
 }
 
+// Cette fonction va nous permettre de rechercher un utilisateur en fonction de ce que nous avons saisie dans la barre de recherche
 function searchUser() {
+    // On vérifie d'abord nos demandes d'ami envoyées afin d'afficher le bon bouton sous la carte d'utilisateur en fonction de la situation
     useFriendshipStore().checkRequestsSended().then((response: any) => {
+        // On éxécute ensuite la fonction de recherche présente dans le store communiquant directement à l'api
         useFriendshipStore().searchUser(search.value).then((response: any) => {
         })
     });
 };
 
+// Cette fonction va nous permettre de transmettre l'id de l'utilisateur dont nous souhaitons annuler la demande d'ami
 function cancelRequest(utilisateur: any) {
     useFriendshipStore().cancelRequest(utilisateur.user_id).then((response) => {
+        // Si tout s'est bien passé on réinitialise la valeur de modalRequest afin que la modal puisse de nouveau s'ouvrir dans le cas où nous souhaiterions annulé par la suite une autre demande d'ami
         modalRequest.value = false;
+        // Et on émet ensuite l'évènement en lien afin de prévenir le serveur que nous avons annulé une demande d'ami
         socket.emit('friendRequest canceled', { user: useAuthStore().$state.user, request: utilisateur });
     });
 }
 
+// Cette fonction va nous permettre d'afficher la modal de confirmation pour annuler une demande d'ami en cours et transmettre les informations de l'utilisateur dont nous souhaitons annuler la demande d'ami
 function cancelModal(user: any) {
     modalRequest.value = true
     invitToBeCanceled.value = user;
 }
+
+// Cette fonction va nous permettre d'afficher la modal de confirmation pour supprimer un ami et transmettre les informations de l'utilisateur que nous souhaitons supprimer de notre liste d'amis
 function deleteModal(user: any) {
     open.value = true;
     userToBeDeleted.value = user;
 }
 
+// On place un watch sur la valeur permettant l'affichage de la modal permettant l'annulation d'une demande d'ami afin de bloquer le scroll de la page lorsque la modal est ouverte
 watch(modalRequest, (value: boolean) => {
+    if (value == true) {
+        document.querySelector('body')!.style.overflowY = 'hidden';
+    } else if (value == false) {
+        document.querySelector('body')!.style.overflowY = 'scroll';
+    }
+})
+
+// On place un watch sur la valeur permettant l'affichage de la modal permettant la suppression d'un ami afin de bloquer le scroll de la page lorsque la modal est ouverte
+watch(open, (value: boolean) => {
     if (value == true) {
         document.querySelector('body')!.style.overflowY = 'hidden';
     } else if (value == false) {

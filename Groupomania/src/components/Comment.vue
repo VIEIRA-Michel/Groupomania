@@ -23,7 +23,8 @@ function autoResize(event: any) {
 
 function createComment(event: any) {
     event.preventDefault();
-    if (inputComment.value != "") {
+    if (inputComment.value.length > 1 && inputComment.value != " ") {
+        console.log(inputComment.value);
         useCommentsStore().createComment(props.publication_id, inputComment.value).then((response) => {
             inputComment.value = "";
             event.target.style.height = 'auto';

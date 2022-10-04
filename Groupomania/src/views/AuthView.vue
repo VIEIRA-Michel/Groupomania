@@ -4,13 +4,23 @@ import { useAuthStore } from '../shared/stores/authStore';
 import { useRouter } from 'vue-router';
 const router = useRouter();
 
+// invalidEmail et invalidPassword qui vont nous permettre de vérifier si nous avons rempli un des champs de manière incorrecte
 const invalidEmail = computed(() => useAuthStore().$state.invalidEmail);
 const invalidPassword = computed(() => useAuthStore().$state.invalidPassword);
+
+// errorMessage va nous permettre d'afficher le message d'erreur reçue de l'api en cas d'erreur lors de la saisie des informations
 const errorMessage = computed(() => useAuthStore().$state.errorMessage);
+
+// warningMessage va nous permettre d'afficher le message d'avertissement reçu lors d'un trop grand nombre de requête émise
 const warningMessage = computed(() => useAuthStore().$state.warningLimiter);
 
-const modalAlert = ref(false);
+// modalAlert va nous permettre de faire apparaitre la modal d'alerte dans le cas où un trop grand nombre de requête seraient émises
+const modalAlert = computed(() => useAuthStore().$state.modalAlert);
+
+// hasAccount qui va nous permettre de basculer du formulaire de connexion au formulaire d'inscription
 let hasAccount = ref(true);
+
+// userInput va nous permettre de récupérer les informations que nous avons saisies sur le formulaire d'inscription
 let userInput = reactive({
     lastname: '',
     firstname: '',
@@ -18,45 +28,38 @@ let userInput = reactive({
     password: '',
     confirmPassword: ''
 });
+
+// loginInput va nous permettre de récupérer les informations que nous avons saisies sur le formulaire de connexion
 let loginInput = reactive({
     email: '',
     password: ''
 });
 
+// Cette fonction va nous permettre de transmettre les informations que nous avons saisies au store afin de les envoyer à l'api pour nous connecter
 function login() {
     useAuthStore().login(loginInput.email, loginInput.password).then((response) => {
+        // Dans le cas où les informations sont correctement saisie et que nous parvenons à nous connecter on sera redirigé vers la page d'accueil
         router.push('/app/home');
+        // Et on efface par la même occasion le message d'erreur liée à un trop grand nombre de requête s'il y en a un
         useAuthStore().removeWarningMessage();
-    }).catch((error) => {
-        console.log(error);
-        if (error.response.status === 429) {
-            modalAlert.value = true;
-        }
-    });
+    })
 }
 
+// Cette fonction va nous permettre de transmettre les informations que nous avons saisies au store afin de les envoyer à l'api pour nous inscrire
 function register() {
     if (userInput.password !== userInput.confirmPassword) {
         useAuthStore().displayErrorMessage('Les mots de passe ne correspondent pas');
     } else {
+        // Dans le cas où le mot de passe saisie respecte certaines conditions on exécute la fonction qui va communiquer avec l'api
         if (userInput.password.length >= 8 && userInput.password.length <= 12) {
             useAuthStore().register(userInput.lastname, userInput.firstname, userInput.email, userInput.password, userInput.confirmPassword).then((response) => {
-                router.push('/app/home');
+                // Si l'inscription s'est correctement dérouler nous basculons à présent sur le formulaire de connexion en passant la valeur à true
                 hasAccount.value = true;
-            }).catch((error) => {
-                console.log(error);
-                if (error.response.status === 429) {
-                    console.log('je passe ici');
-                    modalAlert.value = !modalAlert.value;
-                }
             })
         }
     }
 }
 
-function closeModal() {
-    modalAlert.value = false;
-}
 </script>
 <template>
     <div class="home">
@@ -95,7 +98,7 @@ function closeModal() {
                             <button>Connexion</button>
                         </div>
                         <Teleport to="body">
-                            <div v-if="modalAlert" @click="modalAlert = false" class="calc">
+                            <div v-if="modalAlert" @click="useAuthStore().resetWarning" class="calc">
                                 <div @click.stop class="modal-container">
                                     <div class="modal-container__content">
                                         <div class="modal-container__content__header">
@@ -104,7 +107,7 @@ function closeModal() {
                                             </div>
                                         </div>
                                         <div class="modal-container__content__footer">
-                                            <button @click="closeModal" type="button"
+                                            <button @click="useAuthStore().resetWarning" type="button"
                                                 class="btn btn-primary">Fermer</button>
                                         </div>
                                     </div>

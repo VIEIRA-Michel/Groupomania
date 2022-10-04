@@ -5,9 +5,13 @@ import { useRouter } from 'vue-router';
 import socket from '@/socket';
 const router = useRouter();
 
+// isConnected va nous permettre de savoir si nous sommes connectés ou non
 const isConnected = computed(() => useAuthStore().$state.isConnected);
+
+// user va nous permettre de récupérer nos informations en tant qu'utilisateur
 const user = computed(() => useAuthStore().$state.user);
 
+// userEdit va nous permettre de récupérer les différents champs de saisie de texte et l'image de profil
 let userEdit = reactive({
     picture_url: user.value.picture_url,
     email: '',
@@ -16,23 +20,40 @@ let userEdit = reactive({
     confirmPassword: ''
 });
 
+// updatedProfil va permettre d'afficher une alerte si la modification du profil a été effectuée
 let updatedProfil = ref(false);
+
+// inputError va nous permettre de signaler les erreurs de saisie
 let inputError = ref(false);
+
+// errorMessage va nous permettre d'afficher le message d'erreur
 let errorMessage = ref('');
+
+// changed va nous permettre de vérifier que nous avons bien modifié au moins un champ afin de permettre l'affichage du bouton 'sauvegarder les modifications'
 let changed = ref(false);
+
+// wrongFile va nous permettre d'afficher un message d'erreur dans le cas où l'utilisateur aurait sélectionné une image dans un format autre que celui attendu
 let wrongFile = ref(false);
 
+// changePicture va nous permettre de déclencher le clic sur le bouton original afin de pouvoir sélectionner une image
 function changePicture() {
     document.getElementById("file").click();
 }
 
+// Cette fonction va nous permettre de prévisualiser l'image sélectionnée
 function previewPicture(e: any) {
+    // On réinitialise le message d'erreur pour qu'il puisse ne pas s'afficher si l'image est au bon format dans le cas contraire il s'affichera de nouveau
     wrongFile.value = false;
+    // On sélectionne la balise img où l'on disposera la prévisualisation de l'image où l'on disposera l'image sélectionner
     const image = document.getElementById('picture');
+    // On récupère le fichier sélectionné et on l'attribue à la variable userEdit sur la propriété picture_url
     userEdit.picture_url = e.target.files[0];
+    // Si userEdit.picture_url comporte une valeur on va créer un objet FileReader qui va nous permettre de lire le contenu du fichier sélectionné
     userEdit.picture_url ? image.src = URL.createObjectURL(userEdit.picture_url) : "";
 }
 
+// Cette fonction va procéder à différentes vérifications au niveau des champs de saisie et s'il y a une image sélectionnée vérifier si elle est au bon format 
+// pour par la suite déclencher la fonction qui communiquera à l'api les modifications que l'on souhaite apporter
 function updateProfile(userEdit?: any) {
     if (userEdit.password != userEdit.confirmPassword) {
         errorMessage.value = 'Les mots de passe ne correspondent pas';
@@ -45,6 +66,7 @@ function updateProfile(userEdit?: any) {
             errorMessage.value = 'Aucune modification n\'a été apportée';
             inputError.value = true;
         } else {
+            // Si nous avons sélectionné une image on va vérifier si elle est au bon format
             if (userEdit.picture_url) {
                 if (userEdit.picture_url.type == 'image/jpg'
                     || userEdit.picture_url.type == 'image/jpeg'
@@ -52,11 +74,14 @@ function updateProfile(userEdit?: any) {
                     || userEdit.picture_url.type == 'image/webp') {
                     useAuthStore().updateProfile(userEdit).then((response: any) => {
                         if (response.status == 200) {
+                            // Si la modification a été effectuée on va déclencher l'alerte que le profil a bien été mis à jour et on va réinitialiser la variable indiquant qu'il y a une erreur de saisie
                             inputError ? inputError.value = false : "";
                             updatedProfil.value = true;
                             setTimeout(() => {
+                                // On émet l'évènement en lien avec la modification du profil afin de mettre à jour les informations dans le store des autres utilisateurs connectés
                                 socket.emit('update profil', response, user.value);
                                 updatedProfil.value = false;
+                                // Puis nous sommes redirigés vers la page d'accueil au bout de 2 secondes
                                 router.push('/app/home');
                             }, 2000);
                         } else {
@@ -64,6 +89,7 @@ function updateProfile(userEdit?: any) {
                         }
                     });
                 } else {
+                    // Si l'image est au format string c'est que l'utilisateur n'a pas sélectionné d'image
                     if (typeof (userEdit.picture_url) == 'string') {
                         useAuthStore().updateProfile(userEdit).then((response: any) => {
                             if (response.status == 200) {
@@ -78,6 +104,7 @@ function updateProfile(userEdit?: any) {
                                 alert('Erreur lors de la mise à jour du profil');
                             }
                         });
+                        // Si l'image est dans un format différent de celui attendu on va afficher un message d'erreur
                     } else {
                         wrongFile.value = true;
                         errorMessage.value = 'Seuls les images aux formats .jpg .jpeg .png .webp sont acceptées';
@@ -102,6 +129,8 @@ function updateProfile(userEdit?: any) {
     }
 }
 
+// On place un watch sur les différents champs de saisie afin de pouvoir afficher le bouton de validation de la modification du profil 
+// lorsque aura au moins un champ de saisie rempli ou une image sélectionnée
 watch(userEdit, (value: any) => {
     if (value.email !== '' && value.email == value.confirmEmail
         || value.password !== '' && value.password == value.confirmPassword

@@ -5,6 +5,8 @@ import { useFriendshipStore } from '@/shared/stores/friendsStore';
 import { useChatStore } from '@/shared/stores/chatStore';
 import { useAuthStore } from '@/shared/stores/authStore';
 
+import pictureDefault from '@/assets/profile_picture.jpg';
+
 const requests = computed(() => useFriendshipStore().$state.requests);
 const user = computed(() => useAuthStore().$state.user);
 const users = computed(() => useChatStore().$state.users);
@@ -23,6 +25,7 @@ const emit = defineEmits<{
     (e: 'logout'): any
 }>();
 
+console.log(pictureDefault);
 function toggleNotification() {
     if (showProfileMenu.value == true) {
         showProfileMenu.value = false;
@@ -152,7 +155,7 @@ watch(notificationsCount, (newNotif) => {
                     </div>
                 </nav>
                 <div @click.stop="toggleProfileMenu" class="profile">
-                    <img :src="user.picture_url" alt="avatar" />
+                    <img :src="user.picture_url ? user.picture_url : pictureDefault" alt="avatar" />
                     <div :class="[ showProfileMenu ? 'profile__menu active' : 'profile__menu' ]">
                         <div v-if="showProfileMenu" class="profile__menu__list">
                             <div class="profile__menu__list__item">

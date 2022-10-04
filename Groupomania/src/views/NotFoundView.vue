@@ -3,6 +3,7 @@ import { useAuthStore } from '@/shared/stores/authStore';
 import { useRouter } from 'vue-router';
 const router = useRouter();
 
+// isConnected va nous permettre de savoir si nous sommes connectés ou non
 const isConnected = useAuthStore().$state.isConnected;
 </script>
 <template>

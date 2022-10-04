@@ -10,23 +10,45 @@ import { useOtherStore } from '@/shared/stores/otherStore';
 import { useCommentsStore } from '@/shared/stores/commentsStore';
 import { router } from '@/router';
 
+// user va nous permettre de récupérer nos informations en tant qu'utilisateur
 const user = computed(() => useAuthStore().$state.user);
+
+// isConnected va nous permettre de savoir si nous sommes connectés ou non
 const isConnected = computed(() => useAuthStore().isConnected);
+
+// loading va nous permettre de savoir si nous sommes en train de charger les publications ou non
 const loading = computed(() => useOtherStore().$state.loading);
+
+// messages va nous permettre d'afficher les messages reçus sous forme de pop-up dans le cas où nous ne serions pas dans la discussion où nous avons reçu un message
 const messages = computed(() => useChatStore().$state.messagesToDisplay);
 
+// warningMessage va nous permettre d'afficher le message d'avertissement reçu lors d'un trop grand nombre de requête émise
+const warningMessage = computed(() => useAuthStore().$state.warningLimiter);
+
+// modalAlert va nous permettre de faire apparaitre la modal d'alerte dans le cas où un trop grand nombre de requête seraient émises
+const modalAlert = computed(() => useAuthStore().$state.modalAlert);
+
+// Cette fonction va nous permettre de nous rediriger directement vers la discussion lors du clic sur un message sous forme de pop-up
 function redirect(user_id: number) {
     router.push({ name: 'chat' });
+    // On passe les informations de l'utilisateur qui nous a envoyé le message
     useChatStore().selectedUser(user_id);
 }
 
 onBeforeMount(() => {
+    // Si nous sommes connectés
     if (isConnected.value) {
+        // On récupères les demandes d'amis que nous avons émise et si tout se déroule correctement
         useFriendshipStore().checkRequestsSended().then((response: any) => {
+            // On récupères les demandes d'amis que nous avons reçue et si tout se déroule correctement
             useFriendshipStore().getRequests().then((response: any) => {
+                // On récupères les utilisateurs avec qui nous sommes amis et si tout se déroule correctement
                 useFriendshipStore().getAllFriends().then((response) => {
+                    // on récupère nos informations utilisateur stocké dans le localStorage
                     const session = JSON.parse(localStorage.getItem("user"));
+                    // Si nos informations utilisateur sont bien présentes dans le localStorage
                     if (session) {
+                        // On se connecte au serveur socket
                         socket.auth = { username: session.firstname + ' ' + session.lastname, picture: session.picture_url, user: session.user_id, sessionID: session.session_id };
                         socket.connect();
                     }
@@ -34,9 +56,13 @@ onBeforeMount(() => {
                         socket.auth = { sessionID };
                         socket.userID = userID;
                     });
+                    // Cette fonction va nous permettre de récupérer à présent l'intégralité des utilisateurs et filtrer la liste pour ne garder que les amis
                     useChatStore().getUsersConnected().then((response2: any) => {
+
+                        // Cette fonction nous permet d'indiquer que les informations ont finis d'être chargé et d'arrêter l'écran de chargement
                         useOtherStore().loadedResources();
 
+                        // Ceci va nous permettre de récupérer chacun des évènements émis par le serveur socket et pour chaque évènement exécuter une fonction différente qui va interagir avec notre store
                         socket.onAny((event: string, ...args: any) => {
                             switch (event) {
                                 case 'typing':
@@ -106,11 +132,13 @@ onBeforeMount(() => {
                                 || event == 'has commented' && args[0].comment.user_id == user.value.user_id
                                 || event == 'friendRequest sended' && args[0].request.recipient == user.value.user_id
                                 || event == 'friendRequest accepted' && args[0].response.data.results[0].user_id_sender == user.value.user_id) {
+                                // Ceci va nous permettre de récupérer certains évènements émis par le serveur socket et pour chaque évènement cité dans les conditions, déclencher la fonction qui va nous permettre d'ajouter les informations dans nos notifications
                                 useOtherStore().notificationPush(event, args[0])
                             } else if (event == 'remove like' && args[0].publication.user_id == user.value.user_id
                                 || event == 'delete comment' && args[0].comment.user_id
                                 || event == 'friendRequest canceled' && args[0].request.user_id == user.value.user_id
                                 || event == 'friend removed' && args[0].target.user_id == user.value.user_id) {
+                                // Ceci va nous permettre de récupérer certains évènements émis par le serveur socket et pour chaque évènement cité dans les conditions, déclencher la fonction qui va nous permettre de supprimer les informations dans nos notifications
                                 useOtherStore().notificationRemove(event, args[0])
                             }
                         })
@@ -169,9 +197,28 @@ onUnmounted(() => {
             </div>
         </div>
     </div>
+    <Teleport to="body">
+        <div v-if="modalAlert" @click="useAuthStore().resetWarning" class="calc">
+            <div @click.stop class="modal-container">
+                <div class="modal-container__content">
+                    <div class="modal-container__content__header">
+                        <div class="modal-container__content__header__title">
+                            {{ warningMessage }}
+                        </div>
+                    </div>
+                    <div class="modal-container__content__footer">
+                        <button @click="useAuthStore().resetWarning" type="button"
+                            class="btn btn-primary">Fermer</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </Teleport>
 </template>
 
 <style scoped lang="scss">
+@import '../styles/Utils/keyframes';
+@import '../styles/Components/buttons';
 @import '../styles/Utils/keyframes';
 
 * {
@@ -259,6 +306,67 @@ onUnmounted(() => {
                 }
             }
 
+        }
+    }
+}
+
+.calc {
+    position: fixed;
+    top: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 99;
+}
+
+.modal-container {
+    background-color: #FFF;
+    color: #4E5166;
+    padding: 20px;
+    border-radius: 5px;
+    width: 300px;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: flex-start;
+    backdrop-filter: blur(2px);
+    transition: all 0.3s ease-in-out;
+    transform: translateY(-100px);
+    transform-origin: center;
+
+    &__content {
+        width: 100%;
+
+        &__header {
+
+            &__title {
+                margin-bottom: 20px;
+                margin-top: 0;
+
+                span {
+                    color: $color-primary;
+                    font-weight: 600;
+                }
+            }
+        }
+
+        &__footer {
+            display: flex;
+            justify-content: flex-end;
+
+            .btn.btn-primary {
+                @include button-primary;
+                margin-left: 10px;
+            }
+
+            .btn.btn-secondary {
+                @include button-secondary;
+            }
         }
     }
 }

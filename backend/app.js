@@ -32,10 +32,10 @@ app.use(express.urlencoded({ extended: true }));
 app.use(helmet({ crossOriginResourcePolicy: { policy: "same-site" } }));
 app.use('/images', express.static(path.join(__dirname, 'images')));
 app.use('/api/auth', rateLimiter.authtLimiter, authRoutes);
-app.use('/api/publications', auth.accesToken, publicationsRoutes);
-app.use('/api/publications', auth.accesToken, commentsRoute);
-app.use('/api/user', auth.accesToken, usersRoutes);
-app.use('/api/user', auth.accesToken, chatRoutes);
-app.use('/api/friends', auth.accesToken, friendsRoutes);
+app.use('/api/publications', rateLimiter.navigateLimiter, auth.accesToken, publicationsRoutes);
+app.use('/api/publications', rateLimiter.navigateLimiter, auth.accesToken, commentsRoute);
+app.use('/api/user', rateLimiter.navigateLimiter, auth.accesToken, usersRoutes);
+app.use('/api/user', rateLimiter.navigateLimiter, auth.accesToken, chatRoutes);
+app.use('/api/friends', rateLimiter.navigateLimiter, auth.accesToken, friendsRoutes);
 
 module.exports = app;

@@ -51,9 +51,7 @@ function displayInformation() {
             });
         })
     } else {
-        useFriendshipStore().$patch((state) => {
-            state.friendsOfUser.splice(0, state.friendsOfUser.length)
-        })
+        useFriendshipStore().resetFriendlist();
         display.value = false;
     }
 }

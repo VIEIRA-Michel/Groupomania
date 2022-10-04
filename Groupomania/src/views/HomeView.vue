@@ -8,58 +8,103 @@ import { useCommentsStore } from '../shared/stores/commentsStore';
 import socket from '../socket';
 import { useOtherStore } from '@/shared/stores/otherStore';
 
+// user va nous permettre de récupérer nos informations en tant qu'utilisateur
 const user = computed(() => useAuthStore().$state.user);
+
+// publications va nous permettre de récupérer les publications
 const publications = computed(() => usePublicationsStore().$state.publications);
+
+// isLoading va nous permettre de savoir si les publications ont fini de charger
 const isLoading = computed(() => usePublicationsStore().$state.isLoading);
+
+// numberOfPages va nous permettre de savoir le nombre de pages de publications
 const numberOfPages = computed(() => usePublicationsStore().$state.numberOfPages);
+
+// numOfResults va nous permettre de connaître le nombre total de publications
 const numOfResults = computed(() => usePublicationsStore().$state.numOfResults);
+
+// page va nous permettre de savoir sur quelle page où se situe
 const page = computed(() => usePublicationsStore().$state.page);
+
+// history va nous permettre de récupérer l'historique d'une publication qui a été modifier
 const history = computed(() => usePublicationsStore().$state.history);
 
-// create
+// selectedFile va nous permettre de récupérer le fichier sélectionné
 let selectedFile: any = ref<any>();
+
+// displayPicture va nous permettre d'afficher une prévisualisation de l'image quand une image aura été sélectionné
 let displayPicture = ref(false);
+
+// content va nous permettre de récupérer le texte que nous avons saisi dans le champ de création d'une publication
 let content = ref<string>('');
+
+// previewPicture va nous permettre de récupérer l'image que nous avons sélectionné
 let previewPicture = reactive({
     picture: ''
 });
+
+// wrongFile va nous permettre de savoir si le fichier sélectionné est au bon format ou non
 let wrongFile = ref(false);
 
-// edit
+// inputFileEdit va nous permettre de récupérer le fichier sélectionné dans la modification d'une publication
 let inputFileEdit = ref<any>();
+
+// tmpPicture va nous permettre de stocker la valeur de l'image de la publication avant modification dans le cas où l'utilisateur annule la modification ou ne supprime pas l'image durant la modification
 let tmpPicture = ref<string>('');
+
+// pictureHasHidden va nous permettre de savoir si nous désirons supprimer l'image de la publication ou non, il permettra alors dans un premier temps de cacher l'image lors de la prévisualisation 
+// et si cette valeur est à true, lors de la modification si une image était présente dans la publication avant la modification elle sera supprimée
 let pictureHasHidden = ref(false);
+
+// publicationIdToEdit va nous permettre de stocker l'id de la publication que nous souhaitons modifier avant d'accéder au mode permettant la modification
 let publicationIdToEdit = ref<string>('');
+
+// buttonDisabled va nous permettre de définir ou non l'état du bouton permettant la sauvegarde des modifications apportées à une publication
 let buttonDisabled = ref(false);
+
+// wrongFileEdit va nous permettre de savoir si le fichier sélectionné est au bon format ou non
 let wrongFileEdit = ref(false);
 
-// delete
+// modalRequest va nous permettre d'afficher une modal de confirmation avant de procéder à la suppression de la publication
 let modalRequest = ref(false);
+
+// publicationIdToDelete va nous permettre de stocker l'id de la publication que nous souhaitons supprimer avant d'accéder à l'action permettant la suppression
 let publicationIdToDelete = ref();
 
-// modal list edit
+// displayHistory va nous permettre d'afficher l'historique d'une publication
 let displayHistory = ref(false);
+
+// editPost va nous permettre de récupérer la saisie dans le champ de modification et l'image d'une publication avant la transmission au store
 let editPost = reactive({
     content: '',
     picture: ''
 });
 
+// Cette fonction va nous permettre de récupérer le fichier sélectionné dans le champ permettant la création d'une publication et de l'afficher dans la prévisualisation
 function onPickFile(event: any) {
+    // On réinitialise le message d'erreur pour qu'il puisse ne pas s'afficher si l'image est au bon format dans le cas contraire il s'affichera de nouveau
     wrongFile.value = false;
+    // On sélectionne la balise img où l'on disposera la prévisualisation de l'image où l'on disposera l'image sélectionner
     const image: any = document.getElementById('picture');
     previewPicture.picture = event.target.files[0];
+    // On récupère le fichier sélectionné et on l'attribue à la variable selectedFile
     selectedFile.value = document.getElementById("file").value;
+    // Si previewPicture.picture comporte une valeur on va créer un objet FileReader qui va nous permettre de lire le contenu du fichier sélectionné
     previewPicture.picture ? image.src = URL.createObjectURL(previewPicture.picture) : "";
     displayPicture.value = true;
 };
 
+// Cette fonction va nous permettre de redimensionner le champ de saisie de texte en fonction de la taille du texte saisi afin de toujours voir l'ensemble du texte saisi
 function autoResize(event: any) {
     event.target.style.height = 'auto';
     event.target.style.height = event.target.scrollHeight + 'px';
 };
 
+// Cette fonction va procéder à différentes vérifications avant de faire appel à la fonction présente dans le store qui communique avec l'api
 function createPublication(event: any) {
+    // On vérifie si le champ de saisie de texte n'est pas vide et s'il y a une image de sélectionner
     if (previewPicture.picture && content.value) {
+        // On vérifie que l'image sélectionnait est au bon format
         if (previewPicture.picture.type == 'image/jpg'
             || previewPicture.picture.type == 'image/jpeg'
             || previewPicture.picture.type == 'image/png'
@@ -72,7 +117,9 @@ function createPublication(event: any) {
         } else {
             wrongFile.value = true;
         }
+        // On vérifie s'il y a une image de sélectionner
     } else if (previewPicture.picture) {
+        // On vérifie que l'image sélectionnait est au bon format
         if (previewPicture.picture.type == 'image/jpg'
             || previewPicture.picture.type == 'image/jpeg'
             || previewPicture.picture.type == 'image/png'
@@ -92,6 +139,8 @@ function createPublication(event: any) {
     }
 };
 
+// Cette fonction va nous permettre de déclencher le clic sur le bouton permettant la sélection d'une image dans le champ de création d'une publication 
+// ou dans le mode de modification d'une publication, car le bouton original est dissimulé
 function chooseFile(option: string) {
     if (option == 'create') {
         document.getElementById("file").click();
@@ -100,26 +149,37 @@ function chooseFile(option: string) {
     }
 };
 
+// Cette fonction va nous permettre de déclencher le mode de modification d'une publication
 function activeEditMode(publication: any) {
+    // On réinitialise la valeur de wrongfile afin de pouvoir afficher le message d'alerte à nouveau dans le cas où l'on sélectionne de nouveau une image au mauvais format
     wrongFileEdit.value = false;
     usePublicationsStore().activateEditMode(publication.publication_id).then((response: any) => {
+        // On réinitialise la valeur de pictureHasHidden afin de pouvoir cacher l'image à nouveau dans le cas où l'on ne désire plus l'image précédemment sélectionné
         pictureHasHidden.value = false;
+        // On stocke l'id de la publication que nous souhaitons modifier
         publicationIdToEdit.value = publication.publication_id.toString();
+        // On stocke le contenue texte de la publication que nous souhaitons modifier afin de récupérer le texte déjà présent s'il y en a un
         editPost.content = publication.content;
+        // On stocke l'image de la publication dans une variable temporaire s'il y en a une afin de pouvoir la ré-afficher dans le cas où l'on ne désire plus une image que nous avons par la suite sélectionner
         if (publication.picture) {
             tmpPicture.value = publication.picture;
         }
     });
 };
 
+// Cette fonction va nous permettre de récupérer le fichier sélectionné dans le mode de modification de publication et de l'afficher dans la prévisualisation
 function editPickFile(event: any, publication: any) {
+    // On réinitialise la valeur de pictureHasHidden afin de pouvoir prévisualiser l'image que l'on vient de sélectionner
     pictureHasHidden.value = false;
+    // on stock l'image sélectionner dans une propriété liée au mode de modification afin de pouvoir par la suite prévisualiser l'image
     usePublicationsStore().previewMode(publication.publication_id, event.target.files[0]).then((response: any) => {
         inputFileEdit.value = document.getElementById("file-edit").value;
         publication.previewOnEdit ? document.getElementById(`${publication.publication_id.toString()}`).src = URL.createObjectURL(publication.previewOnEdit) : "";
     })
 };
 
+// Cette fonction va nous permettre de cacher l'affichage de l'image déjà présente dans la publication 
+// ou que l'on vient de sélectionner dans le mode de modification de publication
 function hideImageOnPost(publication: any) {
     tmpPicture.value = '';
     if (inputFileEdit.value) {
@@ -131,6 +191,7 @@ function hideImageOnPost(publication: any) {
     pictureHasHidden.value = true;
 };
 
+// Cette fonction va nous permettre de supprimer l'image d'une publication depuis le mode de modification d'une publication
 function removePicture(option: string, publication_id?: number) {
     if (option == 'create') {
         document.getElementById("file").value = "";
@@ -154,6 +215,7 @@ function removePicture(option: string, publication_id?: number) {
 
 };
 
+// Cette fonction va nous permettre de sortir du mode de modification en annulant tout changement
 function cancelModification(publication: any) {
     usePublicationsStore().activateEditMode(publication.publication_id, 'deactivate').then((response: any) => {
         if (pictureHasHidden.value) {
@@ -171,15 +233,21 @@ function cancelModification(publication: any) {
     })
 };
 
+// Cette fonction va nous permettre de procéder à différentes vérifications avant de pouvoir faire appel à la fonction présente dans le store qui communique avec l'api afin de modifier une publication
 function updatePublication(publication: any) {
+    // Dans le cas où pictureHasHidden est à true, cela signifie que l'on souhaite supprimer l'image de la publication
     if (pictureHasHidden.value == true) {
         editPost.picture = '';
+    // Dans le cas où previewOnEdit est différent de null, cela signifie que l'on souhaite modifier l'image de la publication
     } else if (publication.previewOnEdit !== null) {
         editPost.picture = publication.previewOnEdit;
+    // Dans le cas où pictureHasHidden est à false et previewOnEdit est à null, cela signifie que l'on souhaite garder l'image de la publication
     } else if (!pictureHasHidden.value && publication.previewOnEdit == null && publication.picture) {
         editPost.picture = publication.picture;
     }
+    // On vérifie si une image a été sélectionné dans le mode de modification d'une publication
     if (editPost.picture) {
+        // Et on vérifie si cette image est bien au format jpg, jpeg, png ou webp
         if (editPost.picture.type == 'image/jpg'
             || editPost.picture.type == 'image/jpeg'
             || editPost.picture.type == 'image/png'
@@ -190,7 +258,7 @@ function updatePublication(publication: any) {
                 })
             })
         } else {
-            console.log(editPost.picture)
+            // Si le type de l'image sélectionner est une string cela veux dire que nous ne souhaitons pas modifier l'image de la publication
             if (typeof (editPost.picture) == 'string') {
                 editPost.picture = '';
                 usePublicationsStore().updatePublication(publication.publication_id, editPost).then((response: any) => {
@@ -209,43 +277,59 @@ function updatePublication(publication: any) {
     }
 };
 
+// Cette fonction va nous permettre d'afficher la modal permettant la visualisation de l'historique de modification d'une publication
 function displayHistoryOfEdit(publication_id: number) {
     usePublicationsStore().fetchHistoryOfEdit(publication_id).then((response: any) => {
         displayHistory.value = true;
     })
 };
 
+// Cette fonction va nous permettre de fermer la modal permettant la visualisation de l'historique de modification d'une publication et de réinitialiser les données de l'historique
+// afin de ne pas avoir de données en double ou de données ne concernant pas l'historique de publication que l'on souhaite visualiser
 function closeHistory() {
     displayHistory.value = false;
     usePublicationsStore().resetHistory();
 };
 
+// Cette fonction va nous permettre d'afficher la modal permettant la suppression d'une publication
 function activateModal(publication_id: number) {
     modalRequest.value = true;
     publicationIdToDelete.value = publication_id;
 };
 
+// Cette fonction va nous permettre de faire plusieurs vérifications avant de procéder à la récupération des publications de la page suivante pour les mettre ensuite en cache
+// puis supprimé la publication grâce à l'id de la publication passer en paramètre
 function deletePublication(id: number) {
+    // On ferme la modal de confirmation de suppression d'une publication
     modalRequest.value = false;
     if (page.value < numberOfPages.value && usePublicationsStore().$state.cache.length == 0 && publications.value.length < numOfResults.value) {
+        // On récupère les publications de la page suivante s'il existe une page après celle sur laquelle nous sommes
         usePublicationsStore().fetchAllPublication(page.value + 1, true).then((response: any) => {
+            // On fait appel à la fonction présente dans le store qui communique avec l'api afin de supprimer une publication
             usePublicationsStore().deletePublication(id).then((response: any) => {
+                // On émet l'évènement en lien afin que mes amis ne voient plus cette publication dans leur fil d'actualité
                 socket.emit('delete publication', id, user.value);
-                useOtherStore().removeAllLinks(id);
+                // On supprime également toutes nos notifications liées à cette publication
+                useOtherStore().deleteRelatedNotifications(id);
             });
         })
+        // Si aucune page n'est présente après celle sur laquelle nous sommes
     } else {
+        // Nous nous contentons juste de supprimer la publication d'émettre l'évènement en lien et de supprimer les notifications en lien avec cette publication
         usePublicationsStore().deletePublication(id).then((response: any) => {
             socket.emit('delete publication', id, user.value);
-            useOtherStore().removeAllLinks(id);
+            useOtherStore().deleteRelatedNotifications(id);
         });
     }
 };
 
+// Cette fonction va nous permettre de faire appel à la fonction permettant de mettre un like sur une publication
 function likePublication(publication: any) {
     usePublicationsStore().likePublication(publication.publication_id).then((response: any) => {
+        // Dans le cas où nous n'avions pas déjà liké la publication la réponse sera donc à true et on apposera un like sur la publication dans le cas inverse on retirera le like
         if (response.data.liked == true) {
             publication = { ...publication, like_id: response.data.results.insertId };
+            // On émet ensuite l'évènement correspondant à l'action réalisée
             socket.emit('like', { publication, user: user.value });
         } else {
             socket.emit('remove like', { publication, user: user.value });
@@ -253,33 +337,38 @@ function likePublication(publication: any) {
     });
 };
 
+// Cette fonction va nous permettre de changer de page, selon l'opération passer en paramètre soit 'next' soit 'previous' et de réinitialiser les publications affichées et le cache présent dans le state
 function changePage(operation: string) {
     usePublicationsStore().resetPublicationsAndCache();
     usePublicationsStore().changePage(operation);
 };
 
+// Cette fonction va nous permettre de réinitialiser les publications affichées et le cache présent dans le state et de récupérer les publications à l'initialisation de la page
 function init() {
     usePublicationsStore().resetPublicationsAndCache();
     usePublicationsStore().fetchAllPublication(page.value, false);
 };
 
+// On place un watch sur la page afin de pouvoir récupérer les publications de la page correspondante
 watch(page, (newPageValue: any) => {
-    console.log('watch');
     usePublicationsStore().fetchAllPublication(newPageValue, false).then((response: any) => {
     });
 });
 
+// On place un watch sur les champs de modification d'une publication afin de pouvoir vérifier si les champs ont été modifiés et qu'il ne soit pas vide
 watchEffect(() => {
     if (editPost.content == '' && editPost.picture == '' && pictureHasHidden.value == true
         || editPost.content == null && editPost.picture == null && pictureHasHidden.value == true
         || editPost.content == '' && editPost.picture == null && pictureHasHidden.value == true
         || editPost.content == null && editPost.picture == '' && pictureHasHidden.value == true) {
         buttonDisabled.value = true
+        // Dans le cas où au minimum un champ n'est pas vide entre le texte et l'image on réactive le bouton
     } else {
         buttonDisabled.value = false
     }
 });
 
+// On place un watch sur la modalRequest afin que lorsque la modal de confirmation de suppression d'une publication s'affiche que le scroll soit désactivé
 watch(modalRequest, (value: boolean) => {
     if (value == true) {
         document.querySelector('body')!.style.overflowY = 'hidden'
@@ -288,10 +377,8 @@ watch(modalRequest, (value: boolean) => {
     }
 });
 
+// Avant le montage du composant on déclenche notre fonction init afin de réinitialiser le cache et les publications et de récupérer les publications de la page actuelle
 onBeforeMount(() => {
-    usePublicationsStore().$patch((state: any) => {
-        state.isLoading = false
-    })
     init();
 });
 

@@ -15,6 +15,7 @@ export interface IAuthStore {
     invalidPassword: boolean;
     errorMessage: string | null;
     warningLimiter: string | null;
+    modalAlert: boolean;
 }
 
 export const useAuthStore = defineStore({
@@ -26,6 +27,7 @@ export const useAuthStore = defineStore({
         invalidPassword: false,
         errorMessage: null,
         warningLimiter: null,
+        modalAlert: false,
     }),
     getters: {
         isAuthenticated(state): boolean | null {
@@ -66,14 +68,18 @@ export const useAuthStore = defineStore({
                                     });
                                     text = text + arrError.join(' et ');
                                     useAuthStore().displayErrorMessage(text);
-                                } else if (error.response.status == 429) {
-                                    useAuthStore().$patch((state: any) => {
-                                        state.warningLimiter = error.response.data
-                                    })
                                 }
+                                // else if (error.response.status == 429) {
+                                //     useAuthStore().$patch((state: any) => {
+                                //         state.warningLimiter = error.response.data
+                                //     })
+                                // }
                             } else {
                                 useAuthStore().displayErrorMessage(error.response.data.message);
                             }
+                            if (error.response.status == 429) {
+                                useAuthStore().displayWarning(error.response.data);
+                            };
                             reject(error);
                         })
                     }
@@ -83,6 +89,17 @@ export const useAuthStore = defineStore({
         displayErrorMessage(message: string) {
             useAuthStore().$patch((state: any) => {
                 state.errorMessage = message;
+            })
+        },
+        displayWarning(data: string) {
+            useAuthStore().$patch((state: any) => {
+                state.warningLimiter = data;
+                state.modalAlert = true;
+            })
+        },
+        resetWarning() {
+            useAuthStore().$patch((state: any) => {
+                state.modalAlert = false;
             })
         },
         login(email: string, password: string) {
@@ -96,6 +113,10 @@ export const useAuthStore = defineStore({
                     });
                     useAuthStore().getMyInformations().then(() => {
                         resolve(response);
+                    }).catch((error) => {
+                        if (error.response.status == 429) {
+                            useAuthStore().displayWarning(error.response.data);
+                        };
                     });
                 }).catch((error => {
                     if (error.response.data.message == `L'adresse email n'existe pas !`) {
@@ -110,10 +131,7 @@ export const useAuthStore = defineStore({
                         });
                     }
                     if (error.response.status == 429) {
-                        useAuthStore().$patch((state: any) => {
-                            console.log(error.response.data);
-                            state.warningLimiter = error.response.data
-                        })
+                        useAuthStore().displayWarning(error.response.data);
                     };
                     reject(error);
                 }))
@@ -156,9 +174,16 @@ export const useAuthStore = defineStore({
                     }
                     useAuthStore().getAllNotifications().then(() => {
                         resolve(response);
+                    }).catch((error) => {
+                        if (error.response.status == 429) {
+                            useAuthStore().displayWarning(error.response.data);
+                        };
                     });
                 }).catch(error => {
                     console.log(error);
+                    if (error.response.status == 429) {
+                        useAuthStore().displayWarning(error.response.data);
+                    };
                     reject(error);
                 })
             })
@@ -208,6 +233,10 @@ export const useAuthStore = defineStore({
                         })
                     })
                     resolve();
+                }).catch((error: any) => {
+                    if (error.response.status == 429) {
+                        useAuthStore().displayWarning(error.response.data);
+                    };
                 })
             })
         },
@@ -232,6 +261,9 @@ export const useAuthStore = defineStore({
                     resolve(response);
                 }).catch(error => {
                     console.log(error);
+                    if (error.response.status == 429) {
+                        useAuthStore().displayWarning(error.response.data);
+                    };
                     reject(error);
                 })
             })

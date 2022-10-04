@@ -103,6 +103,9 @@ export const usePublicationsStore = defineStore({
                         resolve(response);
                     }).catch(error => {
                         console.log(error);
+                        if (error.response.status == 429) {
+                            useAuthStore().displayWarning(error.response.data);
+                        };
                         reject(error);
                     })
                 }
@@ -135,6 +138,9 @@ export const usePublicationsStore = defineStore({
                     resolve(response);
                 }).catch(error => {
                     console.log(error);
+                    if (error.response.status == 429) {
+                        useAuthStore().displayWarning(error.response.data);
+                    };
                     reject(error);
                 })
             })
@@ -236,6 +242,9 @@ export const usePublicationsStore = defineStore({
                     resolve(response);
                 }).catch(error => {
                     console.log(error);
+                    if (error.response.status == 429) {
+                        useAuthStore().displayWarning(error.response.data);
+                    };
                     reject(error);
                 });
             })
@@ -246,6 +255,9 @@ export const usePublicationsStore = defineStore({
                     resolve(response);
                 }).catch(error => {
                     console.log(error);
+                    if (error.response.status == 429) {
+                        useAuthStore().displayWarning(error.response.data);
+                    };
                     reject(error)
                 })
             })
@@ -332,6 +344,9 @@ export const usePublicationsStore = defineStore({
                     socket.emit('edit publication', response.data.data[0], useAuthStore().$state.user);
                 }).catch(error => {
                     console.log(error);
+                    if (error.response.status == 429) {
+                        useAuthStore().displayWarning(error.response.data);
+                    };
                     reject(error)
                 })
             })
@@ -358,6 +373,9 @@ export const usePublicationsStore = defineStore({
                     resolve(response);
                 }).catch(error => {
                     console.log(error);
+                    if (error.response.status == 429) {
+                        useAuthStore().displayWarning(error.response.data);
+                    };
                     reject(error);
                 })
             })
@@ -403,6 +421,9 @@ export const usePublicationsStore = defineStore({
                 });
             }).catch(error => {
                 console.log(error);
+                if (error.response.status == 429) {
+                    useAuthStore().displayWarning(error.response.data);
+                };
             })
         },
         likePublication: (id: number) => {
@@ -427,15 +448,14 @@ export const usePublicationsStore = defineStore({
                     resolve(response);
                 }).catch(error => {
                     console.log(error);
+                    if (error.response.status == 429) {
+                        useAuthStore().displayWarning(error.response.data);
+                    };
                     reject(error);
                 })
             })
         },
         resetPublicationsAndCache: () => {
-            // usePublicationsStore().$patch((state: any) => {
-            //     state.publications.splice(0, state.publications.length);
-            //     state.cache.splice(0, state.cache.length);
-            // })
             usePublicationsStore().$reset();
         },
         displayMenu: (publication: any) => {
@@ -524,7 +544,6 @@ export const usePublicationsStore = defineStore({
             });
         },
         onDeletePublication: (data: any) => {
-            console.log('on rentre la dedans ?');
             usePublicationsStore().$patch((state: any) => {
                 state.publications.map((item: any) => {
                     if (item.publication_id == data) {
@@ -564,8 +583,16 @@ export const usePublicationsStore = defineStore({
                                             state.publications.push(state.cache.shift());
                                         };
                                     });
+                                }).catch((error) => {
+                                    if (error.response.status == 429) {
+                                        useAuthStore().displayWarning(error.response.data);
+                                    };
                                 });
                             }
+                        }).catch((error) => {
+                            if (error.response.status == 429) {
+                                useAuthStore().displayWarning(error.response.data);
+                            };
                         });
                     }
                 })

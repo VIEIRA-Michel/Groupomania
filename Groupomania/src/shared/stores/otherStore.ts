@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import moment from 'moment';
+import { useAuthStore } from './authStore';
 
 export interface otherStore {
     information: boolean;
@@ -110,7 +111,6 @@ export const useOtherStore = defineStore({
             } else if (type == "delete comment") {
                 useOtherStore().$patch((state: any) => {
                     state.notifications.map((item: any) => {
-                        console.log(content);
                         if (item.comment_id == content.comment.comment_id && item.type == "comment") {
                             state.notifications.splice(state.notifications.indexOf(item), 1);
                         }
@@ -137,18 +137,29 @@ export const useOtherStore = defineStore({
                 })
             }
         },
-        removeAllLinks: (publication_id: number) => {
+        deleteRelatedNotifications: (publication_id: number) => {
+            console.log(useOtherStore().$state.notifications);
             useOtherStore().$patch((state: any) => {
                 state.notifications.map((item: any) => {
-                    if (item.publication_id == publication_id && item.type == 'like') {
+                    if (item.publication_id == publication_id) {
+                        console.log('notification avec le publication_id correspondant', item);
                         state.notifications.splice(state.notifications.indexOf(item), 1);
                     }
-                    if (item.publication == publication_id && item.type == 'comment') {
-                        state.notifications.splice(state.notifications.indexOf(item), 1);
-                    }
-                    return item;
                 })
             })
+            // let indexToRemove: any = []
+            // useOtherStore().$patch((state: any) => {
+            //     state.notifications.map((item: any) => {
+            //         if (item.publication_id == publication_id) {
+            //             // console.log(state.notifications.indexOf(item));
+            //             indexToRemove.push(state.notifications.indexOf(item))
+            //             //     state.notifications.splice(state.notifications.indexOf(item), 1);
+            //         }
+            //     })
+            //     for (let i = 0; i < indexToRemove.length; i++) {
+            //         state.notifications.splice(indexToRemove[i], 1);
+            //     }
+            // })
         },
         notificationRead: () => {
             useOtherStore().$patch((state: any) => {

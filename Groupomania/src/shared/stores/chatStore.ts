@@ -84,7 +84,15 @@ export const useChatStore = defineStore({
                                     }
                                     state.selectedUser.messagesQty = count;
                                     state.selectedUser.hasNewMessages = false;
+                                }).catch((error) => {
+                                    if (error.response.status == 429) {
+                                        useAuthStore().displayWarning(error.response.data);
+                                    };
                                 });
+                            }).catch((error) => {
+                                if (error.response.status == 429) {
+                                    useAuthStore().displayWarning(error.response.data);
+                                };
                             })
                         }
                     })
@@ -134,6 +142,9 @@ export const useChatStore = defineStore({
                     resolve(response.data.message_sended_id);
                 }).catch(error => {
                     console.log(error);
+                    if (error.response.status == 429) {
+                        useAuthStore().displayWarning(error.response.data);
+                    };
                     reject(error);
                 })
             })
@@ -144,6 +155,9 @@ export const useChatStore = defineStore({
                     resolve(response);
                 }).catch(error => {
                     console.log(error);
+                    if (error.response.status == 429) {
+                        useAuthStore().displayWarning(error.response.data);
+                    };
                     reject(error)
                 })
             })
@@ -177,20 +191,31 @@ export const useChatStore = defineStore({
                     resolve(useChatStore().$state.friendsConnected);
                 }).catch(error => {
                     console.log(error);
+                    if (error.response.status == 429) {
+                        useAuthStore().displayWarning(error.response.data);
+                    };
                     reject(error);
                 })
             })
         },
         getCountOfMessages: (conversation_id: number) => {
-            return getCount(conversation_id)
+            return new Promise((resolve, reject) => {
+                getCount(conversation_id).then((response: any) => {
+                    resolve(response.data.count);
+                }).catch(error => {
+                    console.log(error);
+                    if (error.response.status == 429) {
+                        useAuthStore().displayWarning(error.response.data);
+                    };
+                    reject(error);
+                })
+            })
         },
         fetchMoreMessages: () => {
             return new Promise((resolve, reject) => {
                 useChatStore().$patch((state: any) => {
                     state.selectedUser.from += 25;
-                    console.log(state.selectedUser);
                     fetchMessages(state.selectedUser.user, state.selectedUser.limit, state.selectedUser.from).then((response: any) => {
-                        console.log(response);
                         if (response.length > 0) {
                             for (let i = response.length; i !== 0; i--) {
                                 state.selectedUser.messages.unshift(response.pop());
@@ -199,6 +224,9 @@ export const useChatStore = defineStore({
                         resolve(response);
                     }).catch(error => {
                         console.log(error);
+                        if (error.response.status == 429) {
+                            useAuthStore().displayWarning(error.response.data);
+                        };
                         reject(error)
                     })
                 })
