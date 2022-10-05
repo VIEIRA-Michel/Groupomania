@@ -1,9 +1,13 @@
 <script setup lang="ts">
+
+// On récupère les propriétés passées de l'élément parent et on définit leurs types
 const props = defineProps<{
     key: any,
     user: any,
     selected: any,
 }>();
+
+// On définit le nom de l'évènement que l'on souhaite communiquer à l'élément parent afin qu'il déclenche l'action en lien avec cette évènement
 const emit = defineEmits<{
     (e: 'select'): any;
 }>();

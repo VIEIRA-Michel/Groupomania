@@ -238,10 +238,10 @@ function updatePublication(publication: any) {
     // Dans le cas où pictureHasHidden est à true, cela signifie que l'on souhaite supprimer l'image de la publication
     if (pictureHasHidden.value == true) {
         editPost.picture = '';
-    // Dans le cas où previewOnEdit est différent de null, cela signifie que l'on souhaite modifier l'image de la publication
+        // Dans le cas où previewOnEdit est différent de null, cela signifie que l'on souhaite modifier l'image de la publication
     } else if (publication.previewOnEdit !== null) {
         editPost.picture = publication.previewOnEdit;
-    // Dans le cas où pictureHasHidden est à false et previewOnEdit est à null, cela signifie que l'on souhaite garder l'image de la publication
+        // Dans le cas où pictureHasHidden est à false et previewOnEdit est à null, cela signifie que l'on souhaite garder l'image de la publication
     } else if (!pictureHasHidden.value && publication.previewOnEdit == null && publication.picture) {
         editPost.picture = publication.picture;
     }
@@ -269,6 +269,7 @@ function updatePublication(publication: any) {
                 wrongFileEdit.value = true;
             }
         }
+        // Dans le cas où il n'y a aucune image sélectionner dans le mode de modification d'une publication on procède à la modification de la publication sans modifier l'image
     } else {
         usePublicationsStore().updatePublication(publication.publication_id, editPost).then((response: any) => {
             usePublicationsStore().resetPreview(publication.publication_id).then((response2: any) => {
@@ -279,6 +280,7 @@ function updatePublication(publication: any) {
 
 // Cette fonction va nous permettre d'afficher la modal permettant la visualisation de l'historique de modification d'une publication
 function displayHistoryOfEdit(publication_id: number) {
+    // On fait appel au store afin qu'il déclenche la requête permettant la récupération de l'historique de modification de la publication
     usePublicationsStore().fetchHistoryOfEdit(publication_id).then((response: any) => {
         displayHistory.value = true;
     })

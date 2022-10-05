@@ -5,19 +5,37 @@ import { useFriendshipStore } from '@/shared/stores/friendsStore';
 import { useChatStore } from '@/shared/stores/chatStore';
 import socket from "@/socket";
 
-
+// display va nous permettre d'afficher les informations de notre ami au sein de la conversation
 const display = ref(false);
+
+// allow va nous permettre de récupérer les différentes informations de notre ami
 const allow = ref(false);
+
+// user va nous permettre de récupérer nos informations en tant qu'utilisateur
 const user = computed(() => useAuthStore().$state.user);
+
+// friendsOfUser va nous permettre de récupérer les amis de notre ami
 const friendsOfUser = computed(() => useFriendshipStore().$state.friendsOfUser);
+
+// selectedUser va nous permettre de récupérer l'utilisateur sur lequel nous avons cliqué dans la messagerie
 const selectedUser = computed(() => useChatStore().$state.selectedUser);
+
+// newMessage va nous permettre de récupérer le message que nous avons écrit
 const newMessage = ref('');
+
+// obj va nous permettre de stocker les différentes informations au sujet de notre ami
 const obj = ref({});
+
+// msgDom va nous permettre de gérer le scroll lors de la réception d'un nouveau message au sein de la conversation
 let msgDom: any = ref(document.getElementsByClassName('container-center__body'));
+
+// On récupère la propriété que l'on passe depuis l'élément parent et on définit son type
 const props = defineProps<{
     typing: any
 }>();
 
+// displaySender va nous permettre de vérifier l'émetteur du message pour savoir si c'est le même que celui qui a envoyé le message précédent 
+// afin de l'afficher en dessous du précédent ou de l'afficher à l'opposé pour indiquer que ce n'est pas le même utilisateur qui a envoyé le message
 function displaySender(message: any, index: number) {
     return (
         index === 0 ||
@@ -26,9 +44,10 @@ function displaySender(message: any, index: number) {
     );
 };
 
+// displayInformation va nous permettre d'afficher les informations de l'ami sur avec lequel nous avons ouvert la discussion
 function displayInformation() {
     allow.value = !allow.value;
-
+    // Si allow est à true alors nous allons afficher les informations de notre ami
     if (allow.value == true) {
         useFriendshipStore().getAllFriends(selectedUser.value.user).then((response: any) => {
             display.value = true;
@@ -50,11 +69,14 @@ function displayInformation() {
                 }
             });
         })
+        // Dans le cas contraire nous allons réinitialiser le state stockant la liste d'ami de notre ami, afin de pouvoir afficher une nouvelle liste d'ami dans le cas d'un clic sur un ami différent
     } else {
         useFriendshipStore().resetFriendlist();
         display.value = false;
     }
 }
+
+// Cette fonction va nous permettre d'émettre le message à son destinataire grâce à l'évènement socket en lien avec l'action
 function send(event: any) {
     event?.preventDefault();
     if (selectedUser.value) {
@@ -65,33 +87,42 @@ function send(event: any) {
                 to: selectedUser.value.userID,
                 user: user.value
             });
+            // On réinitialisera la valeur de notre saisie après l'expédition du message
             newMessage.value = '';
+            // Et on scrollera jusqu'au message venant d'être envoyé dans le cas où nous serions remontés plus haut dans la conversation
             event.target.style.height = 'auto';
         })
     };
 }
 
+// Cette fonction va nous permettre de redimensionner le champ de saisie de texte en fonction de la taille du texte saisi afin de toujours voir l'ensemble du texte saisi
 function autoResize(event: any) {
     event.target.style.height = 'auto';
     event.target.style.height = event.target.scrollHeight + 'px';
 }
 
-
-watchEffect(() => {
-    newMessage.value.length >= 1 ? emit('typing', true) : emit('typing', false);
+// Ce watch va nous permettre de transmettre l'évènement au composant parent afin qu'il puisse transmettre l'information via un évènement socket 
+// et dans le cas ou notre ami aurait notre discussion ouverte il serait averti si nous sommes en train d'écrire ou non
+watch(newMessage, (value: any) => {
+    if (value.length > 0) {
+        emit('typing', true)
+    } else {
+        emit('typing', false)
+    }
 })
 
+// Ce watch va nous permettre de scroller jusqu'au dernier message dans le cas où l'on recevrait un nouveau message et que nous étions un peu plus haut dans la discussion
+// Et d'émettre l'évènement au composant parent que nous avons lus le message dans le cas ou la discussion serait restée ouverte
 watch(selectedUser.value.messages, (nouvelleVal: any) => {
     setTimeout(() => {
-        // console.log(msgDom.value[0].scrollHeight);
         msgDom.value[0].scrollTop = msgDom.value[0].scrollHeight;
-        // console.log(msgDom.value[0].scrollHeight);
         // document.querySelector('ul')?.lastChild?.scrollIntoView();
         // console.log(document.querySelector('ul')?.lastElementChild?.scrollHeight);
         emit('read');
     }, 1);
 })
 
+// On définit le nom des différents évènements que l'on souhaite communiquer à l'élément parent afin qu'il déclenche l'action en lien avec l'évènement émit
 const emit = defineEmits<{
     (e: 'input', input: any): any;
     (e: 'typing', typing: any): any;

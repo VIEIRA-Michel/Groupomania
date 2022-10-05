@@ -110,14 +110,17 @@ function updateProfile(userEdit?: any) {
                         errorMessage.value = 'Seuls les images aux formats .jpg .jpeg .png .webp sont acceptées';
                     }
                 }
+                // Si nous n'avons pas sélectionné d'image on va directement déclencher la fonction qui communiquera à l'api les modifications que l'on souhaite apporter
             } else {
                 useAuthStore().updateProfile(userEdit).then((response: any) => {
                     if (response.status == 200) {
                         inputError ? inputError.value = false : "";
                         updatedProfil.value = true;
                         setTimeout(() => {
+                            // Et on émet l'évènement en lien avec la modification du profil afin de mettre à jour les informations dans le store des autres utilisateurs connectés
                             socket.emit('update profil', response, user.value);
                             updatedProfil.value = false;
+                            // Puis nous sommes redirigés vers la page d'accueil au bout de 2 secondes
                             router.push('/app/home');
                         }, 2000);
                     } else {

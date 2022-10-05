@@ -2,9 +2,13 @@
 import { useCommentsStore } from '../shared/stores/commentsStore';
 import { ref } from 'vue';
 
+// inputComment va nous permettre de récupérer ce que nous avons saisie dans le champ de création d'un commentaire
 let inputComment = ref("");
+
+// modalComment va nous permettre de gérer l'affichage ou non de la modal de confirmation de suppression d'un commentaire
 let modalComment = ref(false);
 
+// On récupère les propriétés passées de l'élément parent et on définit leurs types
 const props = defineProps({
     numberOfComments: Number,
     publication_id: Number,
@@ -12,32 +16,38 @@ const props = defineProps({
     comments: Array
 });
 
+// On définit le nom de l'évènement que l'on souhaite communiquer à l'élément parent afin qu'il déclenche l'action en lien avec cette évènement
 const emit = defineEmits<{
     (e: 'getMore'): any;
 }>();
 
+// Cette fonction va nous permettre de redimensionner le champ de saisie de texte en fonction de la taille du texte saisi afin de toujours voir l'ensemble du texte saisi
 function autoResize(event: any) {
     event.target.style.height = 'auto';
     event.target.style.height = event.target.scrollHeight + 'px';
 }
 
+// On appel la fonction présente dans le store qui va créer le commentaire du côté de notre state et également envoyer notre saisie à l'api' afin de créer le commentaire dans la base de données
 function createComment(event: any) {
     event.preventDefault();
     if (inputComment.value.length > 1 && inputComment.value != " ") {
-        console.log(inputComment.value);
         useCommentsStore().createComment(props.publication_id, inputComment.value).then((response) => {
             inputComment.value = "";
+            // Et on réinitialise la taille du champ de saisie de création de commentaire 
             event.target.style.height = 'auto';
         });
     };
 }
 
+// Cette fonction va nous permettre d'afficher la modal de confirmation dans le cas où nous souhaiterions supprimer un commentaire
 function activateModal() {
     modalComment.value = true;
 }
 
+// On transmet le message à la fonction présente dans le store qui fera appel à l'api afin d'exécuter l'action de suppression du commentaire
 function deleteComment(comment: any) {
     useCommentsStore().deleteComment(comment)
+    // Et on repasse la valeur de modalComment à false afin de faire disparaître la modal
     modalComment.value = false;
 }
 

@@ -5,18 +5,34 @@ import { useFriendshipStore } from '@/shared/stores/friendsStore';
 import { useChatStore } from '@/shared/stores/chatStore';
 import { useAuthStore } from '@/shared/stores/authStore';
 
+// Cette image par défaut va s'afficher uniquement dans le cas où l'utilisateur aurait émit un trop grand nombre de requête et qu'il ne peut plus récupérer les informations de son compte
 import pictureDefault from '@/assets/profile_picture.jpg';
 
+// requests va nous permettre de récupérer la liste de nos demandes d'amis reçu
 const requests = computed(() => useFriendshipStore().$state.requests);
+
+// user va nous permettre de récupérer nos informations en tant qu'utilisateur
 const user = computed(() => useAuthStore().$state.user);
-const users = computed(() => useChatStore().$state.users);
+
+// users va nous permettre de récupérer la liste de nos amis connectés
+const users = computed(() => useChatStore().$state.friendsConnected);
+
+// notifications va nous permettre de récupérer la liste des notifications
 const notifications = computed(() => useOtherStore().$state.notifications);
+
+// notificationsCount va nous permettre de récupérer le nombre de notification non lus que nous avons
 const notificationsCount = computed(() => useOtherStore().getCountOfNotificationNotRead);
 
+// showNotification va nous permettre d'afficher ou non la liste des notifications
 let showNotification = ref<any>(null);
+
+// newNotification va nous permettre de savoir si nous avons une nouvelle notification
 let newNotification = ref(false);
+
+// showProfileMenu va nous permettre d'afficher le menu de notre profil
 let showProfileMenu = ref(false);
 
+// On récupère la propriété que l'on passe depuis l'élément parent et on définit son type
 const props = defineProps<{
     isConnected: boolean,
 }>();
@@ -25,7 +41,7 @@ const emit = defineEmits<{
     (e: 'logout'): any
 }>();
 
-console.log(pictureDefault);
+// Cette fonction va nous permettre d'afficher ou de masquer la liste des notifications
 function toggleNotification() {
     if (showProfileMenu.value == true) {
         showProfileMenu.value = false;
@@ -33,12 +49,14 @@ function toggleNotification() {
     if (showNotification.value == null || showNotification.value == false) {
         showNotification.value = true;
         newNotification.value = false;
+        // Cette fonction va nous permettre de mettre à jour le nombre de notification non lus
         useOtherStore().notificationRead();
     } else {
         showNotification.value = false;
     }
 }
 
+// Cette fonction va nous permettre d'afficher ou de masquer le menu de notre profil
 function toggleProfileMenu() {
     if (showNotification.value == true) {
         showNotification.value = false;
@@ -46,6 +64,7 @@ function toggleProfileMenu() {
     showProfileMenu.value = !showProfileMenu.value;
 }
 
+// Ce watch va nous permettre de savoir si nous avons une nouvelle notification et de nous avertir par une animation sur le bouton de notification
 watch(notificationsCount, (newNotif) => {
     if (showNotification.value == false || showNotification.value == null) {
         newNotification.value = true;
