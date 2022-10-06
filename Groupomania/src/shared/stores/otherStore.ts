@@ -27,18 +27,24 @@ export const useOtherStore = defineStore({
         }
     },
     actions: {
+        // Cette fonction va nous permettre de mettre fin au chargement
         loadedResources: (): void => {
+            // Si les données ont fini d'être chargée on passe la valeur à false afin que le chargement se termine
             useOtherStore().$patch({
                 loading: false
             })
         },
+        // Cette fonction va nous permettre de soumettre une notification dans la liste des notifications
         notificationPush: (type: string, content: any): void => {
+            // On crée une variable avec la date et l'heure du jour
             let date = new Date();
+            // Et on change son format pour un format plus conventionnelle
             let newDate = moment(date).format('DD/MM/YYYY HH:mm');
             let newDateSplit = newDate.split(" ");
             newDateSplit[0] = "Aujourd'hui à ";
             let today = newDateSplit.join(" ");
             useOtherStore().$patch((state: any) => {
+                // Si la notification concerne un évènement en particulier on ajoutera les informations nécessaires au bon affichage de la notification
                 if (content.user && type == "friendRequest sended") {
                     console.log(content);
                     state.notifications.unshift({
@@ -75,9 +81,9 @@ export const useOtherStore = defineStore({
                         message: "a aimé votre publication",
                         date: today,
                         like_id: content.publication.like_id,
-                        publication_id: content.publication.publication_id ? content.publication.publication_id : null,
-                        publication_content: content.publication.content ? content.publication.content : null,
-                        publication_picture: content.publication.picture ? content.publication.picture : null,
+                        publication_id: content.publication.publication_id,
+                        publication_content: content.publication.content,
+                        publication_picture: content.publication.picture,
                         read: false
                     })
                 } else if (content.user && type == "has commented") {
@@ -98,8 +104,9 @@ export const useOtherStore = defineStore({
                 }
             })
         },
+        // Cette fonction va nous permettre de supprimer une notification 
         notificationRemove: (type: string, content: any): void => {
-            console.log('notification remove');
+            // Et en fonction de l'évènement socket reçu nous allons procéder au retrait de la notification en comparant avec les données reçues
             if (type == "remove like") {
                 useOtherStore().$patch((state: any) => {
                     state.notifications.map((item: any) => {
@@ -137,30 +144,26 @@ export const useOtherStore = defineStore({
                 })
             }
         },
-        deleteRelatedNotifications: (publication_id: number) => {
-            console.log(useOtherStore().$state.notifications);
+        // Cette fonction a pour but de supprimer toutes les notifications en lien avec une publication que l'on supprimerait afin de ne plus conserver des notifications d'une publication
+        // qui aurait été supprimer
+        deleteRelatedNotifications: (id_likes: any, id_comments: any) => {
             useOtherStore().$patch((state: any) => {
                 state.notifications.map((item: any) => {
-                    if (item.publication_id == publication_id) {
-                        console.log('notification avec le publication_id correspondant', item);
-                        state.notifications.splice(state.notifications.indexOf(item), 1);
-                    }
+                    id_likes.map((like: any) => {
+                        if (item.like_id == like && item.type == "like") {
+                            state.notifications.splice(state.notifications.indexOf(item), 1);
+                        }
+                    })
+                    id_comments.map((comment: any) => {
+                        if (item.comment_id == comment && item.type == "comment") {
+                            state.notifications.splice(state.notifications.indexOf(item), 1);
+                        }
+                    })
+                    return item;
                 })
             })
-            // let indexToRemove: any = []
-            // useOtherStore().$patch((state: any) => {
-            //     state.notifications.map((item: any) => {
-            //         if (item.publication_id == publication_id) {
-            //             // console.log(state.notifications.indexOf(item));
-            //             indexToRemove.push(state.notifications.indexOf(item))
-            //             //     state.notifications.splice(state.notifications.indexOf(item), 1);
-            //         }
-            //     })
-            //     for (let i = 0; i < indexToRemove.length; i++) {
-            //         state.notifications.splice(indexToRemove[i], 1);
-            //     }
-            // })
         },
+        // Cette fonction a pour but de faire disparaître la petite pastille indiquant que des nouvelles notifications non-lus sont présentes
         notificationRead: () => {
             useOtherStore().$patch((state: any) => {
                 state.notifications.map((item: any) => {

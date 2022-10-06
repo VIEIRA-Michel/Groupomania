@@ -35,14 +35,22 @@ export const useFriendshipStore = defineStore({
         invitationList: (state: FriendshipState) => state.invitSendedTo,
     },
     actions: {
+        // Cette fonction a pour but de récupérer les demandes d'amis reçus
         getRequests: () => {
             return new Promise((resolve, reject) => {
+                // Cette requête transmet l'information à l'api afin de nous renvoyer le résultat
                 fetchRequests().then((response: any) => {
+                    // Si le tableau de résultat comporte au moins 1 élément
                     if (response.results && response.results.length > 0) {
+                        // On va parcourir le tableau des résultats
                         response.results.map((item: any) => {
                             useFriendshipStore().$patch((state: any) => {
+                                // Et vérifier si au sein de notre state qui est censé contenir les demandes d'amis reçus il n'y aurait pas une demande d'ami
+                                //  d'un émetteur différent que ceux récupérer depuis notre requête
                                 if (state.requests.find((request: any) => request.sender !== item.sender) || state.requests.length == 0) {
+                                    // Si c'est le cas on passe de cette façon isLoading à false afin de terminer le chargement
                                     state.isLoading = false;
+                                    // Et on ajoute la demande d'ami en question dans le state prévue à cet effet
                                     state.requests.push(item);
                                 }
                             })
@@ -51,6 +59,8 @@ export const useFriendshipStore = defineStore({
                     resolve(response);
                 }).catch(error => {
                     console.log(error);
+                    // Dans le cas où le code erreur est le 429 cela signifie qu'un trop grand nombre de requête a été émise et donc 
+                    // on va déclencher la fonction modifiant certaines valeurs du state permettant l'affichage de la modal d'avertissement
                     if (error.response.status == 429) {
                         useAuthStore().displayWarning(error.response.data);
                     };

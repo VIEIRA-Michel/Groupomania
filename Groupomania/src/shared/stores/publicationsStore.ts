@@ -354,12 +354,23 @@ export const usePublicationsStore = defineStore({
         deletePublication: (id: number) => {
             return new Promise((resolve, reject) => {
                 removePublication(id).then((response: any) => {
+                    let arrIdComment: any = [];
+                    let arrIdLike: any = [];
                     usePublicationsStore().$patch((state: any) => {
                         state.publications.map((item: any) => {
+                            console.log(item);
                             if (item.publication_id == id) {
+                                item.likes.forEach((element: any) => {
+                                    arrIdLike.push(element.like_id);
+                                })
+                                item.comments.forEach((element: any) => {
+                                    arrIdComment.push(element.comment_id);
+                                })
                                 state.publications.splice(state.publications.indexOf(item), 1);
                             }
                         });
+                        // On supprime également toutes nos notifications liées à cette publication
+                        useOtherStore().deleteRelatedNotifications(arrIdLike, arrIdComment);
                         state.numOfResults = state.numOfResults - 1;
                         if (state.numberOfPages != 1 && state.publications.length == 0) {
                             state.page -= 1;
@@ -434,7 +445,7 @@ export const usePublicationsStore = defineStore({
                         state.publications.map((item: any) => {
                             if (item.publication_id == id) {
                                 if (response.data.liked) {
-                                    item.likes.push(user);
+                                    item.likes.push({ ...user, like_id: response.data.results.insertId });
                                     item.iLike = true;
                                 } else {
                                     item.likes = item.likes.filter((item: any) => {
@@ -484,7 +495,11 @@ export const usePublicationsStore = defineStore({
                 state.publications.map((item: any) => {
                     if (item.publication_id == data.publication.publication_id) {
                         if (item.likes.find((like: any) => like.user_id !== data.user.user_id) || item.likes.length == 0) {
-                            item.likes.push(data.user);
+                            item.likes.push({
+                                ...data.user,
+                                like_id: data.publication.like_id,
+                                publication_id: data.publication.publication_id,
+                            });
                         }
                     }
                     return item;
@@ -546,7 +561,7 @@ export const usePublicationsStore = defineStore({
         onDeletePublication: (data: any) => {
             usePublicationsStore().$patch((state: any) => {
                 state.publications.map((item: any) => {
-                    if (item.publication_id == data) {
+                    if (item.publication_id == data.publication.publication_id) {
                         usePublicationsStore().fetchCount().then((response: any) => {
                             usePublicationsStore().$patch((state: any) => {
                                 state.numOfResults = response.qty;
@@ -557,7 +572,7 @@ export const usePublicationsStore = defineStore({
                             if (usePublicationsStore().$state.cache.length > 0) {
                                 usePublicationsStore().$patch((state: any) => {
                                     state.publications.map((item: any) => {
-                                        if (item.publication_id == data) {
+                                        if (item.publication_id == data.publication.publication_id) {
                                             state.publications.splice(state.publications.indexOf(item), 1);
                                             let tmp = ref(state.cache.shift());
                                             state.publications.find((item: any) => item.publication_id == tmp._value.publication_id) ? "" : state.publications.push(tmp._value);
@@ -568,12 +583,12 @@ export const usePublicationsStore = defineStore({
                                 usePublicationsStore().fetchAllPublication(newValue.value, true).then((response: any) => {
                                     usePublicationsStore().$patch((state: any) => {
                                         state.publications.map((item: any) => {
-                                            if (item.publication_id == data) {
+                                            if (item.publication_id == data.publication.publication_id) {
                                                 state.publications.splice(state.publications.indexOf(item), 1);
                                             }
                                         });
                                         state.cache.map((item: any) => {
-                                            if (item.publication_id == data) {
+                                            if (item.publication_id == data.publication.publication_id) {
                                                 state.cache.splice(state.cache.indexOf(item), 1);
                                             }
                                         })

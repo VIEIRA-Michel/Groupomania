@@ -228,48 +228,52 @@ export const useAuthStore = defineStore({
                 let newDateSplit = newDate.split(" ");
                 // On exécute la requête permettant la récupération des notifications
                 fetchNotifications().then((response: any) => {
-                    // On parcours à présent le tableau de notifications
+                    console.log(response);
+                    // On parcours à présent le tableau de résultat
                     response.data.forEach((element: any) => {
-                        // Selon le type de la notification on va lui rajouter de nouvelles propriétés
-                        if (element.type == 'like' || element.type == 'comment') {
-                            element.publication_id = element.param1;
-                            element.publication_picture = element.param2;
-                            element.publication_content = element.param3;
+                        // On retire tous les résultats comportant notre user_id 
+                        if (element.user_id !== useAuthStore().user.user_id) {
+                            // Selon le type de la notification on va lui rajouter de nouvelles propriétés
+                            if (element.type == 'like' || element.type == 'comment') {
+                                element.publication_id = element.param1;
+                                element.publication_picture = element.param2;
+                                element.publication_content = element.param3;
 
-                            if (element.type == 'like') {
-                                element.like_id = element.id;
-                                element.message = 'a aimé votre publication';
-                            } else {
-                                element.comment_id = element.id;
-                                element.message = 'a commenté votre publication';
+                                if (element.type == 'like') {
+                                    element.like_id = element.id;
+                                    element.message = 'a aimé votre publication';
+                                } else {
+                                    element.comment_id = element.id;
+                                    element.message = 'a commenté votre publication';
+                                }
+                            } else if (element.type == 'friendship') {
+                                element.idRequest = element.id;
+                                if (element.created_at > element.param2) {
+                                    element.message = 'a accepté votre demande d\'ami';
+                                } else {
+                                    element.message = 'vous a envoyé une demande d\'ami';
+                                }
                             }
-                        } else if (element.type == 'friendship') {
-                            element.idRequest = element.id;
-                            if (element.created_at > element.param2) {
-                                element.message = 'a accepté votre demande d\'ami';
-                            } else {
-                                element.message = 'vous a envoyé une demande d\'ami';
+                            // On change le format de la date présente dans la notification afin de la rendre plus facilement lisible
+                            let date = moment(element.created_at).format('DD/MM/YYYY à HH:mm').split(" ");
+                            if (date[0] == newDateSplit[0]) {
+                                date[0] = "Aujourd'hui";
+                            } else if (parseInt(date[0]) == parseInt(newDateSplit[0]) - 1) {
+                                date[0] = "Hier";
+                            } else if (parseInt(date[0]) == parseInt(newDateSplit[0]) - 2) {
+                                date[0] = "Avant-hier";
                             }
-                        }
-                        // On change le format de la date présente dans la notification afin de la rendre plus facilement lisible
-                        let date = moment(element.created_at).format('DD/MM/YYYY à HH:mm').split(" ");
-                        if (date[0] == newDateSplit[0]) {
-                            date[0] = "Aujourd'hui";
-                        } else if (parseInt(date[0]) == parseInt(newDateSplit[0]) - 1) {
-                            date[0] = "Hier";
-                        } else if (parseInt(date[0]) == parseInt(newDateSplit[0]) - 2) {
-                            date[0] = "Avant-hier";
-                        }
 
-                        // Puis on enregistre l'intégralité des notifications avec les changements apportés et on ajoute une propriété read à true afin d'indiquer que nous les avons déjà consultés 
-                        // afin d'éviter qu'à chaque rafraichissement de la page nous nous retrouvons avec la totalité des notifications en non-lues
-                        useOtherStore().$patch((state: any) => {
-                            state.notifications.push({
-                                ...element,
-                                read: true,
-                                date: date.join(" ")
+                            // Puis on enregistre l'intégralité des notifications avec les changements apportés et on ajoute une propriété read à true afin d'indiquer que nous les avons déjà consultés 
+                            // afin d'éviter qu'à chaque rafraichissement de la page nous nous retrouvons avec la totalité des notifications en non-lues
+                            useOtherStore().$patch((state: any) => {
+                                state.notifications.push({
+                                    ...element,
+                                    read: true,
+                                    date: date.join(" ")
+                                });
                             });
-                        })
+                        }
                     })
                     resolve();
                 }).catch((error: any) => {
@@ -423,9 +427,6 @@ export const useAuthStore = defineStore({
                                 return com;
                             })
                         }
-                        return item;
-                    })
-                    state.publications.map((item: any) => {
                         return item;
                     })
                 }

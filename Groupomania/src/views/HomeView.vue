@@ -69,7 +69,7 @@ let wrongFileEdit = ref(false);
 let modalRequest = ref(false);
 
 // publicationIdToDelete va nous permettre de stocker l'id de la publication que nous souhaitons supprimer avant d'accéder à l'action permettant la suppression
-let publicationIdToDelete = ref();
+let publicationToDelete = ref();
 
 // displayHistory va nous permettre d'afficher l'historique d'une publication
 let displayHistory = ref(false);
@@ -294,33 +294,30 @@ function closeHistory() {
 };
 
 // Cette fonction va nous permettre d'afficher la modal permettant la suppression d'une publication
-function activateModal(publication_id: number) {
+function activateModal(publication: any) {
     modalRequest.value = true;
-    publicationIdToDelete.value = publication_id;
+    publicationToDelete.value = publication;
 };
 
 // Cette fonction va nous permettre de faire plusieurs vérifications avant de procéder à la récupération des publications de la page suivante pour les mettre ensuite en cache
 // puis supprimé la publication grâce à l'id de la publication passer en paramètre
-function deletePublication(id: number) {
+function deletePublication(publication: any) {
     // On ferme la modal de confirmation de suppression d'une publication
     modalRequest.value = false;
     if (page.value < numberOfPages.value && usePublicationsStore().$state.cache.length == 0 && publications.value.length < numOfResults.value) {
         // On récupère les publications de la page suivante s'il existe une page après celle sur laquelle nous sommes
         usePublicationsStore().fetchAllPublication(page.value + 1, true).then((response: any) => {
             // On fait appel à la fonction présente dans le store qui communique avec l'api afin de supprimer une publication
-            usePublicationsStore().deletePublication(id).then((response: any) => {
+            usePublicationsStore().deletePublication(publication.publication_id).then((response: any) => {
                 // On émet l'évènement en lien afin que mes amis ne voient plus cette publication dans leur fil d'actualité
-                socket.emit('delete publication', id, user.value);
-                // On supprime également toutes nos notifications liées à cette publication
-                useOtherStore().deleteRelatedNotifications(id);
+                socket.emit('delete publication', { publication: publication, user: user.value });
             });
         })
         // Si aucune page n'est présente après celle sur laquelle nous sommes
     } else {
         // Nous nous contentons juste de supprimer la publication d'émettre l'évènement en lien et de supprimer les notifications en lien avec cette publication
-        usePublicationsStore().deletePublication(id).then((response: any) => {
-            socket.emit('delete publication', id, user.value);
-            useOtherStore().deleteRelatedNotifications(id);
+        usePublicationsStore().deletePublication(publication.publication_id).then((response: any) => {
+            socket.emit('delete publication', { publication: publication, user: user.value });
         });
     }
 };
@@ -331,6 +328,7 @@ function likePublication(publication: any) {
         // Dans le cas où nous n'avions pas déjà liké la publication la réponse sera donc à true et on apposera un like sur la publication dans le cas inverse on retirera le like
         if (response.data.liked == true) {
             publication = { ...publication, like_id: response.data.results.insertId };
+            console.log(publication);
             // On émet ensuite l'évènement correspondant à l'action réalisée
             socket.emit('like', { publication, user: user.value });
         } else {
@@ -535,8 +533,7 @@ onBeforeMount(() => {
                                                     icon="fa-solid fa-pen-to-square" />
                                             </div>
                                             <div class="post__top__menu__content__item">
-                                                <fa @click="activateModal(publication.publication_id)"
-                                                    icon="fa-solid fa-trash-can" />
+                                                <fa @click="activateModal(publication)" icon="fa-solid fa-trash-can" />
                                             </div>
                                             <Teleport to="body">
                                                 <div v-if="modalRequest" @click="modalRequest = false"
@@ -554,8 +551,7 @@ onBeforeMount(() => {
                                                                 <button @click="modalRequest = false" type="button"
                                                                     class="btn btn-secondary"
                                                                     data-dismiss="modal">Annuler</button>
-                                                                <button
-                                                                    @click="deletePublication(publicationIdToDelete)"
+                                                                <button @click="deletePublication(publicationToDelete)"
                                                                     type="button"
                                                                     class="btn btn-primary">Supprimer</button>
                                                             </div>

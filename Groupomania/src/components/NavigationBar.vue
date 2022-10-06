@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, watchEffect } from 'vue';
 import { useOtherStore } from '@/shared/stores/otherStore';
 import { useFriendshipStore } from '@/shared/stores/friendsStore';
 import { useChatStore } from '@/shared/stores/chatStore';
