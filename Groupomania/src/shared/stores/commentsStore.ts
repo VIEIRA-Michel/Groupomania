@@ -163,21 +163,11 @@ export const useCommentsStore = defineStore({
         // Cette fonction va nous permettre d'ajouter un commentaire à une publication
         createComment: (publication_id: number, comment: string) => {
             return new Promise((resolve, reject) => {
-                // On crée une variable comprenant la date ainsi que l'heure du jour
-                let date = new Date();
-                let newDate = moment(date).format('DD/MM/YYYY HH:mm:ss');
-                let newDateSplit = newDate.split(" ");
                 // On exécute la requête transmettant l'ordre à l'api afin d'ajouter un commentaire à la publication
                 addComment(publication_id, comment).then((response: any) => {
                     // On récupère la date et l'heure du jour et on la formate pour la mettre à un format plus facilement lisible
                     let commentDate = moment(response.data.data[0].comment_created_at).format('DD/MM/YYYY à HH:mm').split(" ");
-                    if (commentDate[0] == newDateSplit[0]) {
-                        commentDate[0] = "Aujourd'hui";
-                    } else if (parseInt(commentDate[0]) == parseInt(newDateSplit[0]) - 1) {
-                        commentDate[0] = "Hier";
-                    } else if (parseInt(commentDate[0]) == parseInt(newDateSplit[0]) - 2) {
-                        commentDate[0] = "Avant-hier";
-                    }
+                    commentDate[0] = "Aujourd'hui";
                     commentDate.join(" ");
 
                     // On crée une variable comprenant l'ensemble des informations reçues du commentaire que l'on vient de créer

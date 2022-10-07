@@ -68,9 +68,12 @@ export const useFriendshipStore = defineStore({
                 })
             })
         },
+        // Cette fonction va nous permettre de récupérer la liste de nos amis ou celle d'un utilisateur
         getAllFriends: (id?: number) => {
             return new Promise((resolve, reject) => {
+                // Si un id est passé en paramètre on va l'enregistrer dans une variable
                 let param = id ? id : '';
+                // On va ensuite exécuté la requête qui va nous permettre de récupérer la liste de nos amis ou celle d'un utilisateur dans le cas où param est différent de ''
                 fetchFriends(param).then((response: any) => {
                     let userToCompare = 0;
                     let newFriend = ref({
@@ -79,16 +82,22 @@ export const useFriendshipStore = defineStore({
                         firstname: '',
                         lastname: '',
                     });
+                    // 
+                    // Si un id est passé en paramètre on va l'enregistrer dans userToCompare afin de
                     id ? userToCompare = id : userToCompare = useAuthStore().$state.user.user_id;
                     response.results.map((item: any) => {
+                        // Dans le cas où l'id de l'utilisateur ou le notre est égal de l'émetteur de la demande d'ami
                         if (userToCompare == item.sender_user_id) {
+                            // Alors nous allons enregistrer les informations du destinataire de la requête dans la valeur newFriend
                             newFriend.value = {
                                 user_id: item.recipient_user_id,
                                 picture_url: item.recipient_picture_url,
                                 firstname: item.recipient_firstname,
                                 lastname: item.recipient_lastname,
                             };
+                            // Dans le cas où nous sommes pas l'émetteur de la demande d'ami
                         } else {
+                            // Nous allons récupérer les informations de l'éméteur de la demande d'ami et les enregistrer dans la valeur newFriend
                             newFriend.value = {
                                 user_id: item.sender_user_id,
                                 picture_url: item.sender_picture_url,
@@ -96,17 +105,25 @@ export const useFriendshipStore = defineStore({
                                 lastname: item.sender_lastname,
                             };
                         }
+                        // Si un id est passé en paramètre
                         if (id) {
                             useFriendshipStore().$patch((state: any) => {
+                                // Et les informations de l'ami présent dans newFriend ne sont pas déjà présente dans les amis de l'utilisateur
                                 if (state.friendsOfUser.find((item: any) => item.user_id !== newFriend.value.user_id) || state.friendsOfUser.length == 0) {
+                                    // Nous allons ajouté l'ami dans sa liste d'amis
                                     state.friendsOfUser.push(newFriend.value);
+                                    // Et mettre fin au chargement
                                     state.isLoading = false;
                                 }
                             })
+                            // Dans le cas où aucun id est passé en paramètre
                         } else {
                             useFriendshipStore().$patch((state: any) => {
+                                // Et que les l'id de l'ami présent dans newFriend ne sont pas déjà présente dans notre liste d'amis
                                 if (state.friends.find((item: any) => item.user_id !== newFriend.value.user_id) || state.friends.length == 0) {
+                                    // Nous allons ajouté l'ami dans notre liste d'amis
                                     state.friends.push(newFriend.value);
+                                    // Et mettre fin au chargement
                                     state.isLoading = false;
                                 }
                             })
@@ -115,6 +132,8 @@ export const useFriendshipStore = defineStore({
                     resolve(response);
                 }).catch(error => {
                     console.log(error);
+                    // Dans le cas où le code erreur est le 429 cela signifie qu'un trop grand nombre de requête a été émise et donc 
+                    // on va déclencher la fonction modifiant certaines valeurs du state permettant l'affichage de la modal d'avertissement
                     if (error.response.status == 429) {
                         useAuthStore().displayWarning(error.response.data);
                     };
@@ -122,22 +141,35 @@ export const useFriendshipStore = defineStore({
                 })
             })
         },
+        // Cette fonction va nous permettre d'accepter ou de refuser une demande d'ami
         acceptOrDeclineRequest: (req: any, answer: string) => {
             return new Promise((resolve, reject) => {
+                // On exécute la requête qui va nous permettre d'accepter ou de refuser une demande d'ami avec notre réponse et la requête en question passé en paramètre
                 acceptOrDecline(req.sender, answer).then((response: any) => {
+                    // Si nous déclinons la demande d'ami
                     if (answer == 'refused') {
                         useFriendshipStore().$patch((state: any) => {
+                            // Nous allons parcourir nos demande d'amis reçues
                             state.requests.map((item: any) => {
+                                // Et dans le cas où l'id d'un utilisateur d'une des demandes d'ami correspond à l'id de l'utilisateur de la demande d'ami que nous venons de décliner
+                                // Nous allons la supprimer de notre liste de demande d'amis reçues
                                 item.sender == req.sender ? state.requests.splice(state.requests.indexOf(item), 1) : "";
                             });
+                            // Nous allons ensuite parcourir la liste des résultats de recherche d'amis
                             state.searchResults.map((item: any) => {
+                                // Et si l'id d'un utilisateur correspond à l'id de l'émetteur de la demande d'ami que nous venons de décliner
+                                // Nous passons la propriété waitingReply à false afin de faire correspondre le bon état du bouton présent sur la carte de l'utilisateur
                                 item.user_id == req.sender ? item.waitingReply = false : "";
                             })
                         });
+                        // Dans le cas où nous acceptons la demande d'ami
                     } else {
                         useFriendshipStore().$patch((state: any) => {
+                            // Nous parcourons nos demande d'amis reçues
                             state.requests.map((item: any) => {
+                                // Et dans le cas où l'id d'un utilisateur d'une des demandes d'ami reçu correspond à l'id de l'utilisateur de la demande d'ami que nous venons d'accepter
                                 if (item.sender == req.sender) {
+                                    // On l'ajoute à notre liste d'amis
                                     state.friends.push({
                                         user_id: item.sender,
                                         firstname: item.firstname,
@@ -145,21 +177,29 @@ export const useFriendshipStore = defineStore({
                                         picture_url: item.picture_url,
                                         email: item.email
                                     })
+                                    // Puis on supprime la demande de notre liste de demande d'amis reçues
                                     state.requests.splice(state.requests.indexOf(item), 1);
                                 }
                             });
+                            // Nous parcourons ensuite la liste des résultats de recherche d'utilisateur
                             state.searchResults.map((item: any) => {
+                                // Si l'id d'un utilisateur correspond à l'émetteur de la demande d'ami que nous venons d'accepter
                                 if (item.user_id == req.sender) {
+                                    // Nous passons la propriété isFriend à true
                                     item.isFriend = true;
+                                    // et waitingReply à false afin de faire correspondre le bon état du bouton présent sur la carte de l'utilisateur
                                     item.waitingReply = false;
                                 }
                             });
                         })
+                        // Puis on déclenche la fonction permettant d'ajouter l'ami dans notre liste d'amis interagissant avec les sockets en lui passant en paramètre la demande d'ami
                         useChatStore().newFriend(req);
                     }
                     resolve(response);
                 }).catch(error => {
                     console.log(error);
+                    // Dans le cas où le code erreur est le 429 cela signifie qu'un trop grand nombre de requête a été émise et donc 
+                    // on va déclencher la fonction modifiant certaines valeurs du state permettant l'affichage de la modal d'avertissement
                     if (error.response.status == 429) {
                         useAuthStore().displayWarning(error.response.data);
                     };
@@ -167,26 +207,37 @@ export const useFriendshipStore = defineStore({
                 })
             })
         },
+        // Cette fonction va nous permettre de supprimer un ami
         removeFriend: (id: number) => {
             return new Promise((resolve, reject) => {
+                // On exécute la requête qui va nous permettre de supprimer un ami avec l'id de l'ami en question passé en paramètre
                 deleteFriend(id).then((response: any) => {
                     useFriendshipStore().$patch((state: any) => {
+                        // On va parcourir notre liste d'amis
                         state.friends.map((item: any) => {
+                            // Et dans le cas où l'id d'un utilisateur de notre liste d'amis correspond à l'id de l'ami que nous venons de supprimer
                             if (item.user_id == id) {
+                                // On le supprime de notre liste d'amis
                                 state.friends.splice(state.friends.indexOf(item), 1);
                             }
                         })
+                        // On va ensuite parcourir la liste des résultats de recherche d'utilisateur
                         state.searchResults.map((item: any) => {
+                            // Et dans le cas où l'id d'un utilisateur correspond à l'id de l'ami que nous venons de supprimer
                             if (item.user_id == id) {
+                                // On passe la propriété isFriend à false afin de faire correspondre le bon état du bouton présent sur la carte de l'utilisateur
                                 item.isFriend = false;
                             }
                         })
                     })
                     useOtherStore().$patch((state: any) => {
                         state.notifications.map((item: any) => {
-                            if (item.type == 'friendship' && item.user_id == id || item.type == 'friends' && item.user_id == id) {
-                                state.notifications.splice(state.notifications.indexOf(item), 1);
-                            }
+                            // if (item.type == 'friendship' && item.user_id == id || item.type == 'friends' && item.user_id == id) {
+                            //     state.notifications.splice(state.notifications.indexOf(item), 1);
+                            // }
+                            // if (item.user_id == id) {
+                            //     state.notifications.splice(state.notifications.indexOf(item), 1);
+                            // }
                         })
                     })
                     useChatStore().friendDeleted(id);
@@ -200,41 +251,61 @@ export const useFriendshipStore = defineStore({
                 })
             })
         },
+        // Cette fonction permet de réinitialiser le state stockant la liste d'ami de l'utilisateur sur lequel nous avons souhaité obtenir plus d'informations
+        // Afin de pouvoir réutiliser cette fonction pour un autre utilisateur
         resetFriendlist: () => {
             useFriendshipStore().$patch((state) => {
                 state.friendsOfUser.splice(0, state.friendsOfUser.length)
             })
         },
+        // Cette fonction permet de rechercher un utilisateur en fonction de son nom ou de son prénom
         searchUser: (search: string) => {
             return new Promise((resolve, reject) => {
+                // Nous allons exécuter la requête qui va nous permettre de rechercher un utilisateur en lui passant en paramètre la chaîne de caractère saisie dans le champ de recherche
                 searchFriend(search).then((response: any) => {
                     useFriendshipStore().$patch((state: any) => {
+                        // Avant d'afficher si des résultats de recherche ont été trouvés ou non, nous allons réinitialiser la liste des résultats de recherche
                         state.searchResults.splice(0, state.searchResults.length)
                     });
+                    // Si des résultats ont été trouvés
                     if (response.data.results) {
                         useFriendshipStore().$patch((state: any) => {
+                            // Nous allons parcourir la liste des résultats de notre recherche
                             response.data.results.map((item: any) => {
+                                // Si notre liste d'amis contient au moins un utilisateur
                                 if (state.friends.length > 0) {
+                                    // Nous allons parcourir notre liste d'amis
                                     state.friends.map((friend: any) => {
+                                        // Et vérifier si l'id d'utilisateur d'un des résultats de notre recherche correspond à l'id d'un utilisateur de notre liste d'amis
                                         if (item.user_id == friend.user_id) {
+                                            // Si c'est le cas on passe la propriété isFriend à true afin de faire correspondre le bon état du bouton présent sur la carte de l'utilisateur
                                             item.isFriend = true;
                                         }
                                     })
                                 }
+                                // Si nous avons des demandes d'amis en attente que nous avons émise
                                 if (state.invitSendedTo.length > 0) {
+                                    // Nous allons parcourir nos demandes d'amis émise en attente de réponse
                                     state.invitSendedTo.map((invit: any) => {
+                                        // Si l'id d'un utilisateur pour lequel nous avons émis une demande d'amis correspond à l'id d'un utilisateur de notre liste de résultats de recherche
                                         if (item.user_id == invit.id) {
+                                            // Nous allons passer la propriété pending à true afin de faire correspondre le bon état du bouton présent sur la carte de l'utilisateur
                                             item.pending = true;
                                         }
                                     })
                                 }
+                                // Si nous avons des demandes d'amis en attente que nous avons reçu
                                 if (state.requests.length > 0) {
+                                    // Nous allons parcourir la liste des demandes d'amis que nous avons reçu
                                     state.requests.map((request: any) => {
+                                        // Si l'id d'un utilisateur d'une de nos demande d'amis reçues correspond à l'id d'un utilisateur de notre liste de résultats de recherche
                                         if (item.user_id == request.sender) {
+                                            // Nous allons passer la propriété waitingReply à true afin de faire correspondre le bon état du bouton présent sur la carte de l'utilisateur
                                             item.waitingReply = true;
                                         }
                                     })
                                 }
+                                // Si l'id d'utilisateur présent dans le résultat de notre recherche correspond au notre nous le retirons de la liste des résultats de recherche
                                 useAuthStore().$state.user.user_id == item.user_id ? response.data.results.splice(response.data.results.indexOf(item), 1) : state.searchResults.push(item);
                             })
                         })
@@ -242,6 +313,8 @@ export const useFriendshipStore = defineStore({
                     resolve(response);
                 }).catch(error => {
                     console.log(error);
+                    // Dans le cas où le code erreur est le 429 cela signifie qu'un trop grand nombre de requête a été émise et donc 
+                    // on va déclencher la fonction modifiant certaines valeurs du state permettant l'affichage de la modal d'avertissement
                     if (error.response.status == 429) {
                         useAuthStore().displayWarning(error.response.data);
                     };
@@ -249,15 +322,22 @@ export const useFriendshipStore = defineStore({
                 })
             })
         },
+        // Cette fonction permet d'envoyer une demande d'amis à un utilisateur
         sendFriendRequest: (user_id: number) => {
             return new Promise((resolve, reject) => {
+                // On va exécuter la requête qui va nous permettre d'envoyer une demande d'amis à un utilisateur en lui passant en paramètre l'id de l'utilisateur
                 addFriend(user_id).then((response: any) => {
+                    // Si tout s'est bien passé on va parcourir la liste des résultats de recherche
                     useFriendshipStore().$state.searchResults.map((item: any) => {
+                        // Si l'id de l'utilisateur pour lequel nous avons souhaité envoyer une demande d'amis correspond à l'id d'un utilisateur de la liste des résultats de recherche
+                        // On lui passe la propriété pending à true afin de faire correspondre le bon état du bouton présent sur la carte de l'utilisateur
                         item.user_id == user_id ? item.pending = true : "";
                         return item;
                     });
+                    // Si la demande d'ami a bien été envoyée
                     if (response.data.results) {
                         useFriendshipStore().$patch((state: FriendshipState) => {
+                            // On va pouvoir ajouter les informations de l'utilisateur à notre liste de demandes d'amis en attente que nous avons émise
                             state.invitSendedTo.push({
                                 account_disabled: response.data.results[0].account_disabled,
                                 email: response.data.results[0].email,
@@ -272,10 +352,11 @@ export const useFriendshipStore = defineStore({
                             })
                         })
                     }
-                    console.log(response);
                     resolve(response);
                 }).catch(error => {
                     console.log(error);
+                    // Dans le cas où le code erreur est le 429 cela signifie qu'un trop grand nombre de requête a été émise et donc 
+                    // on va déclencher la fonction modifiant certaines valeurs du state permettant l'affichage de la modal d'avertissement
                     if (error.response.status == 429) {
                         useAuthStore().displayWarning(error.response.data);
                     };
@@ -283,17 +364,25 @@ export const useFriendshipStore = defineStore({
                 })
             })
         },
+        // Cette fonction va nous permettre d'annuler une demande d'amis que nous avons émise
         cancelRequest: (user_id: number) => {
             return new Promise((resolve, reject) => {
+                // On exécute la requête qui va nous permettre d'annuler une demande d'amis que nous avons émise en lui passant en paramètre l'id de l'utilisateur
                 cancelReq(user_id).then((response: any) => {
                     useFriendshipStore().$patch((state: FriendshipState) => {
+                        // On va parcourir la liste des résultats de recherche
                         state.searchResults.map((item: any) => {
+                            // Si l'id de l'utilisateur pour lequel nous avons souhaité annuler une demande d'amis correspond à l'id d'un utilisateur de la liste des résultats de recherche
                             if (item.user_id == user_id) {
+                                // On lui passe la propriété pending à false afin de faire correspondre le bon état du bouton présent sur la carte de l'utilisateur
                                 item.pending = false;
                             }
                         })
+                        // On va parcourir la liste des demandes d'amis que nous avons émise
                         state.invitSendedTo.map((item: any) => {
+                            // Si l'id de l'utilisateur pour lequel nous avons souhaité annuler une demande d'amis correspond à l'id d'un utilisateur de la liste des demandes d'amis que nous avons émise
                             if (item.id == user_id) {
+                                // On retire l'utilisateur de la liste des demandes d'amis que nous avons émise
                                 state.invitSendedTo.splice(state.invitSendedTo.indexOf(item), 1);
                             }
                         })
@@ -301,6 +390,8 @@ export const useFriendshipStore = defineStore({
                     resolve(response);
                 }).catch(error => {
                     console.log(error);
+                    // Dans le cas où le code erreur est le 429 cela signifie qu'un trop grand nombre de requête a été émise et donc 
+                    // on va déclencher la fonction modifiant certaines valeurs du state permettant l'affichage de la modal d'avertissement
                     if (error.response.status == 429) {
                         useAuthStore().displayWarning(error.response.data);
                     };
@@ -308,18 +399,25 @@ export const useFriendshipStore = defineStore({
                 })
             })
         },
+        // Cette fonction va nous permettre de récupérer la liste des demandes d'amis que nous avons émise
         checkRequestsSended: () => {
             return new Promise((resolve, reject) => {
+                // On exécute la requête qui va nous permettre de récupérer la liste des demandes d'amis que nous avons émise
                 checkReq().then((response: any) => {
                     useFriendshipStore().$patch((state: any) => {
+                        // On va réinitialiser la liste des demandes d'amis que nous avons émise
                         state.invitSendedTo.splice(0, state.invitSendedTo.length),
+                            // On va parcourir les résultats de la requête
                             response.data.results.map((item: never) => {
+                                // Et ajouté chaque élément à la liste des demandes d'amis que nous avons émise
                                 state.invitSendedTo.push(item);
                             });
                     });
                     resolve(response);
                 }).catch(error => {
                     console.log(error);
+                    // Dans le cas où le code erreur est le 429 cela signifie qu'un trop grand nombre de requête a été émise et donc 
+                    // on va déclencher la fonction modifiant certaines valeurs du state permettant l'affichage de la modal d'avertissement
                     if (error.response.status == 429) {
                         useAuthStore().displayWarning(error.response.data);
                     };
@@ -327,119 +425,164 @@ export const useFriendshipStore = defineStore({
                 })
             })
         },
+        // Cette fonction va s'exécuter lorque un utilisateur émet une demande d'amis à un autre utilisateur 
         onFriendRequestSended: (data: any) => {
+            // Si l'id du destinataire correspond a notre id
             if (data.request.recipient == useAuthStore().$state.user.user_id) {
                 useFriendshipStore().$patch((state: any) => {
+                    // Et que l'id de l'émetteur ne correspond pas à l'id d'un utilisateur présent dans la liste de nos demande d'amis reçues
+                    // pour lesquelles nous n'avons pas encore répondu
                     if (state.requests.find((item: any) => item.sender !== data.request.sender) || state.requests.length == 0) {
+                        // Alors on ajoute la demande d'amis reçue à la liste des demandes d'amis reçues
                         state.requests.push(data.request);
                     }
+                    // Si la liste des résultats de recherche n'est pas vide
                     if (state.searchResults.length > 0) {
+                        // On parcours la liste des résultats de recherche
                         state.searchResults.map((item: any) => {
+                            // Si l'id de l'émetteur de la demande d'amis correspond à l'id d'un utilisateur présent dans la liste des résultats de recherche
                             if (item.user_id == data.request.sender) {
+                                // On lui passe la propriété waitingReply à true afin de faire correspondre le bon état du bouton présent sur la carte de l'utilisateur
                                 item.waitingReply = true;
                             }
                         })
                     }
+                    // Et on termine le chargement
                     state.isLoading = false;
                 });
             }
         },
+        // Cette fonction va s'exécuter lorsque un utilisateur décline une demande d'amis
         onFriendRequestRefused: (data: any) => {
+            // Si l'id de l'émetteur de la demande d'amis correspond à notre id
             if (data.target.sender == useAuthStore().$state.user.user_id) {
                 useFriendshipStore().$patch((state: any) => {
+                    // Si la liste de nos demandes d'amis émises n'est pas vide
                     if (state.invitSendedTo.length > 0) {
+                        // On va parcourir la liste de nos demandes d'amis émises
                         state.invitSendedTo.map((item: any) => {
+                            // Si l'id du destinataire de la demande d'ami que nous avons émise correspond à l'id de l'utilisateur qui a décliné la demande d'amis
                             if (item.id == data.user.user_id) {
+                                // On retire l'utilisateur de la liste de nos demandes d'amis émises
                                 state.invitSendedTo.splice(state.invitSendedTo.indexOf(item), 1);
 
                             }
                         })
                     }
+                    // Si la liste des résultats de recherche n'est pas vide
                     if (state.searchResults.length > 0) {
+                        // On parcours la liste des résultats de recherche
                         state.searchResults.map((item: any) => {
+                            // Si l'id de l'utilisateur qui a décliné la demande d'amis correspond à l'id d'un utilisateur présent dans la liste des résultats de recherche
                             if (item.user_id == data.user.user_id) {
+                                // On lui passe la propriété pending à false
                                 item.pending = false;
+                                // Et isFriend à false afin de faire correspondre le bon état du bouton présent sur la carte de l'utilisateur
                                 item.isFriend = false;
 
                             }
                         })
                     }
-
+                    // Et on termine le chargement
                     state.isLoading = false;
                 })
             }
         },
+        // Cette fonction va s'exécuter lorsqu'un utilisateur accepte une demande d'amis
         onFriendRequestAccepted: (data: any) => {
+            // Si l'id de l'émetteur de la demande d'amis correspond à notre id
             if (data.response.data.results[0].user_id_sender == useAuthStore().$state.user.user_id) {
                 useFriendshipStore().$patch((state: any) => {
+                    // Si la liste de nos demandes d'amis émises n'est pas vide
                     if (state.invitSendedTo.length > 0) {
+                        // On va parcourir la liste de nos demandes d'amis émises
                         state.invitSendedTo.map((item: any) => {
+                            // Si l'id du destinataire de la demande d'ami que nous avons émise correspond à l'id de l'utilisateur qui a accepté la demande d'amis
                             if (item.id == data.response.data.results[0].user_id_recipient) {
+                                // On retire l'utilisateur de la liste de nos demandes d'amis émises
                                 state.invitSendedTo.splice(state.invitSendedTo.indexOf(item), 1);
                             }
                         })
                     }
+                    // Si la liste des résultats de recherche n'est pas vide
                     if (state.searchResults.length > 0) {
+                        // On parcours la liste des résultats de recherche
                         state.searchResults.map((item: any) => {
+                            // Si l'id de l'utilisateur qui a accepté la demande d'amis correspond à l'id d'un utilisateur présent dans la liste des résultats de recherche
                             if (item.user_id == data.response.data.results[0].user_id_recipient) {
+                                // On lui passe la propriété pending à false
                                 item.pending = false;
+                                // Et isFriend à true afin de faire correspondre le bon état du bouton présent sur la carte de l'utilisateur
                                 item.isFriend = true;
                             }
                         })
                     }
+                    // Et on ajoute l'utilisateur à la liste de nos amis
                     state.friends.push({
                         user_id: data.response.data.results[0].id,
                         firstname: data.response.data.results[0].firstname,
                         lastname: data.response.data.results[0].lastname,
                         picture_url: data.response.data.results[0].picture_url
                     })
+                    // Et on termine le chargement
                     state.isLoading = false;
 
                 })
+                // Puis on déclenche la fonction permettant d'ajouter l'utilisateur à notre liste d'amis interagissant avec les évènements sockets
                 useChatStore().newFriend(data.user)
             }
         },
+        // Cette fonction va s'exécuter lorsqu'un utilisateur supprime un ami
         onFriendRemoved: (data: any) => {
+            // Si notre id correspond à l'id de l'utilisateur supprimé
             if (useAuthStore().$state.user.user_id == data.target.user_id) {
                 useFriendshipStore().$patch((state: any) => {
+                    // Si la liste de nos amis n'est pas vide
                     if (state.friends.length > 0) {
+                        // On parcours la liste de nos amis
                         state.friends.map((item: any) => {
+                            // Si l'id de l'utilisateur qui a supprimé un ami correspond à l'id d'un utilisateur présent dans la liste de nos amis
                             if (item.user_id == data.user.user_id) {
+                                // On retire l'utilisateur de la liste de nos amis
                                 state.friends.splice(state.friends.indexOf(item), 1);
                             }
                         })
                     }
+                    // Si la liste des résultats de recherche n'est pas vide
                     if (state.searchResults.length > 0) {
+                        // On parcours la liste des résultats de recherche
                         state.searchResults.map((item: any) => {
+                            // Si l'id de l'utilisateur qui a supprimé un ami correspond à l'id d'un utilisateur présent dans la liste des résultats de recherche
                             if (item.user_id == data.user.user_id) {
+                                // On lui passe la propriété isFriend à false afin de faire correspondre le bon état du bouton présent sur la carte de l'utilisateur
                                 item.isFriend = false;
                             }
                         })
                     }
-                    if (useChatStore().$state.users.length > 0) {
-                        useChatStore().$patch((state: any) => {
-                            state.users.map((item: any) => {
-                                if (item.user == data.user.user_id) {
-                                    state.users.splice(state.users.indexOf(item), 1);
-                                }
-                            })
-                        })
-                    }
+                    // Et on termine le chargement
                     state.isLoading = false;
                 })
+                // Puis on déclenche la fonction permettant de supprimer l'utilisateur de notre liste d'amis interagissant avec les évènements sockets
                 useChatStore().friendDeleted(data.user.user_id);
             }
         },
+        // Cette fonction va s'exécuter lorsqu'un utilisateur annule une demande d'amis
         onFriendRequestCanceled: (data: any) => {
+            // Si l'id du destinataire correspond à notre id
             if (useAuthStore().user.user_id == data.request.user_id) {
                 useFriendshipStore().$patch((state: any) => {
+                    // Si notre liste de demandes d'amis reçu n'est pas vide
                     if (state.requests.length > 0) {
+                        // On va parcourir la liste de nos demandes d'amis reçu
                         state.requests.map((item: any) => {
+                            // Si l'id de l'émetteur de la demande d'amis correspond à l'id de l'utilisateur qui a annulé la demande d'amis
                             if (item.sender == data.user.user_id) {
+                                // On retire l'utilisateur de la liste de nos demandes d'amis reçu
                                 state.requests.splice(state.requests.indexOf(item), 1);
                             }
                         })
                     }
+                    // Et on termine le chargement
                     state.isLoading = false;
                 })
             }
