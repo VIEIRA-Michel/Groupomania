@@ -8,6 +8,8 @@ let inputComment = ref("");
 // modalComment va nous permettre de gérer l'affichage ou non de la modal de confirmation de suppression d'un commentaire
 let modalComment = ref(false);
 
+let commentToDelete = ref<any>();
+
 // On récupère les propriétés passées de l'élément parent et on définit leurs types
 const props = defineProps({
     numberOfComments: Number,
@@ -40,13 +42,15 @@ function createComment(event: any) {
 }
 
 // Cette fonction va nous permettre d'afficher la modal de confirmation dans le cas où nous souhaiterions supprimer un commentaire
-function activateModal() {
+// Et d'attribuer à la variable commentToDelete le commentaire que nous souhaitons supprimer
+function activateModal(comment: any) {
     modalComment.value = true;
+    commentToDelete.value = comment;
 }
 
-// On transmet le message à la fonction présente dans le store qui fera appel à l'api afin d'exécuter l'action de suppression du commentaire
-function deleteComment(comment: any) {
-    useCommentsStore().deleteComment(comment)
+function deleteComment() {
+    // On transmet le message à la fonction présente dans le store qui fera appel à l'api afin d'exécuter l'action de suppression du commentaire
+    useCommentsStore().deleteComment(commentToDelete.value)
     // Et on repasse la valeur de modalComment à false afin de faire disparaître la modal
     modalComment.value = false;
 }
@@ -54,6 +58,12 @@ function deleteComment(comment: any) {
 </script>
 <template>
     <div class="container-post">
+        <div class="more-post">
+            <button v-if="props.comments?.length < props.numberOfComments" @click="emit('getMore')"
+                class="more-post__button">
+                Afficher plus de commentaires
+            </button>
+        </div>
         <div v-for="com in props.comments" class="post">
             <div class="post__details">
                 <div class="post__details__info">
@@ -75,7 +85,7 @@ function deleteComment(comment: any) {
                         </div>
                     </div>
                     <div class="post__button">
-                        <fa v-if="props.user.email == com.email || props.user.role_id == 2" @click="activateModal"
+                        <fa v-if="props.user.email == com.email || props.user.role_id == 2" @click="activateModal(com)"
                             icon="fa-solid fa-trash-can" />
                     </div>
                     <Teleport to="body">
@@ -92,7 +102,7 @@ function deleteComment(comment: any) {
                                     <div class="modal-container__content__footer">
                                         <button @click="modalComment = false" type="button" class="btn btn-secondary"
                                             data-dismiss="modal">Annuler</button>
-                                        <button @click="deleteComment(com)" type="button"
+                                        <button @click="deleteComment()" type="button"
                                             class="btn btn-primary">Supprimer</button>
                                     </div>
                                 </div>
@@ -101,12 +111,6 @@ function deleteComment(comment: any) {
                     </Teleport>
                 </div>
             </div>
-        </div>
-        <div class="more-post">
-            <button v-if="props.comments?.length < props.numberOfComments" @click="emit('getMore')"
-                class="more-post__button">
-                Afficher plus de commentaires
-            </button>
         </div>
     </div>
     <div class="create_post">
@@ -129,7 +133,7 @@ function deleteComment(comment: any) {
     border-top: 1px solid #dbdbdb;
     width: 100%;
     display: flex;
-    flex-direction: column-reverse;
+    flex-direction: column;
     overflow-y: scroll;
     max-height: 507px;
 
@@ -153,7 +157,7 @@ function deleteComment(comment: any) {
                 width: 100%;
                 display: flex;
                 align-items: start;
-                justify-content: space-evenly;
+                margin-left: 15px;
 
                 &__avatar {
                     overflow: hidden;
@@ -173,6 +177,7 @@ function deleteComment(comment: any) {
                     padding: 5px;
                     border: 1px solid #4E5166;
                     width: 70%;
+                    margin-left: 10px;
 
                     &.administrator {
                         background: #ffcf77;
@@ -215,6 +220,7 @@ function deleteComment(comment: any) {
 
         &__button {
             cursor: pointer;
+            margin-left: 20px;
 
             svg {
                 padding: 5px;

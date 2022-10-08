@@ -72,49 +72,19 @@ exports.sendRequest = (req, res, next) => {
 };
 
 exports.replyToRequest = (req, res, next) => {
-    let sqlCheck = `SELECT * FROM requests_friendship WHERE user_id_recipient = ? AND approve_date IS NULL AND denied_date IS NULL;`;
+    let sql = "";
+    if (req.body.response == "accepted") {
+        sql = `UPDATE requests_friendship SET approve_date = NOW() WHERE id = ?`;
+    } else if (req.body.response == "refused") {
+        sql = `DELETE FROM requests_friendship WHERE id = ?`;
+    }
     connection.query(
-        sqlCheck, [req.user.userId], function (err, results) {
+        sql, [req.params.id], function (err, results) {
             if (err) {
                 console.log(err);
                 res.status(500).json({ message: 'Erreur lors de la vérification de la demande d\'amitié !' })
             } else {
-                if (results === undefined || results.length === 0) {
-                    res.status(400).json({ message: 'Vous n\'avez aucune demande d\'amitié !' })
-                } else {
-                    if (req.body.response == 'accepted') {
-                        let sql = `UPDATE requests_friendship SET approve_date = NOW() WHERE id = ?;`;
-                        connection.query(
-                            sql, [results[0].id], function (err, results) {
-                                if (err) {
-                                    console.log(err);
-                                    res.status(500).json({ message: 'Erreur lors de la réponse à la demande d\'amitié !' })
-                                }
-                            }
-                        )
-                    } else if (req.body.response == 'refused') {
-                        let sql = `DELETE FROM requests_friendship WHERE user_id_sender = ?;`;
-                        connection.query(
-                            sql, [req.params.id], function (err, results) {
-                                if (err) {
-                                    console.log(err);
-                                    res.status(500).json({ message: 'Erreur lors de la réponse à la demande d\'amitié !' })
-                                }
-                            }
-                        )
-                    };
-                    sql = `SELECT requests_friendship.id as requestId, requests_friendship.user_id_sender, requests_friendship.user_id_recipient, requests_friendship.request_date, requests_friendship.approve_date, requests_friendship.denied_date, users.id, users.firstname, users.lastname, users.picture_url, users.session_id, users.userID FROM requests_friendship LEFT JOIN users ON users.id = requests_friendship.user_id_recipient WHERE requests_friendship.user_id_sender = ? AND requests_friendship.user_id_recipient = ?;`;
-                    connection.query(
-                        sql, [req.params.id, req.user.userId], function (err, results) {
-                            if (err) {
-                                console.log(err);
-                                res.status(500).json({ message: 'Erreur lors de la réponse à la demande d\'amitié !' })
-                            } else {
-                                res.status(200).json({ message: 'Votre réponse à la demande d\'amitié a été prise en compte !', results })
-                            }
-                        }
-                    )
-                }
+                res.status(200).json({ message: 'Votre réponse a bien été prise en compte !' })
             }
         }
     )

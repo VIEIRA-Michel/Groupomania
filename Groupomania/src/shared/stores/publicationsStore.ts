@@ -421,23 +421,14 @@ export const usePublicationsStore = defineStore({
         deletePublication: (id: number) => {
             return new Promise((resolve, reject) => {
                 removePublication(id).then((response: any) => {
-                    let arrIdComment: any = [];
-                    let arrIdLike: any = [];
                     usePublicationsStore().$patch((state: any) => {
-                        state.publications.map((item: any) => {
-                            console.log(item);
-                            if (item.publication_id == id) {
-                                item.likes.forEach((element: any) => {
-                                    arrIdLike.push(element.like_id);
-                                })
-                                item.comments.forEach((element: any) => {
-                                    arrIdComment.push(element.comment_id);
-                                })
-                                state.publications.splice(state.publications.indexOf(item), 1);
+                        for (let i = 0; i < state.publications.length; i++) {
+                            if (state.publications[i].publication_id == id) {
+                                state.publications.splice(i, 1);
                             }
-                        });
+                        }
                         // On supprime également toutes nos notifications liées à cette publication
-                        useOtherStore().deleteRelatedNotifications(arrIdLike, arrIdComment);
+                        useOtherStore().deleteRelatedNotifications(id, "publication");
                         state.numOfResults = state.numOfResults - 1;
                         if (state.numberOfPages != 1 && state.publications.length == 0) {
                             state.page -= 1;
@@ -590,14 +581,13 @@ export const usePublicationsStore = defineStore({
                     // Si l'id d'une publication correspond à l'id de la publication dont on vient de recevoir un retrait de like
                     if (item.publication_id == data.publication.publication_id) {
                         // On va parcourir le tableau des likes de la publication
-                        item.likes.map((like: any) => {
+                        for (let i = 0; i < item.likes.length; i++) {
                             // Si l'user_id d'un like correspond à l'user_id de l'utilisateur qui a retiré son like
-                            if (like.user_id == data.user.user_id) {
-                                // On retire le like du tableau des likes
-                                item.likes.splice(item.likes.indexOf(like), 1);
+                            if (item.likes[i].user_id == data.user.user_id) {
+                                // On va supprimer le like de l'utilisateur dans le tableau des likes
+                                item.likes.splice(i, 1);
                             }
-                            return like;
-                        })
+                        }
                     }
                     return item;
                 })

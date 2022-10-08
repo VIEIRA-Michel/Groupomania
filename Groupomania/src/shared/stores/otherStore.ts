@@ -60,12 +60,9 @@ export const useOtherStore = defineStore({
                     })
                 } else if (content.user && type == "friendRequest accepted") {
                     state.notifications.unshift({
+                        ...content.user,
                         type: "friends",
-                        user_id: content.response.data.results[0].user_id_recipient,
-                        idRequest: content.response.data.results[0].requestId,
-                        firstname: content.response.data.results[0].firstname,
-                        lastname: content.response.data.results[0].lastname,
-                        picture_url: content.response.data.results[0].picture_url,
+                        idRequest: content.target.idRequest,
                         message: "a accepté votre demande d'ami",
                         date: today,
                         read: false
@@ -109,58 +106,55 @@ export const useOtherStore = defineStore({
             // Et en fonction de l'évènement socket reçu nous allons procéder au retrait de la notification en comparant avec les données reçues
             if (type == "remove like") {
                 useOtherStore().$patch((state: any) => {
-                    state.notifications.map((item: any) => {
-                        if (item.publication_id == content.publication.publication_id && item.type == "like") {
-                            state.notifications.splice(state.notifications.indexOf(item), 1);
+                    for (let i = 0; i < state.notifications.length; i++) {
+                        if (state.notifications[i].publication_id == content.publication.publication_id && state.notifications[i].type == "like") {
+                            state.notifications.splice(i, 1);
                         }
-                    })
+                    }
                 })
             } else if (type == "delete comment") {
                 useOtherStore().$patch((state: any) => {
-                    state.notifications.map((item: any) => {
-                        if (item.comment_id == content.comment.comment_id && item.type == "comment") {
-                            state.notifications.splice(state.notifications.indexOf(item), 1);
+                    for (let i = 0; i < state.notifications.length; i++) {
+                        if (state.notifications[i].comment_id == content.comment.comment_id && state.notifications[i].type == "comment") {
+                            state.notifications.splice(i, 1);
+                            i = -1;
                         }
-                    })
+                    }
                 })
             } else if (type == "friendRequest canceled") {
                 useOtherStore().$patch((state: any) => {
-                    state.notifications.map((item: any) => {
-                        if (item.idRequest == content.target.idRequest && item.type == "friendship invitation") {
-                            state.notifications.splice(state.notifications.indexOf(item), 1);
+                    for (let i = 0; i < state.notifications.length; i++) {
+                        if (state.notifications[i].idRequest == content.target.idRequest && state.notifications[i].type == "friendship invitation") {
+                            state.notifications.splice(i, 1);
+                            i = -1;
                         }
-                    })
+                    }
                 })
             } else if (type == "friend removed") {
                 useOtherStore().$patch((state: any) => {
-                    state.notifications.map((item: any) => {
-                        if (item.user_id == content.user.user_id && item.type == "friends") {
-                            state.notifications.splice(state.notifications.indexOf(item), 1);
-                        };
-                        if (item.user_id == content.user.user_id && item.type == "friendship invitation") {
-                            state.notifications.splice(state.notifications.indexOf(item), 1);
+                    for (let i = 0; i < state.notifications.length; i++) {
+                        if (state.notifications[i].user_id == content.user.user_id && state.notifications[i].type == "friends" || state.notifications[i].user_id == content.user.user_id && state.notifications[i].type == "friendship invitation") {
+                            state.notifications.splice(i, 1);
+                            i = -1;
                         }
-                    })
+                    }
                 })
             }
         },
         // Cette fonction a pour but de supprimer toutes les notifications en lien avec une publication que l'on supprimerait afin de ne plus conserver des notifications d'une publication
         // qui aurait été supprimer
-        deleteRelatedNotifications: (id_likes: any, id_comments: any) => {
+        deleteRelatedNotifications: (id: number, operation: string) => {
             useOtherStore().$patch((state: any) => {
-                state.notifications.map((item: any) => {
-                    id_likes.map((like: any) => {
-                        if (item.like_id == like && item.type == "like") {
-                            state.notifications.splice(state.notifications.indexOf(item), 1);
-                        }
-                    })
-                    id_comments.map((comment: any) => {
-                        if (item.comment_id == comment && item.type == "comment") {
-                            state.notifications.splice(state.notifications.indexOf(item), 1);
-                        }
-                    })
-                    return item;
-                })
+                for (let i = 0; i < state.notifications.length; i++) {
+                    if (operation == "publication" && state.notifications[i].publication_id == id) {
+                        state.notifications.splice(i, 1);
+                        // Je réinitialise l'index pour ne pas sauter d'élément
+                        i = -1;
+                    } else if (operation == "friend" && state.notifications[i].user_id == id) {
+                        state.notifications.splice(i, 1);
+                        i = -1;
+                    }
+                }
             })
         },
         // Cette fonction a pour but de faire disparaître la petite pastille indiquant que des nouvelles notifications non-lus sont présentes

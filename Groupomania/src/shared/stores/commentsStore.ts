@@ -135,19 +135,23 @@ export const useCommentsStore = defineStore({
             removeComment(comment.publication_id, comment.comment_id).then((response: any) => {
                 usePublicationsStore().$patch((state: any) => {
                     // On parcours à présent le state comportant les différentes publications
-                    state.publications.map((publication: any) => {
+                    for (let i = 0; i < state.publications.length; i++) {
                         // Si une publication à le même publication_id qu'un commentaire
-                        if (publication.publication_id == comment.publication_id) {
+                        if (state.publications[i].publication_id == comment.publication_id) {
                             // et que la publication contient des commentaires
-                            if (publication.comments!.length > 0) {
+                            if (state.publications[i].comments.length > 0) {
                                 // On décrémente la valeur de la propriété indiquant le nombre de commentaires présents sur la publication
-                                publication.numberOfComments = publication.numberOfComments! - 1;
+                                state.publications[i].numberOfComments = state.publications[i].numberOfComments - 1;
                                 // Et on supprime le commentaire du tableau de la publication comportant les commentaires
-                                publication.comments!.splice(publication.comments!.findIndex((item: any) => item.comment_id === comment.comment_id), 1);
+                                for (let j = 0; j < state.publications[i].comments.length; j++) {
+                                    if (state.publications[i].comments[j].comment_id == comment.comment_id) {
+                                        state.publications[i].comments.splice(j, 1);
+                                    }
+                                }
+                                // state.publications[i].comments.splice(state.publications[i].comments.findIndex((item: any) => item.comment_id == comment.comment_id), 1);
                             }
                         }
-                        return publication;
-                    });
+                    }
                 })
                 // Et on émet l'évènement socket en lien avec le commentaire que l'on désire supprimer
                 socket.emit('delete comment', { comment, user: useAuthStore().$state.user });
@@ -204,7 +208,7 @@ export const useCommentsStore = defineStore({
                                     console.log('comment already exists');
                                 } else {
                                     // S'il n'est pas présent on l'ajoute à notre liste des commentaires sur la publication
-                                    publication.comments.unshift(obj.value)
+                                    publication.comments.push(obj.value)
                                     // Et on incrémente la quantité de commentaire sur la publication
                                     publication.numberOfComments = publication.numberOfComments! + 1;
                                 }
@@ -260,7 +264,7 @@ export const useCommentsStore = defineStore({
                     // Si une publication a le même publication_id que les données reçues
                     if (item.publication_id == data.comment.publication_id) {
                         // On ajoute le commentaire au début de la liste des commentaires
-                        item.comments.unshift(data.comment);
+                        item.comments.push(data.comment);
                         // Et on incrémente le nombre de commentaire
                         item.numberOfComments = item.numberOfComments + 1;
                     }

@@ -4,6 +4,7 @@ import { useAuthStore } from '../stores/authStore';
 import { fetchRequests, fetchFriends, acceptOrDecline, deleteFriend, searchFriend, addFriend, cancelReq, checkReq } from '../services/friends.service';
 import { useChatStore } from './chatStore';
 import { useOtherStore } from './otherStore';
+import moment from 'moment';
 
 interface FriendshipState {
     friends: any[];
@@ -145,16 +146,18 @@ export const useFriendshipStore = defineStore({
         acceptOrDeclineRequest: (req: any, answer: string) => {
             return new Promise((resolve, reject) => {
                 // On exécute la requête qui va nous permettre d'accepter ou de refuser une demande d'ami avec notre réponse et la requête en question passé en paramètre
-                acceptOrDecline(req.sender, answer).then((response: any) => {
+                acceptOrDecline(req.idRequest, answer).then((response: any) => {
                     // Si nous déclinons la demande d'ami
                     if (answer == 'refused') {
                         useFriendshipStore().$patch((state: any) => {
                             // Nous allons parcourir nos demande d'amis reçues
-                            state.requests.map((item: any) => {
+                            for (let i = 0; i < state.requests.length; i++) {
                                 // Et dans le cas où l'id d'un utilisateur d'une des demandes d'ami correspond à l'id de l'utilisateur de la demande d'ami que nous venons de décliner
-                                // Nous allons la supprimer de notre liste de demande d'amis reçues
-                                item.sender == req.sender ? state.requests.splice(state.requests.indexOf(item), 1) : "";
-                            });
+                                if (state.requests[i].sender == req.sender) {
+                                    // Nous allons la supprimer de notre liste de demande d'amis reçues
+                                    state.requests.splice(i, 1);
+                                }
+                            }
                             // Nous allons ensuite parcourir la liste des résultats de recherche d'amis
                             state.searchResults.map((item: any) => {
                                 // Et si l'id d'un utilisateur correspond à l'id de l'émetteur de la demande d'ami que nous venons de décliner
@@ -166,21 +169,13 @@ export const useFriendshipStore = defineStore({
                     } else {
                         useFriendshipStore().$patch((state: any) => {
                             // Nous parcourons nos demande d'amis reçues
-                            state.requests.map((item: any) => {
+                            for (let i = 0; i < state.requests.length; i++) {
                                 // Et dans le cas où l'id d'un utilisateur d'une des demandes d'ami reçu correspond à l'id de l'utilisateur de la demande d'ami que nous venons d'accepter
-                                if (item.sender == req.sender) {
-                                    // On l'ajoute à notre liste d'amis
-                                    state.friends.push({
-                                        user_id: item.sender,
-                                        firstname: item.firstname,
-                                        lastname: item.lastname,
-                                        picture_url: item.picture_url,
-                                        email: item.email
-                                    })
+                                if (state.requests[i].sender == req.sender) {
                                     // Puis on supprime la demande de notre liste de demande d'amis reçues
-                                    state.requests.splice(state.requests.indexOf(item), 1);
+                                    state.requests.splice(i, 1);
                                 }
-                            });
+                            }
                             // Nous parcourons ensuite la liste des résultats de recherche d'utilisateur
                             state.searchResults.map((item: any) => {
                                 // Si l'id d'un utilisateur correspond à l'émetteur de la demande d'ami que nous venons d'accepter
@@ -191,6 +186,11 @@ export const useFriendshipStore = defineStore({
                                     item.waitingReply = false;
                                 }
                             });
+                            // On l'ajoute ensuite à notre liste d'amis
+                            state.friends.push({
+                                ...req,
+                                user_id: req.sender,
+                            })
                         })
                         // Puis on déclenche la fonction permettant d'ajouter l'ami dans notre liste d'amis interagissant avec les sockets en lui passant en paramètre la demande d'ami
                         useChatStore().newFriend(req);
@@ -214,13 +214,13 @@ export const useFriendshipStore = defineStore({
                 deleteFriend(id).then((response: any) => {
                     useFriendshipStore().$patch((state: any) => {
                         // On va parcourir notre liste d'amis
-                        state.friends.map((item: any) => {
+                        for (let i = 0; i < state.friends.length; i++) {
                             // Et dans le cas où l'id d'un utilisateur de notre liste d'amis correspond à l'id de l'ami que nous venons de supprimer
-                            if (item.user_id == id) {
+                            if (state.friends[i].user_id == id) {
                                 // On le supprime de notre liste d'amis
-                                state.friends.splice(state.friends.indexOf(item), 1);
+                                state.friends.splice(i, 1);
                             }
-                        })
+                        }
                         // On va ensuite parcourir la liste des résultats de recherche d'utilisateur
                         state.searchResults.map((item: any) => {
                             // Et dans le cas où l'id d'un utilisateur correspond à l'id de l'ami que nous venons de supprimer
@@ -230,16 +230,7 @@ export const useFriendshipStore = defineStore({
                             }
                         })
                     })
-                    useOtherStore().$patch((state: any) => {
-                        state.notifications.map((item: any) => {
-                            // if (item.type == 'friendship' && item.user_id == id || item.type == 'friends' && item.user_id == id) {
-                            //     state.notifications.splice(state.notifications.indexOf(item), 1);
-                            // }
-                            // if (item.user_id == id) {
-                            //     state.notifications.splice(state.notifications.indexOf(item), 1);
-                            // }
-                        })
-                    })
+                    useOtherStore().deleteRelatedNotifications(id, "friend");
                     useChatStore().friendDeleted(id);
                     resolve(response);
                 }).catch(error => {
@@ -343,6 +334,7 @@ export const useFriendshipStore = defineStore({
                                 email: response.data.results[0].email,
                                 firstname: response.data.results[0].firstname,
                                 id: response.data.results[0].id,
+                                idRequest: response.data.results[0].requestId,
                                 lastname: response.data.results[0].lastname,
                                 picture_url: response.data.results[0].picture_url,
                                 request_date: response.data.results[0].request_date,
@@ -378,14 +370,16 @@ export const useFriendshipStore = defineStore({
                                 item.pending = false;
                             }
                         })
+
                         // On va parcourir la liste des demandes d'amis que nous avons émise
-                        state.invitSendedTo.map((item: any) => {
+                        for (let i = 0; i < state.invitSendedTo.length; i++) {
                             // Si l'id de l'utilisateur pour lequel nous avons souhaité annuler une demande d'amis correspond à l'id d'un utilisateur de la liste des demandes d'amis que nous avons émise
-                            if (item.id == user_id) {
+                            if (state.invitSendedTo[i].id == user_id) {
                                 // On retire l'utilisateur de la liste des demandes d'amis que nous avons émise
-                                state.invitSendedTo.splice(state.invitSendedTo.indexOf(item), 1);
+                                state.invitSendedTo.splice(i, 1);
+                                i = -1;
                             }
-                        })
+                        }
                     })
                     resolve(response);
                 }).catch(error => {
@@ -408,7 +402,7 @@ export const useFriendshipStore = defineStore({
                         // On va réinitialiser la liste des demandes d'amis que nous avons émise
                         state.invitSendedTo.splice(0, state.invitSendedTo.length),
                             // On va parcourir les résultats de la requête
-                            response.data.results.map((item: never) => {
+                            response.data.results.forEach((item: any) => {
                                 // Et ajouté chaque élément à la liste des demandes d'amis que nous avons émise
                                 state.invitSendedTo.push(item);
                             });
@@ -460,14 +454,14 @@ export const useFriendshipStore = defineStore({
                     // Si la liste de nos demandes d'amis émises n'est pas vide
                     if (state.invitSendedTo.length > 0) {
                         // On va parcourir la liste de nos demandes d'amis émises
-                        state.invitSendedTo.map((item: any) => {
-                            // Si l'id du destinataire de la demande d'ami que nous avons émise correspond à l'id de l'utilisateur qui a décliné la demande d'amis
-                            if (item.id == data.user.user_id) {
+                        for (let i = 0; i < state.invitSendedTo.length; i++) {
+                            if (state.invitSendedTo[i].id == data.user.user_id) {
                                 // On retire l'utilisateur de la liste de nos demandes d'amis émises
-                                state.invitSendedTo.splice(state.invitSendedTo.indexOf(item), 1);
-
+                                state.invitSendedTo.splice(i, 1);
+                                // Je réinitialise l'index pour ne pas sauter d'élément
+                                i = -1;
                             }
-                        })
+                        }
                     }
                     // Si la liste des résultats de recherche n'est pas vide
                     if (state.searchResults.length > 0) {
@@ -491,25 +485,26 @@ export const useFriendshipStore = defineStore({
         // Cette fonction va s'exécuter lorsqu'un utilisateur accepte une demande d'amis
         onFriendRequestAccepted: (data: any) => {
             // Si l'id de l'émetteur de la demande d'amis correspond à notre id
-            if (data.response.data.results[0].user_id_sender == useAuthStore().$state.user.user_id) {
+            if (data.target.sender == useAuthStore().$state.user.user_id) {
                 useFriendshipStore().$patch((state: any) => {
                     // Si la liste de nos demandes d'amis émises n'est pas vide
                     if (state.invitSendedTo.length > 0) {
                         // On va parcourir la liste de nos demandes d'amis émises
-                        state.invitSendedTo.map((item: any) => {
-                            // Si l'id du destinataire de la demande d'ami que nous avons émise correspond à l'id de l'utilisateur qui a accepté la demande d'amis
-                            if (item.id == data.response.data.results[0].user_id_recipient) {
+                        for (let i = 0; i < state.invitSendedTo.length; i++) {
+                            if (state.invitSendedTo[i].id == data.target.recipient) {
                                 // On retire l'utilisateur de la liste de nos demandes d'amis émises
-                                state.invitSendedTo.splice(state.invitSendedTo.indexOf(item), 1);
+                                state.invitSendedTo.splice(i, 1);
+                                // Je réinitialise l'index pour ne pas sauter d'élément
+                                i = -1;
                             }
-                        })
+                        }
                     }
                     // Si la liste des résultats de recherche n'est pas vide
                     if (state.searchResults.length > 0) {
                         // On parcours la liste des résultats de recherche
                         state.searchResults.map((item: any) => {
                             // Si l'id de l'utilisateur qui a accepté la demande d'amis correspond à l'id d'un utilisateur présent dans la liste des résultats de recherche
-                            if (item.user_id == data.response.data.results[0].user_id_recipient) {
+                            if (item.user_id == data.target.recipient) {
                                 // On lui passe la propriété pending à false
                                 item.pending = false;
                                 // Et isFriend à true afin de faire correspondre le bon état du bouton présent sur la carte de l'utilisateur
@@ -519,10 +514,8 @@ export const useFriendshipStore = defineStore({
                     }
                     // Et on ajoute l'utilisateur à la liste de nos amis
                     state.friends.push({
-                        user_id: data.response.data.results[0].id,
-                        firstname: data.response.data.results[0].firstname,
-                        lastname: data.response.data.results[0].lastname,
-                        picture_url: data.response.data.results[0].picture_url
+                        ...data.user,
+                        idRequest: data.target.idRequest,
                     })
                     // Et on termine le chargement
                     state.isLoading = false;
@@ -540,13 +533,16 @@ export const useFriendshipStore = defineStore({
                     // Si la liste de nos amis n'est pas vide
                     if (state.friends.length > 0) {
                         // On parcours la liste de nos amis
-                        state.friends.map((item: any) => {
+                        for (let i = 0; i < state.friends.length; i++) {
                             // Si l'id de l'utilisateur qui a supprimé un ami correspond à l'id d'un utilisateur présent dans la liste de nos amis
-                            if (item.user_id == data.user.user_id) {
+                            if (state.friends[i].user_id == data.user.user_id) {
                                 // On retire l'utilisateur de la liste de nos amis
-                                state.friends.splice(state.friends.indexOf(item), 1);
+                                state.friends.splice(i, 1);
+                                // Je réinitialise l'index pour ne pas sauter d'élément
+                                i = -1;
                             }
-                        })
+                        }
+                        useOtherStore().deleteRelatedNotifications(data.user.user_id, "friend");
                     }
                     // Si la liste des résultats de recherche n'est pas vide
                     if (state.searchResults.length > 0) {
@@ -574,13 +570,13 @@ export const useFriendshipStore = defineStore({
                     // Si notre liste de demandes d'amis reçu n'est pas vide
                     if (state.requests.length > 0) {
                         // On va parcourir la liste de nos demandes d'amis reçu
-                        state.requests.map((item: any) => {
+                        for (let i = 0; i < state.requests.length; i++) {
                             // Si l'id de l'émetteur de la demande d'amis correspond à l'id de l'utilisateur qui a annulé la demande d'amis
-                            if (item.sender == data.user.user_id) {
+                            if (state.requests[i].sender == data.user.user_id) {
                                 // On retire l'utilisateur de la liste de nos demandes d'amis reçu
-                                state.requests.splice(state.requests.indexOf(item), 1);
+                                state.requests.splice(i, 1);
                             }
-                        })
+                        }
                     }
                     // Et on termine le chargement
                     state.isLoading = false;

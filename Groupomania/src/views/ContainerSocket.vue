@@ -131,11 +131,11 @@ onBeforeMount(() => {
                             if (event == 'like' && args[0].publication.user_id == user.value.user_id
                                 || event == 'has commented' && args[0].comment.user_id == user.value.user_id
                                 || event == 'friendRequest sended' && args[0].request.recipient == user.value.user_id
-                                || event == 'friendRequest accepted' && args[0].response.data.results[0].user_id_sender == user.value.user_id) {
+                                || event == 'friendRequest accepted' && args[0].target.sender == user.value.user_id) {
                                 // Ceci va nous permettre de récupérer certains évènements émis par le serveur socket et pour chaque évènement cité dans les conditions, déclencher la fonction qui va nous permettre d'ajouter les informations dans nos notifications
                                 useOtherStore().notificationPush(event, args[0])
                             } else if (event == 'remove like' && args[0].publication.user_id == user.value.user_id
-                                || event == 'delete comment' && args[0].comment.user_id
+                                || event == 'delete comment' && args[0].comment.user_id == user.value.user_id
                                 || event == 'friendRequest canceled' && args[0].request.user_id == user.value.user_id
                                 || event == 'friend removed' && args[0].target.user_id == user.value.user_id) {
                                 // Ceci va nous permettre de récupérer certains évènements émis par le serveur socket et pour chaque évènement cité dans les conditions, déclencher la fonction qui va nous permettre de supprimer les informations dans nos notifications

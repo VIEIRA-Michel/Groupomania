@@ -52,11 +52,11 @@ export const useChatStore = defineStore({
         // Dans le cas où l'on supprime un utilisateur ou qu'un utilisateur nous supprime de sa liste d'ami on viendra également le retirer de notre liste d'amis spécialement conçu pour les sockets
         friendDeleted: (user_id: number) => {
             useChatStore().$patch((state: any) => {
-                state.friendsConnected.map((friend: any) => {
-                    if (friend.user == user_id) {
-                        state.friendsConnected.splice(state.friendsConnected.indexOf(friend), 1);
+                for (let i = 0; i < state.friendsConnected.length; i++) {
+                    if (state.friendsConnected[i].user == user_id) {
+                        state.friendsConnected.splice(i, 1);
                     }
-                })
+                }
                 // Et dans le cas où nous serions présents dans la page de messagerie avec la conversation ouverte avec un utilisateur et que ce même utilisateur venais à nous supprimé on fermerait la conversation
                 if (state.selectedUser !== null) {
                     if (state.selectedUser.user == user_id) {
@@ -74,11 +74,11 @@ export const useChatStore = defineStore({
                         state.selectedUser.messages.splice(0, state.selectedUser.messages.length);
                     }
                     // Nous parcourons notre liste d'ami spécialement conçu pour les sockets
-                    state.friendsConnected.map((friend: any) => {
+                    for (let i = 0; i < state.friendsConnected.length; i++) {
                         // Et si l'id d'un ami correspond à l'id que l'on reçoit
-                        if (friend.user == user) {
+                        if (state.friendsConnected[i].user == user) {
                             // On récupère les informations de notre ami
-                            state.selectedUser = friend;
+                            state.selectedUser = state.friendsConnected[i];
                             // Puis on interroge l'api afin de savoir combien de messages sont présents dans notre conversation
                             useChatStore().getCountOfMessages(user).then((count: any) => {
                                 // Et nous récupérons un nombre limité de nos messages afin de ne pas avoir un délais d'attente trop long
@@ -112,7 +112,7 @@ export const useChatStore = defineStore({
                                 };
                             })
                         }
-                    })
+                    }
                 })
             } else {
                 useChatStore().$patch((state: any) => {

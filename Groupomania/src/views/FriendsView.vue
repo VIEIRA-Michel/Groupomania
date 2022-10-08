@@ -33,6 +33,7 @@ let invitToBeCanceled = ref(null);
 
 // Cette fonction va nous permettre de transmettre l'id de notre ami à la fonction présente dans le store communiquant directement à l'api
 function removeFriend(utilisateur: number) {
+    console.log(utilisateur);
     useFriendshipStore().removeFriend(utilisateur.user_id).then((response: any) => {
         // Si tout s'est bien passé on réinitialise la valeur de open afin que la modal puisse de nouveau s'ouvrir dans le cas où nous souhaiterions supprimé par la suite un autre ami
         open.value = false;
@@ -68,7 +69,7 @@ function replyToRequest(invitation: any, reply: string) {
     useFriendshipStore().acceptOrDeclineRequest(invitation, reply).then((response) => {
         // Si tout s'est bien passé on émet l'évènement en lien afin de prévenir le serveur que nous avons accepté ou refusé une demande d'ami
         if (reply == 'accepted') {
-            socket.emit('friendRequest accepted', { response, user: useAuthStore().$state.user });
+            socket.emit('friendRequest accepted', { user: useAuthStore().$state.user, target: invitation });
         } else {
             socket.emit('friendRequest refused', { user: useAuthStore().$state.user, target: invitation });
         }
