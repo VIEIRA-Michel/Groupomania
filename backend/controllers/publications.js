@@ -61,20 +61,6 @@ exports.getAllPublications = (req, res, next) => {
     )
 };
 
-exports.getPublicationsOfOnePerson = (req, res, next) => {
-    let sql = `SELECT * FROM publications WHERE user_id = ?;`;
-    connection.query(
-        sql, [req.params.id], function (err, results) {
-            if (err) {
-                console.log(err);
-                res.status(500).json({ message: 'Erreur lors de la récupération des publications' })
-            } else {
-                res.status(200).json({ Publications: results })
-            }
-        }
-    )
-};
-
 exports.getQtyOfPublications = (req, res, next) => {
     let sql = `SELECT COUNT(publications.id) FROM publications LEFT JOIN users ON users.id = publications.user_id AND users.account_disabled IS NULL LEFT JOIN requests_friendship senders ON users.id = senders.user_id_sender LEFT JOIN requests_friendship recipients ON users.id = recipients.user_id_recipient WHERE users.id = ? OR (senders.user_id_recipient = ? AND senders.approve_date IS NOT NULL) OR (recipients.user_id_sender = ? AND recipients.approve_date IS NOT NULL);`;
     connection.query(

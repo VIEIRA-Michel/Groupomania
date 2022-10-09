@@ -308,15 +308,19 @@ function deletePublication(publication: any) {
         // On récupère les publications de la page suivante s'il existe une page après celle sur laquelle nous sommes
         usePublicationsStore().fetchAllPublication(page.value + 1, true).then((response: any) => {
             // On fait appel à la fonction présente dans le store qui communique avec l'api afin de supprimer une publication
+            // On émet l'évènement en lien afin que mes amis ne voient plus cette publication dans leur fil d'actualité
+            socket.emit('delete publication', { publication: publication, user: user.value });
             usePublicationsStore().deletePublication(publication.publication_id).then((response: any) => {
-                // On émet l'évènement en lien afin que mes amis ne voient plus cette publication dans leur fil d'actualité
-                socket.emit('delete publication', { publication: publication, user: user.value });
+                // On supprime également toutes nos notifications liées à cette publication
+                useOtherStore().deleteRelatedNotifications(publication.publication_id, "publication");
             });
         })
         // Si aucune page n'est présente après celle sur laquelle nous sommes
     } else {
         // Nous nous contentons juste de supprimer la publication d'émettre l'évènement en lien et de supprimer les notifications en lien avec cette publication
         usePublicationsStore().deletePublication(publication.publication_id).then((response: any) => {
+            // On supprime également toutes nos notifications liées à cette publication
+            useOtherStore().deleteRelatedNotifications(publication.publication_id, "publication");
             socket.emit('delete publication', { publication: publication, user: user.value });
         });
     }
@@ -625,8 +629,8 @@ onBeforeMount(() => {
                                 <template v-if="publication.displayComments">
                                     <Comment :publication_id="publication.publication_id" :user="user"
                                         :numberOfComments="publication.numberOfComments"
-                                        :comments="publication.comments"
-                                        @getMore="useCommentsStore().getMoreComments(publication)" />
+                                        :comments="publication.comments" :cache="publication.cache"
+                                        @getMore="useCommentsStore().getMoreComments(publication.publication_id)" />
                                 </template>
                             </div>
                         </div>

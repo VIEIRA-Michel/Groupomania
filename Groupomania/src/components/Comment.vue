@@ -15,7 +15,8 @@ const props = defineProps({
     numberOfComments: Number,
     publication_id: Number,
     user: Object,
-    comments: Array
+    comments: Array,
+    cache: Array
 });
 
 // On définit le nom de l'évènement que l'on souhaite communiquer à l'élément parent afin qu'il déclenche l'action en lien avec cette évènement
@@ -31,14 +32,13 @@ function autoResize(event: any) {
 
 // On appel la fonction présente dans le store qui va créer le commentaire du côté de notre state et également envoyer notre saisie à l'api' afin de créer le commentaire dans la base de données
 function createComment(event: any) {
-    event.preventDefault();
-    if (inputComment.value.length > 1 && inputComment.value != " ") {
-        useCommentsStore().createComment(props.publication_id, inputComment.value).then((response) => {
+    if (inputComment.value.trim() !== "") {
+        useCommentsStore().createComment(props.publication_id!, inputComment.value.trim()).then((response) => {
             inputComment.value = "";
             // Et on réinitialise la taille du champ de saisie de création de commentaire 
-            event.target.style.height = 'auto';
+            event.target[0].style.height = 'auto';
         });
-    };
+    }
 }
 
 // Cette fonction va nous permettre d'afficher la modal de confirmation dans le cas où nous souhaiterions supprimer un commentaire
@@ -49,17 +49,22 @@ function activateModal(comment: any) {
 }
 
 function deleteComment() {
-    // On transmet le message à la fonction présente dans le store qui fera appel à l'api afin d'exécuter l'action de suppression du commentaire
-    useCommentsStore().deleteComment(commentToDelete.value)
-    // Et on repasse la valeur de modalComment à false afin de faire disparaître la modal
+    if (props.comments!.length < props.numberOfComments! && props.cache!.length == 0) {
+        useCommentsStore().getAllComments(props.publication_id!, 10, 5, true).then((response: any) => {
+            useCommentsStore().deleteComment(commentToDelete.value)
+        })
+        // On transmet le message à la fonction présente dans le store qui fera appel à l'api afin d'exécuter l'action de suppression du commentaire
+        // Et on repasse la valeur de modalComment à false afin de faire disparaître la modal
+    } else {
+        useCommentsStore().deleteComment(commentToDelete.value)
+    }
     modalComment.value = false;
 }
-
 </script>
 <template>
-    <div class="container-post">
+    <div v-if="props.comments!.length > 0" class="container-post">
         <div class="more-post">
-            <button v-if="props.comments?.length < props.numberOfComments" @click="emit('getMore')"
+            <button v-if="props.comments?.length! < props.numberOfComments!" @click="emit('getMore')"
                 class="more-post__button">
                 Afficher plus de commentaires
             </button>
@@ -116,9 +121,10 @@ function deleteComment() {
     <div class="create_post">
         <div class="create_post__info">
             <div class="create_post__info__content">
-                <form @keyup.enter="createComment($event)">
+                <form @submit.prevent="createComment($event)">
                     <textarea v-model="inputComment" placeholder="Écrivez un commentaire..."
                         class="create_post__info__content__input" @input="autoResize($event)"></textarea>
+                    <input type="submit">
                 </form>
             </div>
         </div>
@@ -136,6 +142,7 @@ function deleteComment() {
     flex-direction: column;
     overflow-y: scroll;
     max-height: 507px;
+    padding-bottom: 20px;
 
     .post {
         display: flex;
@@ -256,7 +263,10 @@ function deleteComment() {
     display: flex;
     justify-content: center;
     align-items: center;
-    margin: 20px 0;
+    padding: 20px 0;
+    background: #f5f5f5;
+    border-radius: 0 0 5px 5px;
+    border-top: 1px solid #dbdbdb;
 
     &__top {
         margin-left: 10px;
@@ -278,7 +288,6 @@ function deleteComment() {
 
     &__info {
         // margin-left: 8px;
-        border: 1px solid #dbdbdb;
         border-radius: 5px;
         width: 90%;
 
@@ -289,9 +298,6 @@ function deleteComment() {
         }
 
         &__content {
-            background: #FFFFFF;
-            border-radius: 25px;
-
             &__input {
                 border: none;
                 outline: none;
@@ -302,6 +308,7 @@ function deleteComment() {
                 border: none;
                 width: 98%;
                 border-radius: 5px;
+                border: 1px solid #dbdbdb;
                 background-color: rgb(255, 255, 255);
                 color: rgb(0, 0, 0);
 
@@ -316,7 +323,27 @@ function deleteComment() {
             }
 
             form {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: end;
 
+                input {
+                    background-color: #f5f5f5;
+                    margin-top: 20px;
+                    border-color: #FD2D01;
+                    color: #FD2D01;
+                    padding: 5px 10px;
+                    border: 1px solid #FD2D01;
+                    border-radius: 5px;
+                    cursor: pointer;
+                    transition: all 0.3s ease-in-out;
+
+                    &:hover {
+                        background: #FD2D01;
+                        color: #ffffff;
+                        transition: 0.3s all;
+                    }
+                }
 
                 svg {
                     cursor: pointer;

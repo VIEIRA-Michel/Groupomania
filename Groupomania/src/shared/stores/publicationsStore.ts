@@ -66,6 +66,7 @@ export const usePublicationsStore = defineStore({
                             publication_date: publicationDate.join(" "),
                             likes: [],
                             comments: [],
+                            cache: [],
                             menu: false,
                             displayComments: false,
                             editMode: false,
@@ -207,6 +208,7 @@ export const usePublicationsStore = defineStore({
                                         displayComments: false,
                                         likes: [],
                                         comments: [],
+                                        cache: [],
                                         numberOfComments: 0,
                                         publication_date: publicationDate.join(" "),
                                         publication_edit: publicationEdit ? publicationEdit.join(" ") : null,
@@ -225,6 +227,7 @@ export const usePublicationsStore = defineStore({
                                         displayComments: false,
                                         likes: [],
                                         comments: [],
+                                        cache: [],
                                         numberOfComments: 0,
                                         publication_date: publicationDate.join(" "),
                                         publication_edit: publicationEdit ? publicationEdit.join(" ") : null,
@@ -420,22 +423,31 @@ export const usePublicationsStore = defineStore({
         // Cette fonction va nous servir à supprimer une publication
         deletePublication: (id: number) => {
             return new Promise((resolve, reject) => {
+                // On va exécuter la requête permettant de supprimer une publication en transmettant l'id de la publication
                 removePublication(id).then((response: any) => {
                     usePublicationsStore().$patch((state: any) => {
+                        // Si tout s'est bien passé on va parcourir les publications
                         for (let i = 0; i < state.publications.length; i++) {
+                            // Si l'id d'une publication correspond à l'id de la publication que l'on souhaite supprimée
                             if (state.publications[i].publication_id == id) {
+                                // On va supprimer la publication du state
                                 state.publications.splice(i, 1);
                             }
                         }
-                        // On supprime également toutes nos notifications liées à cette publication
-                        useOtherStore().deleteRelatedNotifications(id, "publication");
+                        // On réduit le nombre de publications de 1
                         state.numOfResults = state.numOfResults - 1;
+                        // S'il y a plus de 1 page et que le nombre de publications est égal à 0
                         if (state.numberOfPages != 1 && state.publications.length == 0) {
+                            // On est redirigé vers la page précédente
                             state.page -= 1;
+                            // S'il y a plus de 1 page et que le nombre de publications est différent de 5
                         } else if (state.numberOfPages != 1 && state.publications.length != 5) {
+                            // Et qu'il y a des publications dans le cache
                             if (state.cache.length > 0) {
+                                // On va ajouter la première publication du cache à la fin de la liste des publications
                                 state.publications.push(state.cache.shift());
                             }
+                            // Et calculer ensuite le nombre de page selon le nombre de publications
                             state.numberOfPages = Math.floor(state.numOfResults / 5 - 0.2) + 1;
                         };
                     })
@@ -654,87 +666,68 @@ export const usePublicationsStore = defineStore({
         onDeletePublication: (data: any) => {
             usePublicationsStore().$patch((state: any) => {
                 // On va parcourir les publications
-                state.publications.map((item: any) => {
-                    // Si l'id d'une publication correspond à l'id de la publication dont on vient de recevoir une suppression
-                    if (item.publication_id == data.publication.publication_id) {
-                        // On va exécuter la fonction permettant de connaître le nombre total de publications
-                        usePublicationsStore().fetchCount().then((response: any) => {
-                            usePublicationsStore().$patch((state: any) => {
-                                // Puis modifier la valeur du nombre de publications
-                                state.numOfResults = response.qty;
-                                // et le nombre de pages au total
-                                state.numberOfPages = Math.floor(state.numOfResults / 5 - 0.2) + 1;
-                            })
-                            let newValue = ref(0);
-                            // On va vérifier si la valeur de la page où nous sommes est égal au nombre de pages au total
-                            // Si c'est le cas newValue sera égal à la valeur de la page où nous sommes + 1
-                            // Dans le cas contraire newValue sera égal à la valeur de la page où nous sommes uniquement
-                            state.page.value < usePublicationsStore().$state.numberOfPages ? newValue.value = state.page.value + 1 : newValue.value = state.page.value;
-                            // On va ensuite vérifier si des éléments sont présents dans le cache
-                            if (usePublicationsStore().$state.cache.length > 0) {
-                                usePublicationsStore().$patch((state: any) => {
-                                    // On va parcourir le tableau des publications
-                                    state.publications.map((item: any) => {
-                                        // Si l'id d'une publication correspond à l'id de la publication qu'un utilisateur vient de supprimer
-                                        if (item.publication_id == data.publication.publication_id) {
-                                            // On va retirer cette publication du tableau des publications
-                                            state.publications.splice(state.publications.indexOf(item), 1);
-                                            // On va retirer le premier élément présent dans le cache et l'enregistrer dans la variable
-                                            let tmp = ref(state.cache.shift());
-                                            // On va ensuite parcourir le tableau des publications et vérifier si l'id d'une publication correspond avec l'id de la publication
-                                            // stockée dans notre variable tmp si ce n'est pas le cas on va l'ajouter a la fin du tableau des publications
-                                            state.publications.find((item: any) => item.publication_id == tmp._value.publication_id) ? "" : state.publications.push(tmp._value);
-                                        }
-                                    })
-                                })
-                                // Dans le cas où aucun élément n'est présent dans le cache
-                            } else {
-                                // On va exécuter la fonction permettant de récupérer les publications afin de les stocker dans le cache
-                                usePublicationsStore().fetchAllPublication(newValue.value, true).then((response: any) => {
-                                    usePublicationsStore().$patch((state: any) => {
-                                        // On va ensuite parcourir le tableau des publications
-                                        state.publications.map((item: any) => {
-                                            // Si l'id d'une publication correspond à l'id de la publication qu'un utilisateur vient de supprimer
-                                            if (item.publication_id == data.publication.publication_id) {
-                                                // On va retirer cette publication du tableau des publications
-                                                state.publications.splice(state.publications.indexOf(item), 1);
-                                            }
-                                        });
-                                        // On va parcourir le cache
-                                        state.cache.map((item: any) => {
-                                            // Si l'id d'une publication correspond à l'id de la publication qu'un utilisateur vient de supprimer
-                                            if (item.publication_id == data.publication.publication_id) {
-                                                // On va la retirer du cache
-                                                state.cache.splice(state.cache.indexOf(item), 1);
-                                            }
-                                        })
-                                        // Si le nombre total de page est différent de 1 et que le nombre de publications est égal à 0
-                                        if (state.numberOfPages != 1 && state.publications.length == 0) {
-                                            // On va changer la valeur de la page où nous sommes pour revenir à la page précédente
-                                            state.page -= 1;
-                                            // Si le nombre total de page est différent de 1 et que le nombre total de publications est différent de 5
-                                        } else if (state.numberOfPages != 1 && state.publications.length != 5) {
-                                            // On va retirer le premier élément présent dans le cache pour l'introduire a la fin de nos publications
-                                            state.publications.push(state.cache.shift());
-                                        };
-                                    });
-                                }).catch((error) => {
-                                    // Dans le cas où le code erreur est le 429 cela signifie qu'un trop grand nombre de requête a été émise et donc 
-                                    // on va déclencher la fonction modifiant certaines valeurs du state permettant l'affichage de la modal d'avertissement
-                                    if (error.response.status == 429) {
-                                        useAuthStore().displayWarning(error.response.data);
-                                    };
-                                });
+                if (state.page < state.numberOfPages && state.cache.length == 0 && state.publications.length < state.numOfResults) {
+                    // On récupère les publications de la page suivante s'il existe une page après celle sur laquelle nous sommes
+                    usePublicationsStore().fetchAllPublication(state.page + 1, true).then((response: any) => {
+                        // Puis on parcours les publications
+                        for (let i = 0; i < state.publications.length; i++) {
+                            // Si l'id d'une publication correspond à l'id de la publication dont on vient de recevoir une suppression
+                            if (state.publications[i].publication_id == data.publication.publication_id) {
+                                // On va supprimer la publication de la liste des publications
+                                state.publications.splice(i, 1);
                             }
-                        }).catch((error) => {
-                            // Dans le cas où le code erreur est le 429 cela signifie qu'un trop grand nombre de requête a été émise et donc 
-                            // on va déclencher la fonction modifiant certaines valeurs du state permettant l'affichage de la modal d'avertissement
-                            if (error.response.status == 429) {
-                                useAuthStore().displayWarning(error.response.data);
-                            };
-                        });
+                        }
+                        // On réduit le nombre de publications de 1
+                        state.numOfResults = state.numOfResults - 1;
+                        // S'il y a plus de 1 page et que le nombre de publications est égal à 0
+                        if (state.numberOfPages != 1 && state.publications.length == 0) {
+                            // On est redirigé vers la page précédente
+                            state.page -= 1;
+                            // S'il y a plus de 1 page et que le nombre de publications est différent de 5
+                        } else if (state.numberOfPages != 1 && state.publications.length != 5) {
+                            // Et qu'il y a des publications dans le cache
+                            if (state.cache.length > 0) {
+                                // On va ajouter la première publication du cache à la fin de la liste des publications
+                                state.publications.push(state.cache.shift());
+                            }
+                            // Et calculer ensuite le nombre de page selon le nombre de publications
+                            state.numberOfPages = Math.floor(state.numOfResults / 5 - 0.2) + 1;
+                        };
+                    }).catch((error) => {
+                        console.log(error);
+                        // Dans le cas où le code erreur est le 429 cela signifie qu'un trop grand nombre de requête a été émise et donc 
+                        // on va déclencher la fonction modifiant certaines valeurs du state permettant l'affichage de la modal d'avertissement
+                        if (error.response.status == 429) {
+                            useAuthStore().displayWarning(error.response.data);
+                        };
+                    })
+                    // Si aucune page n'est présente après celle sur laquelle nous sommes
+                } else {
+                    // On parcours les publications
+                    for (let i = 0; i < state.publications.length; i++) {
+                        // Si l'id d'une publication correspond à l'id de la publication dont on vient de recevoir une suppression
+                        if (state.publications[i].publication_id == data.publication.publication_id) {
+                            // On va supprimer la publication de la liste des publications
+                            state.publications.splice(i, 1);
+                        }
                     }
-                })
+                    // On réduit le nombre de publications de 1
+                    state.numOfResults = state.numOfResults - 1;
+                    // S'il y a plus de 1 page et que le nombre de publications est égal à 0
+                    if (state.numberOfPages != 1 && state.publications.length == 0) {
+                        // On est redirigé vers la page précédente
+                        state.page -= 1;
+                        // S'il y a plus de 1 page et que le nombre de publications est différent de 5
+                    } else if (state.numberOfPages != 1 && state.publications.length != 5) {
+                        // Et qu'il y a des publications dans le cache
+                        if (state.cache.length > 0) {
+                            // On va ajouter la première publication du cache à la fin de la liste des publications
+                            state.publications.push(state.cache.shift());
+                        }
+                        // Et calculer ensuite le nombre de page selon le nombre de publications
+                        state.numberOfPages = Math.floor(state.numOfResults / 5 - 0.2) + 1;
+                    };
+                }
             })
         },
     }

@@ -31,6 +31,7 @@ export interface Publication {
     user_id: number,
     likes?: [] | null,
     comments?: [] | null,
+    cache?: [] | null,
     iLike: boolean,
     numberOfLikes?: number | null,
     numberOfComments?: number | null,

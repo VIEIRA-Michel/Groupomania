@@ -13,7 +13,7 @@ interface CommentState {
 export const useCommentsStore = defineStore({
     id: "comment",
     state: (): CommentState => ({
-        isLoading: true
+        isLoading: true,
     }),
     getters: {
     },
@@ -27,7 +27,7 @@ export const useCommentsStore = defineStore({
                     // Si l'id d'une publication correspond avec les données reçues en paramètre de cette fonction
                     if (item.publication_id == publication.publication_id) {
                         // Nous allons déclencher la requête permettant la récupération d'une certaine quantité de commentaire concernant cette publication
-                        useCommentsStore().getAllComments(publication.publication_id, item.limit, item.from).then((response: any) => {
+                        useCommentsStore().getAllComments(publication.publication_id, item.limit, item.from, false).then((response: any) => {
                             usePublicationsStore().$patch((state: any) => {
                                 // Et passer la valeur de la propriété permettant l'affichage des commentaires à true
                                 item.displayComments = true;
@@ -60,7 +60,8 @@ export const useCommentsStore = defineStore({
             }
         },
         // Cette fonction va nous permettre de récupérer une certaine quantité de commentaires
-        getAllComments: (id: number, limit: number, from: number) => {
+        getAllComments: (id: number, limit: number, from: number, cache?: boolean) => {
+            console.log(cache);
             return new Promise((resolve, reject) => {
                 // On crée une variable contenant la date du jour
                 let date = new Date();
@@ -83,18 +84,31 @@ export const useCommentsStore = defineStore({
                             }
                             comment.comment_created_at = commentDate.join(" ");
                         })
-                        usePublicationsStore().$patch((state: any) => {
-                            // Nous allons ensuite parcourir le tableau contenant les différentes publications
-                            state.publications.map((post: any) => {
-                                // Si une publication à le même publication_id que le commentaire en question
-                                if (post.publication_id == response.comments[0].publication_id) {
-                                    // On parcours notre tableau de résultat et si le commentaire n'est pas déjà présent au sein de la publication on l'ajoute
-                                    response.comments.map((comment: any) => {
-                                        post.comments.find((item: any) => item.comment_id == comment.comment_id) ? "" : post.comments.push(comment);
-                                    })
+                        if (!cache) {
+                            usePublicationsStore().$patch((state: any) => {
+                                // Nous allons ensuite parcourir le tableau contenant les différentes publications
+                                state.publications.map((post: any) => {
+                                    // Si une publication à le même publication_id que le commentaire en question
+                                    if (post.publication_id == response.comments[0].publication_id) {
+                                        // On parcours notre tableau de résultat et si le commentaire n'est pas déjà présent au sein de la publication on l'ajoute
+                                        response.comments.map((comment: any) => {
+                                            post.comments.find((item: any) => item.comment_id == comment.comment_id) ? "" : post.comments.unshift(comment);
+                                        })
+                                    }
+                                })
+                            })
+                        } else {
+                            usePublicationsStore().$patch((state: any) => {
+                                console.log(response.comments);
+                                for (let i = 0; i < state.publications.length; i++) {
+                                    if (state.publications[i].publication_id == response.comments[0].publication_id) {
+                                        for (let j = 0; j < response.comments.length; j++) {
+                                            state.publications[i].cache.push(response.comments[j]);
+                                        }
+                                    }
                                 }
                             })
-                        })
+                        }
                     }
                     resolve(response);
                 }).catch(error => {
@@ -138,17 +152,14 @@ export const useCommentsStore = defineStore({
                     for (let i = 0; i < state.publications.length; i++) {
                         // Si une publication à le même publication_id qu'un commentaire
                         if (state.publications[i].publication_id == comment.publication_id) {
-                            // et que la publication contient des commentaires
-                            if (state.publications[i].comments.length > 0) {
-                                // On décrémente la valeur de la propriété indiquant le nombre de commentaires présents sur la publication
-                                state.publications[i].numberOfComments = state.publications[i].numberOfComments - 1;
-                                // Et on supprime le commentaire du tableau de la publication comportant les commentaires
-                                for (let j = 0; j < state.publications[i].comments.length; j++) {
-                                    if (state.publications[i].comments[j].comment_id == comment.comment_id) {
-                                        state.publications[i].comments.splice(j, 1);
-                                    }
+                            for (let j = 0; j < state.publications[i].comments.length; j++) {
+                                if (state.publications[i].comments[j].comment_id == comment.comment_id) {
+                                    state.publications[i].comments.splice(j, 1);
+                                    state.publications[i].numberOfComments = state.publications[i].numberOfComments - 1;
                                 }
-                                // state.publications[i].comments.splice(state.publications[i].comments.findIndex((item: any) => item.comment_id == comment.comment_id), 1);
+                            }
+                            if (state.publications[i].cache.length > 0) {
+                                state.publications[i].comments.unshift(state.publications[i].cache.shift());
                             }
                         }
                     }
@@ -228,12 +239,12 @@ export const useCommentsStore = defineStore({
             })
         },
         // Cette fonction va nous permettre de récupérer d'avantages de commentaires
-        getMoreComments: (publication: any) => {
+        getMoreComments: (publication_id: number) => {
             usePublicationsStore().$patch((state: any) => {
                 // Nous allons parcourir le state comportant les publications
                 state.publications.map((item: any) => {
                     // Vérifier si une publication a le même publication_id que les données reçues
-                    if (item.publication_id == publication.publication_id) {
+                    if (item.publication_id == publication_id) {
                         // Et incrémenter la valeur de la propriété from
                         item.from = item.from + item.limit;
                         // Ainsi que celle de limit afin de récupérer uniquement de nouveau commentaire sans récupérer les anciens déjà présent
@@ -241,7 +252,7 @@ export const useCommentsStore = defineStore({
                         // Si le nombre de commentaire est plus grand que la valeur de la propriété grâce à laquelle nous nous servons d'index pour récupérer d'avantages de commentaire
                         if (item.comments.length >= item.from) {
                             // On exécute la fonction qui va permettre la récupération de commentaire
-                            useCommentsStore().getAllComments(publication.publication_id, item.limit, item.from).then((response: any) => {
+                            useCommentsStore().getAllComments(publication_id, item.limit, item.from).then((response: any) => {
                                 console.log('nice');
                             }).catch(error => {
                                 // Dans le cas où le code erreur est le 429 cela signifie qu'un trop grand nombre de requête a été émise et donc 
