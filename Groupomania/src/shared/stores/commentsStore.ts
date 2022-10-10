@@ -2,7 +2,6 @@ import { usePublicationsStore } from './publicationsStore';
 import { defineStore } from 'pinia';
 import { fetchComments, fetchCountOfComments, removeComment, addComment } from '../services/comments.service';
 import { ref } from 'vue';
-import socket from '../../socket';
 import moment from 'moment';
 import { useAuthStore } from './authStore';
 
@@ -50,9 +49,6 @@ export const useCommentsStore = defineStore({
                     state.publications.map((item: any) => {
                         if (item.publication_id == publication.publication_id) {
                             item.displayComments = false;
-                            item.comments.splice(0, item.comments.length);
-                            item.limit = 5;
-                            item.from = 0;
                             return item;
                         }
                     })
@@ -61,7 +57,6 @@ export const useCommentsStore = defineStore({
         },
         // Cette fonction va nous permettre de récupérer une certaine quantité de commentaires
         getAllComments: (id: number, limit: number, from: number, cache?: boolean) => {
-            console.log(cache);
             return new Promise((resolve, reject) => {
                 // On crée une variable contenant la date du jour
                 let date = new Date();
@@ -97,9 +92,9 @@ export const useCommentsStore = defineStore({
                                     }
                                 })
                             })
+                            // Dans le cas où cache est à true cela signifie que nous souhaitons stocker les commentaires dans le cache
                         } else {
                             usePublicationsStore().$patch((state: any) => {
-                                console.log(response.comments);
                                 for (let i = 0; i < state.publications.length; i++) {
                                     if (state.publications[i].publication_id == response.comments[0].publication_id) {
                                         for (let j = 0; j < response.comments.length; j++) {
@@ -152,20 +147,24 @@ export const useCommentsStore = defineStore({
                     for (let i = 0; i < state.publications.length; i++) {
                         // Si une publication à le même publication_id qu'un commentaire
                         if (state.publications[i].publication_id == comment.publication_id) {
+                            // On parcours la liste des commentaires
                             for (let j = 0; j < state.publications[i].comments.length; j++) {
+                                // Si un commentaire à le même comment_id que le commentaire venant d'être supprimé
                                 if (state.publications[i].comments[j].comment_id == comment.comment_id) {
+                                    // On supprime le commentaire
                                     state.publications[i].comments.splice(j, 1);
+                                    // Et on décrémente la valeur de numberOfComments
                                     state.publications[i].numberOfComments = state.publications[i].numberOfComments - 1;
                                 }
                             }
+                            // Si un élément est présent dans le cache
                             if (state.publications[i].cache.length > 0) {
+                                // On supprime le premier élément dans le cache pour l'ajouter au début de la liste des commentaires
                                 state.publications[i].comments.unshift(state.publications[i].cache.shift());
                             }
                         }
                     }
                 })
-                // Et on émet l'évènement socket en lien avec le commentaire que l'on désire supprimer
-                socket.emit('delete comment', { comment, user: useAuthStore().$state.user });
             }).catch(error => {
                 console.log(error);
                 // Dans le cas où le code erreur est le 429 cela signifie qu'un trop grand nombre de requête a été émise et donc 
@@ -206,9 +205,6 @@ export const useCommentsStore = defineStore({
                         role_id: response.data.data[0].role_id,
                         user_id: response.data.data[0].user_id,
                     });
-
-                    // Afin d'émettre l'évènement en lien avec notre variable contenant toutes les informations concernant le commentaire à l'instant créer
-                    socket.emit('has commented', { comment: obj.value, user: useAuthStore().$state.user });
                     usePublicationsStore().$patch((state: any) => {
                         // On parcours ensuite le state comportant les différentes publications
                         state.publications.map((publication: any) => {
@@ -216,7 +212,6 @@ export const useCommentsStore = defineStore({
                             if (publication.publication_id === publication_id) {
                                 // On parcours les commentaires de la publication afin de savoir si le commentaire n'est pas déjà présent afin d'éviter les doublons
                                 if (publication.comments.find((comment: any) => comment.comment_id == response.data.data[0].comment_id)) {
-                                    console.log('comment already exists');
                                 } else {
                                     // S'il n'est pas présent on l'ajoute à notre liste des commentaires sur la publication
                                     publication.comments.push(obj.value)
@@ -226,7 +221,7 @@ export const useCommentsStore = defineStore({
                             }
                         })
                     })
-                    resolve(response);
+                    resolve(obj.value);
                 }).catch(error => {
                     console.log(error);
                     // Dans le cas où le code erreur est le 429 cela signifie qu'un trop grand nombre de requête a été émise et donc 
@@ -245,22 +240,19 @@ export const useCommentsStore = defineStore({
                 state.publications.map((item: any) => {
                     // Vérifier si une publication a le même publication_id que les données reçues
                     if (item.publication_id == publication_id) {
-                        // Et incrémenter la valeur de la propriété from
-                        item.from = item.from + item.limit;
-                        // Ainsi que celle de limit afin de récupérer uniquement de nouveau commentaire sans récupérer les anciens déjà présent
-                        item.limit = item.limit + item.limit;
-                        // Si le nombre de commentaire est plus grand que la valeur de la propriété grâce à laquelle nous nous servons d'index pour récupérer d'avantages de commentaire
-                        if (item.comments.length >= item.from) {
-                            // On exécute la fonction qui va permettre la récupération de commentaire
-                            useCommentsStore().getAllComments(publication_id, item.limit, item.from).then((response: any) => {
-                                console.log('nice');
-                            }).catch(error => {
-                                // Dans le cas où le code erreur est le 429 cela signifie qu'un trop grand nombre de requête a été émise et donc 
-                                // on va déclencher la fonction modifiant certaines valeurs du state permettant l'affichage de la modal d'avertissement
-                                if (error.response.status == 429) {
-                                    useAuthStore().displayWarning(error.response.data);
-                                };
-                            });
+                        // Si un élément est présent dans le cache
+                        if (item.cache.length > 0) {
+                            // On va parcourir le cache
+                            for (let i = item.cache.length; i > 0; i--) {
+                                // On va ajouter le premier élément du cache au début de la liste des commentaires
+                                item.comments.unshift(item.cache.shift());
+                            }
+                            // Et on va déclencher la fonction permettant de récupérer d'avantages de commentaires
+                            useCommentsStore().getAllComments(publication_id, 10 - item.cache.length, item.comments.length + item.cache.length, false);
+                            // Dans le cas où aucun élément n'est présent dans le cache
+                        } else {
+                            // On va déclencher la fonction permettant de récupérer d'avantages de commentaires
+                            useCommentsStore().getAllComments(publication_id, 10, item.comments.length, false);
                         }
                     }
                     return item;
@@ -287,18 +279,48 @@ export const useCommentsStore = defineStore({
         onDeleteComment: (data: any) => {
             usePublicationsStore().$patch((state: any) => {
                 // On parcours notre state qui contient les différentes publications
-                state.publications.map((item: any) => {
-                    // Si une publication à le même publication_id que les données reçues
-                    if (item.publication_id == data.comment.publication_id) {
-                        // On va filtrer le tableau est gardé que les commentaires ayant un comment_id différent de celui que les données reçues
-                        item.comments = item.comments.filter((itemComment: any) => {
-                            return itemComment.comment_id != data.comment.comment_id;
-                        });
-                        // Puis décrémenter le nombre de commentaire sur la publication
-                        item.numberOfComments = item.numberOfComments - 1;
+                for (let i = 0; i < state.publications.length; i++) {
+                    // Si une publication a le même publication_id que les données reçues
+                    if (state.publications[i].publication_id == data.comment.publication_id) {
+                        // Si le nombre de commentaire affiché est inférieur au nombre total de commentaire et que le cache ne comporte aucun élément
+                        if (state.publications[i].comments!.length < state.publications[i].numberOfComments!
+                            && state.publications[i].cache!.length == 0) {
+                            if (state.publications[i].displayComments) {
+                                // On va déclencher la fonction permettant de récupérer d'avantages de commentaires et les ajouter au cache
+                                useCommentsStore().getAllComments(data.comment.publication_id, 10, 4, true).then((response: any) => {
+                                    // On parcours ensuite la liste des commentaires
+                                    for (let j = 0; j < state.publications[i].comments.length; j++) {
+                                        // Si un commentaire a le même comment_id que les données reçues
+                                        if (state.publications[i].comments[j].comment_id == data.comment.comment_id) {
+                                            // On supprime le commentaire
+                                            state.publications[i].comments.splice(j, 1);
+                                            // Et on décrémente le nombre de commentaire
+                                            state.publications[i].numberOfComments = state.publications[i].numberOfComments - 1;
+                                        }
+                                    }
+                                });
+                            } else {
+                                state.publications[i].numberOfComments = state.publications[i].numberOfComments - 1;
+                            }
+                        } else {
+                            // On parcours ensuite la liste des commentaires
+                            for (let j = 0; j < state.publications[i].comments.length; j++) {
+                                // Si un commentaire a le même comment_id que les données reçues
+                                if (state.publications[i].comments[j].comment_id == data.comment.comment_id) {
+                                    // On supprime le commentaire
+                                    state.publications[i].comments.splice(j, 1);
+                                    // Et on décrémente le nombre de commentaire
+                                    state.publications[i].numberOfComments = state.publications[i].numberOfComments - 1;
+                                }
+                            }
+                        }
+                        // Si un élément est présent dans le cache
+                        if (state.publications[i].cache.length > 0) {
+                            // On va retirer le premier élément du cache pour l'ajouter au début de la liste des commentaires
+                            state.publications[i].comments.unshift(state.publications[i].cache.shift());
+                        }
                     }
-                    return item;
-                });
+                }
             })
         }
     }

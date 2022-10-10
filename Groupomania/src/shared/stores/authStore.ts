@@ -1,5 +1,5 @@
 import { defineStore, storeToRefs } from 'pinia';
-import socket from "../../socket";
+import socket from "@/socket";
 import { signUp, signIn, fetchInformation, editProfile, fetchNotifications } from "../services/auth.service";
 import { useChatStore } from './chatStore';
 import { useCommentsStore } from './commentsStore';

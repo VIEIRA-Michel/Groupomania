@@ -141,18 +141,15 @@ export const useOtherStore = defineStore({
                 })
             }
         },
-        // Cette fonction a pour but de supprimer toutes les notifications en lien avec une publication que l'on supprimerait afin de ne plus conserver des notifications d'une publication
-        // qui aurait été supprimer
+        // Cette fonction a pour but de supprimer les notifications en lien avec l'argument passé en paramètre
+        // Dans le cas où l'on supprime une publication, on supprime les notifications en lien avec cette publication
+        // Dans le cas où l'on supprime un ami, on supprime les notifications en lien avec cet ami
         deleteRelatedNotifications: (id: number, operation: string) => {
             useOtherStore().$patch((state: any) => {
-                for (let i = 0; i < state.notifications.length; i++) {
-                    if (operation == "publication" && state.notifications[i].publication_id == id) {
+                for (let i = state.notifications.length; i >= 0; i--) {
+                    if (state.notifications[i] && operation == "publication" && state.notifications[i].publication_id == id
+                        || state.notifications[i] && operation == "friend" && state.notifications[i].user_id == id) {
                         state.notifications.splice(i, 1);
-                        // Je réinitialise l'index pour ne pas sauter d'élément
-                        i = -1;
-                    } else if (operation == "friend" && state.notifications[i].user_id == id) {
-                        state.notifications.splice(i, 1);
-                        i = -1;
                     }
                 }
             })

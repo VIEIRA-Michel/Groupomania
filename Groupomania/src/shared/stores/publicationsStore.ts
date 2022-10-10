@@ -3,7 +3,6 @@ import { defineStore } from 'pinia';
 import { fetchPublications, addPublication, fetchCountOfPublication, editPublication, removePublication, fetchLikes, likeAndDislike, getHistory } from '../services/publications.service';
 import type { Publication } from '../interfaces/publication.interface';
 import { useAuthStore } from '../stores/authStore';
-import socket from "../../socket";
 import { ref } from 'vue';
 import moment from 'moment';
 import { useFriendshipStore } from './friendsStore';
@@ -103,9 +102,7 @@ export const usePublicationsStore = defineStore({
                                 state.page = 1;
                             }
                         })
-                        // On émet un évènement au backend afin de prévenir les autres utilisateurs que nous avons publié une nouvelle publication
-                        socket.emit('new publication', { publication, user: useAuthStore().$state.user });
-                        resolve(response);
+                        resolve(publication);
                     }).catch(error => {
                         console.log(error);
                         // Dans le cas où le code erreur est le 429 cela signifie qu'un trop grand nombre de requête a été émise et donc 
@@ -392,6 +389,7 @@ export const usePublicationsStore = defineStore({
                                 item.content = response.data.data[0].content;
                                 item.picture = response.data.data[0].picture;
                                 item.editMode = false;
+                                item.menu = false;
                                 item.publication_edit = publicationEdit.join(" ");
                             }
                         })
@@ -406,9 +404,7 @@ export const usePublicationsStore = defineStore({
                             return item;
                         })
                     })
-                    resolve(response);
-                    // On va émettre un événement afin de prévenir les autres utilisateurs que la publication a été modifiée
-                    socket.emit('edit publication', response.data.data[0], useAuthStore().$state.user);
+                    resolve({ ...response.data.data[0], publication_edit: publicationEdit.join(" ") });
                 }).catch(error => {
                     console.log(error);
                     // Dans le cas où le code erreur est le 429 cela signifie qu'un trop grand nombre de requête a été émise et donc 
@@ -544,7 +540,7 @@ export const usePublicationsStore = defineStore({
                 state.publications.map((item: any) => {
                     // Si l'id d'une publication correspondant à l'id de la publication dont on veut afficher le menu
                     if (item.publication_id == publication.publication_id) {
-                        item.menu = true;
+                        item.menu = !item.menu;
                         // Dans le cas contraire on va cacher le menu de toutes les autres publications afin de ne pas avoir plusieurs menus affichés en même temps
                     } else {
                         item.menu = false;
@@ -648,6 +644,7 @@ export const usePublicationsStore = defineStore({
         },
         // Cette fonction s'exécute à la réception d'un évènement de type 'edit publication' émis par le serveur socket.io
         onEditPublication: (data: any) => {
+            console.log(data);
             usePublicationsStore().$patch((state: any) => {
                 // On va parcourir les publications
                 state.publications.map((item: any) => {
@@ -656,7 +653,7 @@ export const usePublicationsStore = defineStore({
                         // On va modifier le contenu de la publication
                         item.content = data.content;
                         item.picture = data.picture;
-                        item.updated_at = data.updated_at;
+                        item.publication_edit = data.publication_edit;
                     }
                     return item;
                 });

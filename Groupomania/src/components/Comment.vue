@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { useCommentsStore } from '../shared/stores/commentsStore';
+import { useCommentsStore } from '@/shared/stores/commentsStore';
 import { ref } from 'vue';
+import socket from '@/socket';
+import { useAuthStore } from '@/shared/stores/authStore';
 
 // inputComment va nous permettre de récupérer ce que nous avons saisie dans le champ de création d'un commentaire
 let inputComment = ref("");
@@ -34,6 +36,8 @@ function autoResize(event: any) {
 function createComment(event: any) {
     if (inputComment.value.trim() !== "") {
         useCommentsStore().createComment(props.publication_id!, inputComment.value.trim()).then((response) => {
+            // Si tout s'est bien passé, on émet l'évènement avec le commentaire crée afin les autres utilisateurs puissent le voir
+            socket.emit('has commented', { comment: response, user: useAuthStore().$state.user });
             inputComment.value = "";
             // Et on réinitialise la taille du champ de saisie de création de commentaire 
             event.target[0].style.height = 'auto';
@@ -49,15 +53,20 @@ function activateModal(comment: any) {
 }
 
 function deleteComment() {
+    // Si le nombre de commentaire affiché est inférieur au nombre total de commentaire et que le cache est vide
     if (props.comments!.length < props.numberOfComments! && props.cache!.length == 0) {
-        useCommentsStore().getAllComments(props.publication_id!, 10, 5, true).then((response: any) => {
+        // On appel la fonction qui va nous permettre de récupérer d'avantage de commentaire et de les stocker dans le cache
+        useCommentsStore().getAllComments(props.publication_id!, 10, props.comments!.length, true).then((response: any) => {
+            socket.emit('delete comment', { comment: commentToDelete.value, user: useAuthStore().$state.user });
+            // On appel la fonction qui va nous permettre de supprimer le commentaire de la base de données
             useCommentsStore().deleteComment(commentToDelete.value)
         })
-        // On transmet le message à la fonction présente dans le store qui fera appel à l'api afin d'exécuter l'action de suppression du commentaire
-        // Et on repasse la valeur de modalComment à false afin de faire disparaître la modal
     } else {
-        useCommentsStore().deleteComment(commentToDelete.value)
+        socket.emit('delete comment', { comment: commentToDelete.value, user: useAuthStore().$state.user });
+        // On appel la fonction qui va nous permettre de supprimer le commentaire de la base de données
+        useCommentsStore().deleteComment(commentToDelete.value);
     }
+    // Et on repasse la valeur de modalComment à false afin de faire disparaître la modal
     modalComment.value = false;
 }
 </script>

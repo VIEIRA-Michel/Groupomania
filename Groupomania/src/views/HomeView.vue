@@ -110,6 +110,8 @@ function createPublication(event: any) {
             || previewPicture.picture.type == 'image/png'
             || previewPicture.picture.type == 'image/webp') {
             usePublicationsStore().addNewPublication(content.value, previewPicture.picture).then((response: any) => {
+                // On émet l'évènement en lien afin de prévenir les autres utilisateurs que nous avons publié une nouvelle publication
+                socket.emit('new publication', { publication: response, user: useAuthStore().$state.user });
                 previewPicture.picture = '';
                 content.value = '';
                 removePicture('create');
@@ -125,6 +127,8 @@ function createPublication(event: any) {
             || previewPicture.picture.type == 'image/png'
             || previewPicture.picture.type == 'image/webp') {
             usePublicationsStore().addNewPublication(null, previewPicture.picture).then((response: any) => {
+                // On émet l'évènement en lien afin de prévenir les autres utilisateurs que nous avons publié une nouvelle publication
+                socket.emit('new publication', { publication: response, user: useAuthStore().$state.user });
                 previewPicture.picture = '';
                 removePicture('create');
             });
@@ -134,6 +138,8 @@ function createPublication(event: any) {
     } else if (!previewPicture.picture && content.value
         || previewPicture.picture == null && content.value) {
         usePublicationsStore().addNewPublication(content.value, null).then((response: any) => {
+            // On émet l'évènement en lien afin de prévenir les autres utilisateurs que nous avons publié une nouvelle publication
+            socket.emit('new publication', { publication: response, user: useAuthStore().$state.user });
             content.value = '';
         });
     }
@@ -219,7 +225,6 @@ function removePicture(option: string, publication_id?: number) {
 function cancelModification(publication: any) {
     usePublicationsStore().activateEditMode(publication.publication_id, 'deactivate').then((response: any) => {
         if (pictureHasHidden.value) {
-            document.getElementById(`${publicationIdToEdit.value}`).style.display = 'block';
             pictureHasHidden.value = false;
         }
         if (publication.previewOnEdit) {
@@ -245,36 +250,42 @@ function updatePublication(publication: any) {
     } else if (!pictureHasHidden.value && publication.previewOnEdit == null && publication.picture) {
         editPost.picture = publication.picture;
     }
-    // On vérifie si une image a été sélectionné dans le mode de modification d'une publication
-    if (editPost.picture) {
-        // Et on vérifie si cette image est bien au format jpg, jpeg, png ou webp
-        if (editPost.picture.type == 'image/jpg'
-            || editPost.picture.type == 'image/jpeg'
-            || editPost.picture.type == 'image/png'
-            || editPost.picture.type == 'image/webp') {
-            usePublicationsStore().updatePublication(publication.publication_id, editPost).then((response: any) => {
-                usePublicationsStore().resetPreview(publication.publication_id).then((response2: any) => {
-                    removePicture('edit', publication.publication_id);
-                })
-            })
-        } else {
-            // Si le type de l'image sélectionner est une string cela veux dire que nous ne souhaitons pas modifier l'image de la publication
-            if (typeof (editPost.picture) == 'string') {
-                editPost.picture = '';
+    // On vérifie si le button n'est pas désactivé afin de pouvoir procéder à la modification de la publication
+    if (!buttonDisabled.value) {
+        // On vérifie si une image a été sélectionné dans le mode de modification d'une publication
+        if (editPost.picture) {
+            // Et on vérifie si cette image est bien au format jpg, jpeg, png ou webp
+            if (editPost.picture.type == 'image/jpg'
+                || editPost.picture.type == 'image/jpeg'
+                || editPost.picture.type == 'image/png'
+                || editPost.picture.type == 'image/webp') {
                 usePublicationsStore().updatePublication(publication.publication_id, editPost).then((response: any) => {
+                    socket.emit('edit publication', response, useAuthStore().$state.user);
                     usePublicationsStore().resetPreview(publication.publication_id).then((response2: any) => {
+                        removePicture('edit', publication.publication_id);
                     })
                 })
             } else {
-                wrongFileEdit.value = true;
+                // Si le type de l'image sélectionner est une string cela veux dire que nous ne souhaitons pas modifier l'image de la publication
+                if (typeof (editPost.picture) == 'string') {
+                    editPost.picture = '';
+                    usePublicationsStore().updatePublication(publication.publication_id, editPost).then((response: any) => {
+                        socket.emit('edit publication', response, useAuthStore().$state.user);
+                        usePublicationsStore().resetPreview(publication.publication_id).then((response2: any) => {
+                        })
+                    })
+                } else {
+                    wrongFileEdit.value = true;
+                }
             }
-        }
-        // Dans le cas où il n'y a aucune image sélectionner dans le mode de modification d'une publication on procède à la modification de la publication sans modifier l'image
-    } else {
-        usePublicationsStore().updatePublication(publication.publication_id, editPost).then((response: any) => {
-            usePublicationsStore().resetPreview(publication.publication_id).then((response2: any) => {
+            // Dans le cas où il n'y a aucune image sélectionner dans le mode de modification d'une publication on procède à la modification de la publication sans modifier l'image
+        } else {
+            usePublicationsStore().updatePublication(publication.publication_id, editPost).then((response: any) => {
+                socket.emit('edit publication', response, useAuthStore().$state.user);
+                usePublicationsStore().resetPreview(publication.publication_id).then((response2: any) => {
+                })
             })
-        })
+        }
     }
 };
 
@@ -332,7 +343,6 @@ function likePublication(publication: any) {
         // Dans le cas où nous n'avions pas déjà liké la publication la réponse sera donc à true et on apposera un like sur la publication dans le cas inverse on retirera le like
         if (response.data.liked == true) {
             publication = { ...publication, like_id: response.data.results.insertId };
-            console.log(publication);
             // On émet ensuite l'évènement correspondant à l'action réalisée
             socket.emit('like', { publication, user: user.value });
         } else {
@@ -370,6 +380,7 @@ watchEffect(() => {
     } else {
         buttonDisabled.value = false
     }
+    console.log(buttonDisabled.value);
 });
 
 // On place un watch sur la modalRequest afin que lorsque la modal de confirmation de suppression d'une publication s'affiche que le scroll soit désactivé
@@ -1087,8 +1098,7 @@ onBeforeMount(() => {
             height: 100%;
             max-height: 353px;
             object-fit: cover;
-            border-top: 1px solid #dbdbdb;
-            border-bottom: 1px solid #dbdbdb;
+            border: 1px solid #dbdbdb;
             border-radius: 5px;
             background: #FFFFFF;
             margin-top: 10px;
@@ -1369,7 +1379,7 @@ onBeforeMount(() => {
     }
 
     &__content {
-        height: 100%;
+        // height: 100%; 
         max-height: 350px;
         overflow-y: scroll;
         margin-bottom: 20px;

@@ -93,6 +93,7 @@ onBeforeMount(() => {
                                     usePublicationsStore().onRemoveLike(args[0]);
                                     break;
                                 case 'new publication':
+                                    console.log(args[0]);
                                     usePublicationsStore().onNewPublication(args[0]);
                                     break;
                                 case 'edit publication':
@@ -102,6 +103,7 @@ onBeforeMount(() => {
                                     usePublicationsStore().onDeletePublication(args[0]);
                                     break;
                                 case 'has commented':
+                                    console.log(args[0]);
                                     useCommentsStore().onComment(args[0]);
                                     break;
                                 case 'delete comment':
@@ -231,7 +233,6 @@ onUnmounted(() => {
     right: 10px;
     width: 250px;
     z-index: 10;
-    filter: drop-shadow(0 0 0.75rem #FFFFFF);
 
     &__list {
         &__item {
