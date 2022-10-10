@@ -4,6 +4,8 @@ const date = require('date-and-time');
 const fs = require('fs');
 require('dotenv').config();
 
+// Cette fonction va nous permettre de stocker les messages envoyés par les utilisateurs dans la base de données MySQL ainsi que sur Redis
+// Afin de pouvoir les récupérer plus vite et de pouvoir les afficher sur la page de chat
 exports.sendMessage = async (req, res, next) => {
     let sql = `INSERT INTO messages (content, sender, recipient, created_at) VALUES (?, ?, ?, ?);`;
     let sqlVariables = [req.body.message, req.user.userId, req.params.id, date.format(new Date(), 'YYYY-MM-DD HH:mm:ss')];
@@ -69,6 +71,7 @@ exports.sendMessage = async (req, res, next) => {
     })
 };
 
+// Cette fonction va nous permettre de récupérer les utilisateurs parmi nos amis qui sont connectés au serveur socket depuis la base de données Redis
 exports.getUsersConnected = async (req, res, next) => {
     try {
         const connected = await redis.get(`connected`);
@@ -81,6 +84,8 @@ exports.getUsersConnected = async (req, res, next) => {
     }
 };
 
+// Cette fonction va nous permettre de récupérer les messages d'une conversation
+// les messages stockés sur Redis dans un premier temps, si il n'y a pas assez de messages, on va chercher dans la base de données MySQL
 exports.getMessageOfConversation = async (req, res, next) => {
     let numConversation = "";
     if (req.user.userId > req.params.id) {
@@ -134,6 +139,8 @@ exports.getMessageOfConversation = async (req, res, next) => {
     }
 };
 
+// Cette fonction nous permettre de connaître le nombre de messages entre deux utilisateurs
+// Afin de savoir si on doit afficher le bouton "Voir plus de messages" pour pouvoir récupérer les messages précédents
 exports.countMessages = async (req, res, next) => {
     let sql = `SELECT COUNT(*) AS count FROM messages WHERE (sender = ? AND recipient = ?) OR (sender = ? AND recipient = ?);`;
     let sqlVariables = [req.user.userId, req.params.id, req.params.id, req.user.userId];

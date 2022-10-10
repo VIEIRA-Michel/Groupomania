@@ -7,6 +7,7 @@ require('dotenv').config();
 const crypto = require("crypto");
 const randomId = () => crypto.randomBytes(8).toString("hex");
 
+// Cette fonction va nous permettre de nous inscrire
 exports.signup = (req, res, next) => {
     bcrypt.hash(req.body.password, 10)
         .then(hash => {
@@ -68,6 +69,7 @@ exports.signup = (req, res, next) => {
         .catch(error => res.status(500).json({ message: error }))
 };
 
+// Cette fonction va nous permettre de nous connecter
 exports.login = (req, res, next) => {
     let user = {
         email: req.body.email
@@ -120,6 +122,7 @@ exports.login = (req, res, next) => {
     )
 };
 
+// Cette fonction va nous permettre de mettre à jour notre profil
 exports.updateProfil = (req, res, next) => {
     let sql = `SELECT * FROM users WHERE id = ?;`;
     connection.query(
@@ -188,6 +191,7 @@ exports.updateProfil = (req, res, next) => {
     )
 };
 
+// Cette fonction va nous permettre de vérifier si nous sommes connecté et par la même occasion de récupérer nos informations d'utilisateur
 exports.me = (req, res, next) => {
     let sql = `SELECT id, picture_url, lastname, firstname, email, birthday, session_id, userID, role_id FROM users WHERE id = ?;`;
     connection.query(
@@ -215,6 +219,7 @@ exports.me = (req, res, next) => {
     )
 };
 
+// Cette fonction va nous permettre de récupérer les amis de l'utilisateur avec qui nous avons actuellement la conversation ouverte
 exports.getAllFriendsOfUser = (req, res, next) => {
     let sql = `SELECT sender.id as sender_user_id, sender.picture_url as sender_picture_url, sender.lastname as sender_lastname, sender.firstname as sender_firstname, sender.gender_id as sender_gender_id, sender.birthday as sender_birthday, sender.email as sender_email, sender.role_id as sender_role_id, sender.created_at as sender_created_at, sender.account_disabled as sender_account_disabled, recipient.id as recipient_user_id, recipient.picture_url as recipient_picture_url, recipient.lastname as recipient_lastname, recipient.firstname as recipient_firstname, recipient.gender_id as recipient_gender_id, recipient.birthday as recipient_birthday, recipient.email as recipient_email, recipient.role_id as recipient_role_id, recipient.created_at as recipient_created_at, recipient.account_disabled as recipient_account_disabled, requests_friendship.id as requestId, requests_friendship.request_date, requests_friendship.approve_date, requests_friendship.denied_date FROM requests_friendship LEFT JOIN users sender ON sender.id = requests_friendship.user_id_sender AND sender.account_disabled IS NULL LEFT JOIN users recipient ON recipient.id = requests_friendship.user_id_recipient AND recipient.account_disabled IS NULL WHERE (requests_friendship.user_id_recipient = ? AND requests_friendship.approve_date IS NOT NULL AND requests_friendship.denied_date IS NULL) OR (requests_friendship.user_id_sender = ? AND requests_friendship.approve_date IS NOT NULL AND requests_friendship.denied_date IS NULL) GROUP BY requestId;`;
     connection.query(
@@ -230,6 +235,7 @@ exports.getAllFriendsOfUser = (req, res, next) => {
     )
 };
 
+// Cette fonction va nous permettre de récupérer plusieurs informations issue de la base de données afin de les transformer en notifications et de les ajouter aux notifications des utilisateurs
 exports.getAllNotifications = (req, res, next) => {
     let allResults = [];
     let sql = `SELECT * FROM publications WHERE user_id = ?;`;

@@ -75,6 +75,7 @@ io.use((socket, next) => {
   }
 });
 
+
 io.on('connection', (socket) => {
   socket.emit("session", {
     sessionID: socket.sessionID,
@@ -83,6 +84,8 @@ io.on('connection', (socket) => {
 
   socket.join(socket.userID);
 
+  // Quand un utilisateur se connecte au serveur socket, on va lui envoyer tous les utilisateurs qui se trouvent dans la base de données Redis pour par la suite trier les utilisateurs
+  // Et ne garder que les utilisateurs avec qui il est ami
   let users = [];
   (async () => {
     const connected = await redis.get(`connected`);
@@ -96,6 +99,7 @@ io.on('connection', (socket) => {
     socket.emit("users", users)
   })();
 
+  // Quand un utilisateur se connecte nous mettons à jour la liste des utilisateurs connectés sur la key "connected" de redis
   socket.broadcast.emit("user connected", {
     userID: socket.userID,
     user: socket.user,
@@ -131,6 +135,9 @@ io.on('connection', (socket) => {
     })
   });
 
+  // Dans le cas où un utilisateur se déconnecte de l'application nous mettons à jour la liste des utilisateurs connectés
+  // présents dans la base de données Redis
+  // Quand deux utilisateurs ayant une conversation privée se déconnectent, nous supprimons la conversation de la base de données Redis afin de libérer de l'espace
   socket.on("disconnect", async () => {
     const matchingSockets = await io.in(socket.userID).allSockets();
     const isDisconnected = matchingSockets.size === 0;
@@ -183,6 +190,7 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Les différents évènements transitant sur le serveur socket émis par le client
   socket.on('typing', (data) => {
     socket.broadcast.emit('typing', data)
   });
@@ -225,6 +233,8 @@ io.on('connection', (socket) => {
   socket.on('friendRequest canceled', (data) => {
     socket.broadcast.emit('friendRequest canceled', data)
   });
+  // Dans le cas d'une modification de profil, on met à jour les informations de l'utilisateur sur la key lui étant associée présent sur redis
+  // Et sur la key "connected" qui contient les informations de tous les utilisateurs si ils sont connectés ou non sur le serveur socket
   socket.on('update profil', (data) => {
     (async () => {
       const user = await redis.get(`user:${data.data[0].id}`);

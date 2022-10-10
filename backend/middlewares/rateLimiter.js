@@ -9,7 +9,7 @@ exports.authtLimiter = rateLimit({
 
 exports.navigateLimiter = rateLimit({
     windowMs: 3 * 60 * 1000, // 3 minutes
-    max: 3000,
+    max: 700,
     message:
         "Trop de requêtes ont été effectués par cette adresse IP. Veuillez essayé de nouveau dans 5 minutes. Merci pour votre compréhension."
 });

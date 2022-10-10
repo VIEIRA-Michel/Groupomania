@@ -1,5 +1,6 @@
 const connection = require('../database/mysql_connexion');
 
+// Cette fonction va nous permettre de créer un commentaire
 exports.createComment = (req, res, next) => {
     let comment = {
         user_id: req.user.userId,
@@ -29,6 +30,7 @@ exports.createComment = (req, res, next) => {
     )
 };
 
+// Cette fonction va nous permettre de supprimer un commentaire en fonction de son id
 exports.deleteComment = (req, res, next) => {
     let sql = `DELETE FROM comments WHERE id = ?;`;
     connection.query(
@@ -43,6 +45,7 @@ exports.deleteComment = (req, res, next) => {
     )
 };
 
+// Cette fonction va nous permettre de récupérer le nombre total de commentaires sur une publication afin de pouvoir l'afficher sous la publication
 exports.getNumberOfComments = (req, res, next) => {
     let sql = `SELECT COUNT(id) FROM comments WHERE publication_id = ?;`;
     connection.query(
@@ -57,6 +60,7 @@ exports.getNumberOfComments = (req, res, next) => {
     )
 };
 
+// Cette fonction va nous permettre de récupérer un certains nombre de commentaires d'une publication afin de pouvoir les afficher sous la publication
 exports.getAllCommentsFromPublication = (req, res, next) => {
     let sql = `SELECT publications.id as publication_id, publications.content as publication_content, picture, publications.user_id, publications.created_at as publication_created, updated_at as publication_updated_at, users.picture_url, users.lastname, users.firstname, users.email, users.role_id, users.account_disabled, comments.id as comment_id, comments.user_id as comment_user_id, comments.publication_id as comment_publication_id, comments.content as comment_content, comments.created_at as comment_created_at FROM comments 
     LEFT JOIN users ON users.id = comments.user_id AND users.account_disabled IS NULL LEFT JOIN publications ON publications.id = comments.publication_id WHERE comments.publication_id = ?;`;

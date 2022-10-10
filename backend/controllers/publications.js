@@ -2,6 +2,8 @@ const connection = require('../database/mysql_connexion');
 const date = require('date-and-time');
 const fs = require('fs');
 
+// Cette fonction va nous permettre de récupérer les publications de nos amis dont le compte n'est pas désactivé et nos publications
+// Les administrateurs récupèrent toutes les publications de tous les utilisateurs
 exports.getAllPublications = (req, res, next) => {
     const resultsPerPage = 5;
     let reqVariables = [req.user.userId, req.user.userId, req.user.userId];
@@ -61,6 +63,7 @@ exports.getAllPublications = (req, res, next) => {
     )
 };
 
+// Cette fonction va nous permettre de récupérer le nombre de publications pour l'affichage du nombre de pages
 exports.getQtyOfPublications = (req, res, next) => {
     let sql = `SELECT COUNT(publications.id) FROM publications LEFT JOIN users ON users.id = publications.user_id AND users.account_disabled IS NULL LEFT JOIN requests_friendship senders ON users.id = senders.user_id_sender LEFT JOIN requests_friendship recipients ON users.id = recipients.user_id_recipient WHERE users.id = ? OR (senders.user_id_recipient = ? AND senders.approve_date IS NOT NULL) OR (recipients.user_id_sender = ? AND recipients.approve_date IS NOT NULL);`;
     connection.query(
@@ -75,6 +78,7 @@ exports.getQtyOfPublications = (req, res, next) => {
     )
 };
 
+// Cette fonction va nous permettre de créer une publication
 exports.createPublication = (req, res, next) => {
     let now = new Date();
     let today = date.format(now, 'YYYY-MM-DD HH:mm:ss');
@@ -118,6 +122,7 @@ exports.createPublication = (req, res, next) => {
     )
 };
 
+// Cette fonction va nous permettre de modifier une publication
 exports.updatePublication = (req, res, next) => {
     let publication = req.file ?
         {
@@ -165,6 +170,7 @@ exports.updatePublication = (req, res, next) => {
     )
 };
 
+// Cette fonction va nous permettre de récupérer l'historique de modification d'une publication
 exports.getHistoryOfEdit = (req, res, next) => {
     let sql = `SELECT * FROM publication_history WHERE publication_id = ?;`;
     connection.query(
@@ -179,6 +185,7 @@ exports.getHistoryOfEdit = (req, res, next) => {
     )
 };
 
+// Cette fonction va nous permettre de supprimer une publication
 exports.deletePublication = (req, res, next) => {
     let sql = `SELECT * FROM publications WHERE id = ?;`;
     connection.query(
@@ -224,6 +231,7 @@ exports.deletePublication = (req, res, next) => {
     )
 };
 
+// Cette fonction va nous permettre de liker ou disliker une publication
 exports.likePublication = (req, res, next) => {
     let now = new Date();
     let today = date.format(now, 'YYYY-MM-DD HH:mm:ss');
@@ -268,6 +276,7 @@ exports.likePublication = (req, res, next) => {
     )
 };
 
+// Cette fonction va nous permettre de récupérer les likes d'une publication afin de l'afficher sous la publication
 exports.getLikes = (req, res, next) => {
     let sql = `SELECT publication_user_liked.id as idLike, publication_user_liked.user_id as user_id_who_liked, publication_user_liked.publication_id as publication_id, users.id as user_id, users.picture_url, users.lastname as user_lastname, users.firstname as user_firstname, users.account_disabled as account_disabled FROM publication_user_liked LEFT JOIN users ON users.id = publication_user_liked.user_id AND users.account_disabled IS NULL WHERE publication_user_liked.publication_id = ?;`;
     connection.query(
