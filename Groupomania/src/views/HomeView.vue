@@ -268,12 +268,15 @@ function updatePublication(publication: any) {
             } else {
                 // Si le type de l'image sélectionner est une string cela veux dire que nous ne souhaitons pas modifier l'image de la publication
                 if (typeof (editPost.picture) == 'string') {
-                    editPost.picture = '';
-                    usePublicationsStore().updatePublication(publication.publication_id, editPost).then((response: any) => {
-                        socket.emit('edit publication', response, useAuthStore().$state.user);
-                        usePublicationsStore().resetPreview(publication.publication_id).then((response2: any) => {
+                    if(publication.content === editPost.content && publication.picture === editPost.picture) {
+                        usePublicationsStore().closeEditingMode(publication.publication_id);
+                    } else {
+                        usePublicationsStore().updatePublication(publication.publication_id, editPost).then((response: any) => {
+                            socket.emit('edit publication', response, useAuthStore().$state.user);
+                            usePublicationsStore().resetPreview(publication.publication_id).then((response2: any) => {
+                            })
                         })
-                    })
+                    }
                 } else {
                     wrongFileEdit.value = true;
                 }
@@ -380,7 +383,7 @@ watchEffect(() => {
     } else {
         buttonDisabled.value = false
     }
-    console.log(buttonDisabled.value);
+    // console.log(buttonDisabled.value);
 });
 
 // On place un watch sur la modalRequest afin que lorsque la modal de confirmation de suppression d'une publication s'affiche que le scroll soit désactivé

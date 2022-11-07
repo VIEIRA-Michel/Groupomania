@@ -416,6 +416,20 @@ export const usePublicationsStore = defineStore({
                 })
             })
         },
+        // Cette fonction va nous permettre de fermer le mode édition lorsque aucun changement n'a été apporté à la publication
+        closeEditingMode: (id: number) => {
+            usePublicationsStore().$patch((state: any) => {
+                // On parcours le tableau des publications
+                state.publications.map((item: any) => {
+                    if(item.publication_id == id) {
+                        // Et on passe la valeur permettant d'entrer en mode édition à false afin de fermer le mode édition
+                        item.editMode = false;
+                        // Et on passe la valeur permettant l'afficher du menu de la publication à false afin de masquer le menu
+                        item.menu = false;
+                    }
+                })
+            })
+        },
         // Cette fonction va nous servir à supprimer une publication
         deletePublication: (id: number) => {
             return new Promise((resolve, reject) => {

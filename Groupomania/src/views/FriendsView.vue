@@ -78,12 +78,14 @@ function replyToRequest(invitation: any, reply: string) {
 
 // Cette fonction va nous permettre de rechercher un utilisateur en fonction de ce que nous avons saisie dans la barre de recherche
 function searchUser() {
-    // On vérifie d'abord nos demandes d'ami envoyées afin d'afficher le bon bouton sous la carte d'utilisateur en fonction de la situation
-    useFriendshipStore().checkRequestsSended().then((response: any) => {
-        // On éxécute ensuite la fonction de recherche présente dans le store communiquant directement à l'api
-        useFriendshipStore().searchUser(search.value).then((response: any) => {
-        })
-    });
+    if(search.value.length > 0) {
+        // On vérifie d'abord nos demandes d'ami envoyées afin d'afficher le bon bouton sous la carte d'utilisateur en fonction de la situation
+        useFriendshipStore().checkRequestsSended().then((response: any) => {
+            // On éxécute ensuite la fonction de recherche présente dans le store communiquant directement à l'api
+            useFriendshipStore().searchUser(search.value).then((response: any) => {
+            })
+        });
+    }
 };
 
 // Cette fonction va nous permettre de transmettre l'id de l'utilisateur dont nous souhaitons annuler la demande d'ami
