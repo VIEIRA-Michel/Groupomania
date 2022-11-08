@@ -398,23 +398,23 @@ header {
                     position: absolute;
                     top: 54px;
                     right: 0px;
-                    background: #F5F5F5;
+                    background: #ffffff;
                     // padding: 10px;
 
                     &__list {
                         &__item {
                             padding: 10px;
-                            background: #FFFFFF;
+                            background: #f6f6f6;
                             border: 1px solid #dbdbdb;
                             border-radius: 5px;
                             margin: 10px;
 
                             &__content {
-                                background-color: floralwhite;
+                                background-color: #ebe6e2;
                                 padding: 10px;
                                 border-radius: 5px;
                                 margin-top: 10px;
-                                border: 1px solid #FD2D01;
+                                border: 1px solid #dbdbdb;
                                 -webkit-animation: text-focus-in 0.4s cubic-bezier(0.550, 0.085, 0.680, 0.530) both;
                                 animation: text-focus-in 0.4s cubic-bezier(0.550, 0.085, 0.680, 0.530) both;
 

@@ -40,4 +40,5 @@ export interface Publication {
     from?: number,
     page: number,
     previewOnEdit: null | Blob,
+    showUsersWhoLiked: boolean,
 };

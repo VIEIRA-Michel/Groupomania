@@ -11,6 +11,7 @@ import { useOtherStore } from '@/shared/stores/otherStore';
 // user va nous permettre de récupérer nos informations en tant qu'utilisateur
 const user = computed(() => useAuthStore().$state.user);
 
+
 // publications va nous permettre de récupérer les publications
 const publications = computed(() => usePublicationsStore().$state.publications);
 
@@ -28,6 +29,7 @@ const page = computed(() => usePublicationsStore().$state.page);
 
 // history va nous permettre de récupérer l'historique d'une publication qui a été modifier
 const history = computed(() => usePublicationsStore().$state.history);
+
 
 // selectedFile va nous permettre de récupérer le fichier sélectionné
 let selectedFile: any = ref<any>();
@@ -555,7 +557,7 @@ onBeforeMount(() => {
                                             </div>
                                             <Teleport to="body">
                                                 <div v-if="modalRequest" @click="modalRequest = false"
-                                                    class="calc d-flex flex-row justify-content-center align-items-center">
+                                                    class="calc">
                                                     <div @click.stop class="modal-container">
 
                                                         <div class="modal-container__content">
@@ -624,19 +626,62 @@ onBeforeMount(() => {
                         <div v-else class="post__likeAndComment">
                             <div class="post__interaction">
                                 <div class="post__interaction__like">
-                                    <button :class="[publication.iLike ? 'like' : '']"
+                                    <div :class="[publication.iLike ? 'like' : '']"
                                         @click.stop="likePublication(publication)">
-                                        <span>{{ publication.likes!.length + ' ' }}</span>
                                         <fa v-if="!publication.iLike" icon="fa-regular fa-heart" />
                                         <fa v-else icon="fa-solid fa-heart" />
-                                    </button>
+                                </div>
                                 </div>
                                 <div class="post__interaction__comment">
-                                    <button @click.stop="useCommentsStore().beforeGetComments(publication)"
+                                    <div @click.stop="useCommentsStore().beforeGetComments(publication)"
                                         type="button">
-                                        <span>{{ publication.numberOfComments + ' ' }}</span>
                                         <fa icon="fa-regular fa-comment-dots" />
-                                    </button>
+                                </div>
+                                </div>
+                            </div>
+                            <div class="post__likeAndComment__detail">
+                                <div class="post__likeAndComment__detail__like">
+                                    <template v-if="publication.likes.length > 0" v-for="(userHasLiked, i) in publication.likes" :key="i">
+                                            <img v-if="i < 3" :class="`userHasLiked ${'user' + i}`" :src="userHasLiked.picture_url" alt="">
+                                    </template>
+                                    <div v-if="publication.likes?.length > 3" class="icon-ellipsis">
+                                    <fa icon="fa-solid fa-ellipsis" />
+                                    </div>
+                                </div>
+                                <p v-show="publication.likes.length > 0" :class="[publication.likes.length == 1 ? 'post__likeAndComment__detail__info icon-1' : publication.likes.length == 2 ? 'post__likeAndComment__detail__info icon-2' : publication.likes.length == 3 ? 'post__likeAndComment__detail__info icon-3' : 'post__likeAndComment__detail__info icon-4' ]">Aimé par {{publication.iLike ? ' vous ' : ''}} {{ publication.iLike && publication.likes.length > 1 ? ' et ' : '' }}
+                                    <span @click="usePublicationsStore().showUsersWhoLikedThePublication(publication.publication_id, true)" v-if="publication.iLike && publication.likes.length > 1">{{ (publication.likes.length - 1) + (publication.likes.length > 2 ? ' personnes' : ' personne')}}</span>
+                                    <span @click="usePublicationsStore().showUsersWhoLikedThePublication(publication.publication_id, true)" v-if="!publication.iLike && publication.likes.length > 0"> {{ (publication.likes.length) + (publication.likes.length > 1 ? ' personnes' : ' personne')}}</span>
+                                </p>
+                                <Teleport to="body">
+                                    <div v-if="publication.showUsersWhoLiked" @click="usePublicationsStore().showUsersWhoLikedThePublication(publication.publication_id, false)" class="calc">
+                                        <div @click.stop class="modal-container-like">
+                                            <div class="modal-container-like__content">
+                                                <div class="modal-container-like__content__header">
+                                                    <div class="modal-container-like__content__header__title">
+                                                        Utilisateur(s) qui ont aimé
+                                                    </div>
+                                                </div>
+                                                <div class="modal-container-like__content__body">
+                                                    <div class="modal-container-like__content__body__users">
+                                                        <div :class="[publication.likes.length > 4 ? 'modal-container-like__content__body__users__list showScroll' : 'modal-container-like__content__body__users__list']">
+                                                            <div v-for="(userHasLiked, index) in publication.likes" :key="index" class="modal-container-like__content__body__users__list__item">
+                                                                <img :src="userHasLiked.picture_url" alt="">
+                                                                <div> {{(userHasLiked.user_firstname ? userHasLiked.user_firstname : userHasLiked.firstname) + ' ' + (userHasLiked.user_lastname ? userHasLiked.user_lastname : userHasLiked.lastname)}}</div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-container-like__content__footer">
+                                                    <button @click="usePublicationsStore().showUsersWhoLikedThePublication(publication.publication_id, false)"
+                                                        type="button"
+                                                        class="btn btn-primary">Fermer</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </Teleport>
+                                <div class="post__likeAndComment__detail__comment">
+                                    <p>{{ publication.numberOfComments == 0 ? '' : publication.numberOfComments == 1 ? publication.numberOfComments + ' commentaire' : publication.numberOfComments + ' commentaires'}}</p>
                                 </div>
                             </div>
                             <div class="post__interaction__comment__list">
@@ -683,8 +728,8 @@ onBeforeMount(() => {
     width: 470px;
     border-radius: 5px;
     margin: 60px auto auto auto;
-    background-color: floralwhite;
-    border: 1px solid #FD2D01;
+    background-color: #f6f6f6;
+    border: 1px solid #dbdbdb;
     -webkit-animation: slide-in-top 0.4s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
     animation: slide-in-top 0.4s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
 
@@ -755,7 +800,7 @@ onBeforeMount(() => {
                 border: 1px solid #DBDBDB;
                 border-radius: 5px;
                 padding: 0px 7px 0px 7px;
-                background-color: rgb(255, 255, 255);
+                background-color: #ffffff;
                 color: rgb(0, 0, 0);
 
                 &:focus-visible {
@@ -844,10 +889,6 @@ onBeforeMount(() => {
                         background: #f5f5f5;
                         transition: 0.3s all;
                     }
-
-                    &.post-edit {
-                        // width: 108px;
-                    }
                 }
 
                 &__submit {
@@ -925,8 +966,8 @@ onBeforeMount(() => {
     width: 470px;
     border-radius: 5px;
     margin: 10px auto auto auto;
-    background-color: #FFFFFF;
-    border: 1px solid #FD2D01;
+    background-color: #f6f6f6;
+    border: 1px solid #dbdbdb;
     position: relative;
 
     @media (max-width: 768px) {
@@ -935,7 +976,6 @@ onBeforeMount(() => {
 
     &__information {
         border-radius: 5px;
-        background-color: floralwhite;
     }
 
     &__top {
@@ -1069,12 +1109,9 @@ onBeforeMount(() => {
         margin: 10px;
 
         &__text {
-            // margin: 0px 10px 20px;
             display: flex;
             flex-direction: column;
             color: #4E5166;
-            // width: 96%;
-            width: 100%;
 
             span {
                 font-weight: bold;
@@ -1082,7 +1119,12 @@ onBeforeMount(() => {
 
             p {
                 width: 95%;
+                padding: 5px;
+                border-radius: 5px;
+                border: 1px solid #dbdbdb;
+                background-color: #ffffff;
                 overflow-wrap: break-word;
+                text-align: center;
             }
 
             .picture-message-alert {
@@ -1154,23 +1196,93 @@ onBeforeMount(() => {
     }
 
     &__likeAndComment {
-        border-top: 1px solid #dbdbdb;
+
+        &__detail {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            margin-bottom: 0px;
+            height: 30px;
+            &__like {
+                position: relative;
+                display: flex;
+                padding-left: 5px;
+                align-items: center;
+                $distance : 0;
+                .userHasLiked {
+                    position: absolute;
+                    @for $i from 1 through 4 {
+                        &.user0 {
+                            left: 0;
+                        }
+                        &.user1 {
+                            left: 15px;
+                        }
+                        &.user2 {
+                            left: 30px;
+                        }
+                    }
+                            width:25px;
+                            height:25px;
+                            border-radius: 50%;
+                            object-fit: cover;
+                            border: 1px solid #f6f6f6;
+                }
+                .icon-ellipsis {
+                    position: absolute;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    width: 25px;
+                    height: 25px;
+                    background-color: #dbdbdb;
+                    border: 1px solid #f6f6f6;
+                    border-radius: 50%;
+                    left: 45px;
+                    svg {
+                        color: #4E5166;
+                    }
+                }
+            }
+            &__info {
+                position: absolute;
+                
+                &.icon-1 {
+                    left: 40px;
+                }
+                &.icon-2 {
+                    left: 55px;
+                }
+                &.icon-3 {
+                    left: 70px;
+                }
+                &.icon-4 {
+                    left: 85px;
+                }
+                span {
+                    font-weight: bold;
+                    &:hover {
+                        cursor: pointer;
+                    }
+                }
+            }
+            &__comment {
+                padding-right: 5px;
+            }
+        }
     }
 
     &__interaction {
         display: flex;
-        width: 100%;
         border-radius: 0px 0px 15px 15px;
-
+        margin: 0 10px;
         &__like {
-            width: 50%;
-            padding: 5px;
-
-            button {
-                width: 100%;
+            div {
                 height: 100%;
-                background-color: #FFFFFF;
                 border: none;
+                background-color: #f6f6f6;
                 cursor: pointer;
                 display: flex;
                 justify-content: center;
@@ -1192,7 +1304,6 @@ onBeforeMount(() => {
             .like {
                 svg {
                     font-size: 20px;
-                    // color: linear-gradient(to right, #FD2D01, #FFD7D7);
                     color: #FD2D01;
                     -webkit-animation: jello-horizontal 0.9s both;
                     animation: jello-horizontal 0.9s both;
@@ -1201,14 +1312,11 @@ onBeforeMount(() => {
         }
 
         &__comment {
-            width: 50%;
             padding: 5px;
-            border-left: 1px solid #dbdbdb;
 
-            button {
-                width: 100%;
+            div {
                 height: 100%;
-                background-color: #FFFFFF;
+                background-color: #f6f6f6;
                 border: none;
                 cursor: pointer;
                 display: flex;
@@ -1382,7 +1490,6 @@ onBeforeMount(() => {
     }
 
     &__content {
-        // height: 100%; 
         max-height: 350px;
         overflow-y: scroll;
         margin-bottom: 20px;
@@ -1394,9 +1501,9 @@ onBeforeMount(() => {
         &__body {
             &__list {
                 &__item {
-                    background: floralwhite;
+                    background: #ebe6e2;
                     border-radius: 5px;
-                    border: 1px solid #FD2D01;
+                    border: 1px solid #dbdbdb;
                     margin: 20px;
                     padding: 10px 10px 0 10px;
 
@@ -1431,7 +1538,7 @@ onBeforeMount(() => {
 
                     &__content {
                         margin-top: 10px;
-                        background: #FFFFFF;
+                        background: #f5f5f5;
                         border: 1px solid #dbdbdb;
                         border-radius: 5px;
                         padding: 5px;
@@ -1475,6 +1582,84 @@ onBeforeMount(() => {
     }
 }
 
+.modal-container-like {
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 5px;
+    width: 350px;
+    border: 1px solid #dbdbdb;
+
+    &__content {
+        &__header {
+            &__title {
+                font-weight: bold;
+                font-size: 15px;
+                color: #FD2D01;
+                text-align: center;
+            }
+        }
+        &__body {
+            margin-top : 20px;
+            margin-bottom : 20px;
+            &__users {
+                &__list {
+                    margin-top: 10px;
+                    margin-bottom: 10px;
+                    padding: 10px;
+                    border-radius: 5px;
+                    max-height: 260px;
+                    border: 1px solid #dbdbdb;
+                    background-color: #f5f5f5;
+
+                    &__item {
+                        margin: 10px;
+                        display: flex;
+                        flex-direction: row;
+                        align-items: center;
+                        border-radius: 5px;
+                        background-color: #ebe6e2;
+                        padding: 10px;
+                        border: 1px solid #dbdbdb;
+                        img {
+                            width: 40px;
+                            height: 40px;
+                            border-radius: 5px;
+                            margin-right: 5px;
+                            object-fit: cover;
+                        }
+                        div {
+                            font-weight: bold;
+                        }
+                    }
+
+                    &.showScroll {
+                        overflow-y: scroll;
+                    }
+                }
+            }
+        }
+        &__footer {
+            display: flex;
+            justify-content: flex-end;
+            button {
+                border-color: #FD2D01;
+                color: #FD2D01;
+                background-color: #ffffff;
+                border: 1px solid #FD2D01;
+                padding: 5px;
+                border-radius: 5px;
+                font-size: 13px;
+                cursor: pointer;
+
+                &:hover {
+                    background-color: #FD2D01;
+                    color: #ffffff;
+                    transition: .3s all ease-in-out;
+                }
+            }
+        }
+    }
+}
 .publication {
     &:nth-child(1) {
         -webkit-animation: slide-in-left 0.2s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.5s both;

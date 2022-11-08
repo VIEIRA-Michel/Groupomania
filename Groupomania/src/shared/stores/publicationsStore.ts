@@ -77,6 +77,7 @@ export const usePublicationsStore = defineStore({
                             limit: 5,
                             from: 0,
                             previewOnEdit: null,
+                            showUsersWhoLiked: false,
                         });
                         usePublicationsStore().$patch((state: any) => {
                             // Si le state qui contient les publications possède déjà 5 publications nous allons supprimer la dernière publication et l'ajouter au cache
@@ -212,6 +213,7 @@ export const usePublicationsStore = defineStore({
                                         limit: 5,
                                         from: 0,
                                         previewOnEdit: null,
+                                        showUsersWhoLiked: false,
                                     })
                                 })
                                 // Si le cache contient des données, nous allons ajouter les publications récupérées dans le state cache
@@ -231,6 +233,7 @@ export const usePublicationsStore = defineStore({
                                         limit: 5,
                                         from: 0,
                                         previewOnEdit: null,
+                                        showUsersWhoLiked: false,
                                     });
                                     state.isLoading = false;
                                 })
@@ -426,6 +429,21 @@ export const usePublicationsStore = defineStore({
                         item.editMode = false;
                         // Et on passe la valeur permettant l'afficher du menu de la publication à false afin de masquer le menu
                         item.menu = false;
+                    }
+                })
+            })
+        },
+        showUsersWhoLikedThePublication: (id: number, show: boolean) => {
+            usePublicationsStore().$patch((state: any) => {
+                state.publications.map((item: any) => {
+                    if(show) {
+                        if (item.publication_id === id) {
+                            item.showUsersWhoLiked = true;
+                        } else {
+                            item.showUsersWhoLiked = false;
+                        }
+                    } else {
+                        item.showUsersWhoLiked = false;
                     }
                 })
             })

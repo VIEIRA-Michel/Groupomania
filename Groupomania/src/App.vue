@@ -26,6 +26,6 @@ function logout() {
 
 body {
   margin: auto;
-  background-color: #FFD7D7;
+  background-color: #ebe6e2;
 }
 </style>
