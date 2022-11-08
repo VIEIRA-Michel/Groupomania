@@ -406,13 +406,13 @@ header {
                             padding: 10px;
                             background: #f6f6f6;
                             border: 1px solid #dbdbdb;
-                            border-radius: 5px;
+                            border-radius: 10px;
                             margin: 10px;
 
                             &__content {
                                 background-color: #ebe6e2;
                                 padding: 10px;
-                                border-radius: 5px;
+                                border-radius: 10px;
                                 margin-top: 10px;
                                 border: 1px solid #dbdbdb;
                                 -webkit-animation: text-focus-in 0.4s cubic-bezier(0.550, 0.085, 0.680, 0.530) both;
@@ -430,7 +430,7 @@ header {
                                                 width: 20px;
                                                 height: 20px;
                                                 object-fit: cover;
-                                                border-radius: 5px;
+                                                border-radius: 50%;
                                             }
                                         }
 
@@ -456,7 +456,7 @@ header {
                                                 width: 100%;
                                                 height: 150px;
                                                 object-fit: cover;
-                                                border-radius: 5px;
+                                                border-radius: 10px;
                                             }
                                         }
                                     }
@@ -496,10 +496,10 @@ header {
 
                     &__avatar {
                         img {
-                            width: 40px;
-                            height: 40px;
+                            width: 38px;
+                            height: 38px;
                             object-fit: cover;
-                            border-radius: 5px;
+                            border-radius: 50%;
                         }
                     }
 

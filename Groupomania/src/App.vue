@@ -19,9 +19,19 @@ function logout() {
   <router-view>
   </router-view>
 </template>
-<style>
+<style lang="scss">
 * {
   font-family: 'Lato', sans-serif;
+
+  &::-webkit-scrollbar {
+    width: 4px;
+    background:#ffffff;
+
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #fd2d02;
+  }
 }
 
 body {

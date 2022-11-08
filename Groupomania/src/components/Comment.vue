@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useCommentsStore } from '@/shared/stores/commentsStore';
-import { ref } from 'vue';
+import { onMounted, ref } from 'vue';
 import socket from '@/socket';
 import { useAuthStore } from '@/shared/stores/authStore';
 
@@ -28,6 +28,7 @@ const emit = defineEmits<{
 
 // Cette fonction va nous permettre de redimensionner le champ de saisie de texte en fonction de la taille du texte saisi afin de toujours voir l'ensemble du texte saisi
 function autoResize(event: any) {
+    console.log('resizeeeeee');
     event.target.style.height = 'auto';
     event.target.style.height = event.target.scrollHeight + 'px';
 }
@@ -69,9 +70,15 @@ function deleteComment() {
     // Et on repasse la valeur de modalComment à false afin de faire disparaître la modal
     modalComment.value = false;
 }
+
+// Lors du clic sur le texte présent en guise de placeholder cette fonction va nous permettre de placer le curseur sur la balise textarea afin de saisir le commentaire
+function focusInput() {
+    document.querySelector('.create_post__info__content__input').focus();
+}
+
 </script>
 <template>
-    <div v-if="props.comments!.length > 0" class="container-post">
+    <div v-if="props.comments!.length > 0" :class="[props.comments!.length > 5 ? 'container-post scrollY' : 'container-post' ]">
         <div class="more-post">
             <button v-if="props.comments?.length! < props.numberOfComments!" @click="emit('getMore')"
                 class="more-post__button">
@@ -86,13 +93,16 @@ function deleteComment() {
                     </div>
                     <div
                         :class="[com.role_id == 2 ? 'post__details__info__commentary administrator' : 'post__details__info__commentary']">
-                        <div class="post__details__info__commentary__name">
-                            <span v-if="com.role_id == 1">{{ com.firstname + ' ' + com.lastname }}</span>
-                            <span class="post__details__info__commentary__name__role"
-                                v-if="com.role_id == 2">Administrateur</span>
-                        </div>
-                        <div class="post__details__info__commentary__date">
-                            <span>{{ com.comment_created_at }}</span>
+                        <div class="post__details__info__commentary__top">
+                            <div class="post__details__info__commentary__top__name">
+                                <span v-if="com.role_id == 1">{{ com.firstname + ' ' + com.lastname }}</span>
+                                <span class="post__details__info__commentary__top__name__role"
+                                    v-if="com.role_id == 2">Administrateur</span>
+                            </div>
+                            <div class="post__details__info__commentary__top__date">
+                                <span>{{ com.comment_created_at }}</span>
+                            </div>
+
                         </div>
                         <div class="post__details__info__commentary__content">
                             <p>{{ com.comment_content }}</p>
@@ -131,8 +141,11 @@ function deleteComment() {
         <div class="create_post__info">
             <div class="create_post__info__content">
                 <form @submit.prevent="createComment($event)">
-                    <textarea v-model="inputComment" placeholder="Écrivez un commentaire..."
-                        class="create_post__info__content__input" @input="autoResize($event)"></textarea>
+                    <textarea v-model="inputComment" class="create_post__info__content__input"
+                        @input="autoResize($event)">
+                    </textarea>
+                    <div v-if="inputComment.length == 0" @click="focusInput"
+                        class="create_post__info__content__input__placeholder"></div>
                     <input type="submit">
                 </form>
             </div>
@@ -144,15 +157,22 @@ function deleteComment() {
 @import '../styles/Utils/variables';
 @import '../styles/Components/buttons';
 
+* {
+    font-family: 'Lato', sans-serif !important;
+}
+
+
 .container-post {
     border-top: 1px solid #dbdbdb;
     width: 100%;
     display: flex;
     flex-direction: column;
-    overflow-y: scroll;
     max-height: 507px;
     padding-bottom: 20px;
 
+    &.scrollY {
+        overflow-y: scroll;
+    }
     .post {
         display: flex;
         justify-content: flex-start;
@@ -173,25 +193,26 @@ function deleteComment() {
                 width: 100%;
                 display: flex;
                 align-items: start;
-                margin-left: 15px;
+                margin-left: 10px;
 
                 &__avatar {
                     overflow: hidden;
-                    margin-right: 10px;
+                    width: 43px;
+                    height: 43px;
 
                     img {
-                        width: 40px;
-                        height: 40px;
+                        width: 43px;
+                        height: 43px;
                         object-fit: cover;
-                        border-radius: 5px;
+                        border-radius: 50%;
                     }
                 }
 
                 &__commentary {
-                    background: #dbdbdb;
-                    border-radius: 5px;
-                    padding: 5px;
-                    border: 1px solid #4E5166;
+                    background: #ebe6e2;
+                    border-radius: 10px;
+                    padding: 0 5px;
+                    border: 1px solid #dbdbdb;
                     width: 70%;
                     margin-left: 10px;
 
@@ -199,32 +220,42 @@ function deleteComment() {
                         background: #ffcf77;
                     }
 
-                    &__name {
-                        margin-bottom: 5px;
+                    &__top {
+                        display: flex;
+                        flex-direction: row;
+                        justify-content: space-between;
+                        align-items: center;
+                        padding-top: 2px;
 
-                        span {
-                            font-weight: 700;
+                        &__name {
+                            margin-bottom: 5px;
+
+                            span {
+                                font-weight: 700;
+                            }
+
+                            &__role {
+                                font-size: 12px;
+                                color: #FFFFFF;
+                                padding: 2px;
+                                background: #FD2D01;
+                                border-radius: 5px;
+                            }
                         }
 
-                        &__role {
+                        &__date {
                             font-size: 12px;
-                            color: #FFFFFF;
-                            padding: 2px;
-                            background: #FD2D01;
-                            border-radius: 5px;
+                            color: #FD2D01;
                         }
                     }
 
-                    &__date {
-                        font-size: 12px;
-                        color: #FD2D01;
-                    }
 
                     &__content {
-                        margin-top: 10px;
+                        padding-bottom: 2px;
 
                         p {
                             width: 100%;
+                            font-size: 14px;
                             overflow-wrap: break-word;
                             margin: 0;
                             color: #4E5166;
@@ -258,24 +289,30 @@ function deleteComment() {
         &__button {
             margin: 20px auto;
             display: flex;
-            border: none;
-            padding: 5px;
-            color: floralwhite;
-            background-color: #4E5166;
-            border-radius: 5px;
-
+            padding: 5px 10px;
+            color: #4E5166;
+            background-color: #dbdbdb;
+            border: 1px solid transparent;
+            border-radius: 10px;
+            cursor: pointer;
+            &:hover {
+                border: 1px solid #4E5166;
+                background-color: #f5f5f5;
+                transition: .3s all ease-in-out;
+            }
         }
     }
 }
 
 .create_post {
     display: flex;
-    justify-content: center;
+    // justify-content: center
+    width: 100%;
     align-items: center;
+
     padding: 20px 0;
     background: #f5f5f5;
-    border-radius: 0 0 5px 5px;
-    border-top: 1px solid #dbdbdb;
+    border-radius: 0 0 20px 20px;
 
     &__top {
         margin-left: 10px;
@@ -298,7 +335,7 @@ function deleteComment() {
     &__info {
         // margin-left: 8px;
         border-radius: 5px;
-        width: 90%;
+        width: 100%;
 
         &__name {
             span {
@@ -308,18 +345,38 @@ function deleteComment() {
 
         &__content {
             &__input {
-                border: none;
                 outline: none;
                 color: #4E5166;
                 display: block;
                 overflow: hidden;
                 resize: none;
-                border: none;
-                width: 98%;
-                border-radius: 5px;
+                width: 83.485%;
+                margin: 0 15px;
+                height: 56px;
+                // height: 30px;
+                padding-top: 6px;
+                padding-left: 8px;
+                // width: 70.485%;
+                border-radius: 10px;
                 border: 1px solid #dbdbdb;
                 background-color: rgb(255, 255, 255);
                 color: rgb(0, 0, 0);
+                font-size: 14px;
+
+                &__placeholder {
+                    color: #dbdbdb;
+                    position: absolute;
+                    left: 5%;
+                    top: 15%;
+
+                    &::before {
+                        content: 'Écrivez un commentaire...';
+                        cursor: text;
+                        color: #dbdbdb;
+                        background: transparent;
+                        font-size: 14px;
+                    }
+                }
 
                 @media (max-width: 768px) {
                     width: 90%;
@@ -333,18 +390,20 @@ function deleteComment() {
 
             form {
                 display: flex;
-                flex-wrap: wrap;
-                justify-content: end;
+                flex-direction: row;
+                justify-content: space-around;
+                position: relative;
 
                 input {
+                    width: 16.515%;
                     background-color: #f5f5f5;
-                    margin-top: 20px;
                     border-color: #FD2D01;
                     color: #FD2D01;
                     padding: 5px 10px;
                     border: 1px solid #FD2D01;
-                    border-radius: 5px;
+                    border-radius: 10px;
                     cursor: pointer;
+                    margin-right: 15px;
                     transition: all 0.3s ease-in-out;
 
                     &:hover {

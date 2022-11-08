@@ -584,7 +584,7 @@ onBeforeMount(() => {
                                 </div>
                             </div>
                             <div class="post__content">
-                                <div class="post__content__text">
+                                <div :class="[publication.editMode ? 'post__content__text editingMode' : 'post__content__text']">
                                     <template v-if="publication.editMode">
                                         <textarea ref="jedi" type="text" v-model="editPost.content"
                                             class="create_post__content__details__text post-edit"
@@ -592,9 +592,11 @@ onBeforeMount(() => {
                                         <input type="file" ref="fileInput" accept="image/*"
                                             @change="editPickFile($event, publication)" id="file-edit"
                                             class="create_post__content__details__file">
-                                        <div @click="chooseFile('edit')"
-                                            class="create_post__content__details__button__choose post-edit">Choisir un
-                                            fichier</div>
+                                            <div>
+                                                <div @click="chooseFile('edit')"
+                                                    class="create_post__content__details__button__choose post-edit">Choisir un
+                                                    fichier</div>
+                                            </div>
                                         <span v-if="wrongFileEdit" class="picture-message-alert">Seuls
                                             les images
                                             aux formats .jpg .jpeg
@@ -711,7 +713,7 @@ onBeforeMount(() => {
 @import '../styles/Utils/keyframes';
 
 * {
-    font-family: 'Lato', sans-serif;
+    font-family: 'Lato', sans-serif !important;
 }
 
 @import '../styles/Components/buttons';
@@ -726,7 +728,7 @@ onBeforeMount(() => {
     display: flex;
     flex-direction: column;
     width: 470px;
-    border-radius: 5px;
+    border-radius: 20px;
     margin: 60px auto auto auto;
     background-color: #f6f6f6;
     border: 1px solid #dbdbdb;
@@ -755,9 +757,9 @@ onBeforeMount(() => {
                 margin-right: 10px;
 
                 img {
-                    width: 40px;
-                    border-radius: 5px;
-                    height: 40px;
+                    width: 38px;
+                    border-radius: 50%;
+                    height: 38px;
                     object-fit: cover;
                 }
             }
@@ -798,8 +800,8 @@ onBeforeMount(() => {
                 overflow: hidden;
                 resize: none;
                 border: 1px solid #DBDBDB;
-                border-radius: 5px;
-                padding: 0px 7px 0px 7px;
+                border-radius: 10px;
+                padding: 2px 7px 2px 7px;
                 background-color: #ffffff;
                 color: rgb(0, 0, 0);
 
@@ -845,7 +847,7 @@ onBeforeMount(() => {
                 color: #FFFFFF;
                 padding: 5px 10px;
                 border: 1px solid #FD2D01;
-                border-radius: 5px;
+                border-radius: 10px;
                 cursor: pointer;
                 transition: all 0.3s ease-in-out;
 
@@ -854,7 +856,7 @@ onBeforeMount(() => {
                     justify-content: center;
                     align-items: center;
                     color: #FFFFFF;
-                    border-radius: 5px;
+                    border-radius: 10px;
                     background: #FD2D01;
                     cursor: pointer;
                     position: absolute;
@@ -875,11 +877,11 @@ onBeforeMount(() => {
                     display: flex;
                     justify-content: center;
                     align-items: center;
-                    padding: 5px;
+                    padding: 5px 10px;
                     font-size: 13px;
                     background: #dbdbdb;
                     color: #4E5166;
-                    border-radius: 5px;
+                    border-radius: 10px;
                     cursor: pointer;
                     margin: 10px 0;
                     border: 1px solid transparent;
@@ -944,11 +946,11 @@ onBeforeMount(() => {
         }
 
         &__submit {
-            background: #FFFFFF;
+            background: #f6f6f6;
             border: 1px solid #FD2D01;
             color: #FD2D01;
-            padding: 5px;
-            border-radius: 5px;
+            padding: 5px 10px;
+            border-radius: 10px;
             cursor: pointer;
 
             &:hover {
@@ -964,7 +966,7 @@ onBeforeMount(() => {
     display: flex;
     flex-direction: column;
     width: 470px;
-    border-radius: 5px;
+    border-radius: 20px;
     margin: 10px auto auto auto;
     background-color: #f6f6f6;
     border: 1px solid #dbdbdb;
@@ -991,14 +993,17 @@ onBeforeMount(() => {
                 margin-right: 0.5rem;
 
                 img {
-                    width: 40px;
-                    border-radius: 5px;
-                    height: 40px;
+                    width: 38px;
+                    border-radius: 50%;
+                    height: 38px;
                     object-fit: cover;
                 }
             }
 
             &__info {
+                display: flex;
+                flex-direction: column;
+                justify-content: space-evenly;  
                 &__name {
                     font-weight: bold;
                 }
@@ -1112,6 +1117,17 @@ onBeforeMount(() => {
             display: flex;
             flex-direction: column;
             color: #4E5166;
+            // width: 100%;
+            &.editingMode {
+                flex-direction: row;
+                width: 100%;
+                flex-wrap: wrap;
+
+                textarea {
+                    width: 100% !important;
+                }
+
+            }
 
             span {
                 font-weight: bold;
@@ -1144,7 +1160,7 @@ onBeforeMount(() => {
             max-height: 353px;
             object-fit: cover;
             border: 1px solid #dbdbdb;
-            border-radius: 5px;
+            border-radius: 10px;
             background: #FFFFFF;
             margin-top: 10px;
 
@@ -1341,7 +1357,6 @@ onBeforeMount(() => {
     }
 
     &__button {
-        background: floralwhite;
         border-radius: 0 0 5px 5px;
 
         &__list {
@@ -1363,7 +1378,6 @@ onBeforeMount(() => {
             }
 
             .cancel {
-                background-color: #FFFFFF;
                 border: 1px solid #4E5166;
                 color: #4E5166;
 
@@ -1374,7 +1388,6 @@ onBeforeMount(() => {
             }
 
             .submit {
-                background: #FFFFFF;
                 border: 1px solid #FD2D01;
                 color: #FD2D01;
 
@@ -1502,7 +1515,7 @@ onBeforeMount(() => {
             &__list {
                 &__item {
                     background: #ebe6e2;
-                    border-radius: 5px;
+                    border-radius: 20px;
                     border: 1px solid #dbdbdb;
                     margin: 20px;
                     padding: 10px 10px 0 10px;
@@ -1513,22 +1526,26 @@ onBeforeMount(() => {
 
                             &__avatar {
                                 img {
-                                    width: 40px;
-                                    height: 40px;
-                                    border-radius: 5px;
+                                    width: 38px;
+                                    height: 38px;
+                                    border-radius: 50%;
                                     object-fit: cover;
                                 }
                             }
 
                             &__info {
                                 margin-left: 10px;
+                                display: flex;
+                                flex-direction: column;
+                                justify-content: space-evenly;
 
                                 &__name {
                                     font-weight: bold;
+                                    font-size: 16px;
                                 }
 
                                 &__date {
-                                    font-size: 12px;
+                                    font-size: 14px;
                                     color: #FD2D01;
                                 }
                             }
@@ -1540,7 +1557,7 @@ onBeforeMount(() => {
                         margin-top: 10px;
                         background: #f5f5f5;
                         border: 1px solid #dbdbdb;
-                        border-radius: 5px;
+                        border-radius: 10px;
                         padding: 5px;
                     }
 
@@ -1552,7 +1569,7 @@ onBeforeMount(() => {
                         img {
                             width: 100%;
                             object-fit: cover;
-                            border-radius: 5px;
+                            border-radius: 10px;
                         }
                     }
                 }
@@ -1567,10 +1584,10 @@ onBeforeMount(() => {
 
         button {
             background-color: #FFFFFF;
-            padding: 5px;
+            padding: 5px 10px;
             color: #FD2D01;
             border: 1px solid #FD2D01;
-            border-radius: 5px;
+            border-radius: 10px;
             cursor: pointer;
 
             &:hover {
