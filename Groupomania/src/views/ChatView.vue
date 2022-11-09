@@ -46,7 +46,7 @@ function isTyping(param: any) {
     <div class="container">
         <div :class="[selectedUser ? 'container-left active' : 'container-left']">
             <div class="container-left__title">
-                Amis en ligne ({{ usersOnline.length }})
+                Discussions
             </div>
             <div class="container-left__list">
                 <UserChat v-if="users.length > 0" v-for="utilisateur in users" :key="utilisateur.userID"
@@ -87,11 +87,10 @@ function isTyping(param: any) {
 
     .container-left {
         width: 30%;
-        border-right: 1px solid #DBDBDB;
-        border: 1px solid #FD2D01;
-        border-radius: 5px;
+        border: 1px solid #dbdbdb;
+        border-radius: 20px;
         margin-right: 10px;
-        background-color: floralwhite;
+        background-color: #f6f6f6;
         z-index: 2;
         -webkit-animation: slide-in-left-chat 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
         animation: slide-in-left-chat 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
@@ -102,15 +101,12 @@ function isTyping(param: any) {
             display: flex;
             justify-content: center;
             margin: 20px;
-            border: 1px solid #dbdbdb;
-            background: #FFFFFF;
-            padding: 10px;
             border-radius: 5px;
         }
 
         &__list {
             border-radius: 5px 5px 0 0;
-            margin-top: 20px;
+            margin: 20px;
 
             &__message {
                 text-align: center;
@@ -121,7 +117,7 @@ function isTyping(param: any) {
             }
 
             &__item {
-                justify-content: center;
+                // justify-content: center;
                 // @media only screen and (max-width: 768px) {
                 //     display: flex;
                 // }
@@ -152,8 +148,8 @@ function isTyping(param: any) {
         display: flex;
         flex-direction: column;
         justify-content: space-between;
-        border: 1px solid #FD2D01;
-        border-radius: 5px;
+        border: 1px solid #dbdbdb;
+        border-radius: 20px;
         margin-right: 10px;
         z-index: 1;
         -webkit-animation: slide-in-left-chat 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.3s both;
@@ -173,8 +169,8 @@ function isTyping(param: any) {
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            border: 1px solid #FD2D01;
-            border-radius: 5px;
+            border: 1px solid #dbdbdb;
+            border-radius: 20px;
             margin-right: 10px;
             z-index: 1;
             -webkit-animation: slide-out-right 0.3s cubic-bezier(0.550, 0.085, 0.680, 0.530) both;

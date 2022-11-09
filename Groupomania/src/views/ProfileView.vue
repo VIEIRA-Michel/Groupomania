@@ -151,10 +151,11 @@ watch(userEdit, (value: any) => {
                 <h1>Editer mon profil</h1>
             </div>
             <div v-if="updatedProfil" class="edit-profil__notification success">
-                <fa icon="fa-solid fa-check" />
-                <p>Profil mis à jour !</p>
+            <!-- <div class="edit-profil__notification success"> -->
+                <p>Profil mis à jour ! <span>Vous allez être redirigé dans 2 secondes..</span></p>
             </div>
             <div v-if="inputError || wrongFile" class="edit-profil__notification verifyInput">
+            <!-- <div class="edit-profil__notification verifyInput"> -->
                 <fa icon="fa-solid fa-triangle-exclamation" />
                 <p>{{ errorMessage }}</p>
             </div>
@@ -217,21 +218,29 @@ watch(userEdit, (value: any) => {
         align-items: center;
         width: 70%;
         height: 100%;
-        background-color: floralwhite;
+        background-color: #f6f6f6;
         padding: 20px;
-        border-radius: 5px;
+        border-radius: 20px;
         margin: 40px auto auto auto;
-        border: 1px solid #FD2D01;
+        border: 1px solid #dbdbdb;
         transition: all 0.3s ease-in-out;
+        position: relative;
 
         &__notification {
-            height: 20px;
-            width: 100%;
-            border-radius: 5px;
+            // height: 20px;
+            border-radius: 10px;
             display: flex;
             justify-content: center;
             font-weight: 300;
             margin-bottom: 20px;
+            padding: 10px;
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            box-shadow: rgb(0 0 0 / 22%) 0px 2px 18px 0px;
+            span {
+                font-weight: 300;
+            }
 
             svg {
                 margin-right: 10px;
@@ -239,14 +248,28 @@ watch(userEdit, (value: any) => {
 
             &.success {
                 color: black;
-                background: #BCFFCB;
-                border: 1px solid darkgreen;
+                background: #FD2D01;
+                color: #ffffff;
+                font-weight: 500;
+
+                p {
+                    color: #ffffff;
+                    display: flex;
+                    flex-direction: column;
+                    span {
+
+                    }
+                }
             }
 
             &.verifyInput {
-                color: #FFFFFF;
-                background-color: #FF7A79;
-                border: 1px solid darkred;
+                background-color: #4E5166;
+                color: #ffffff;
+                font-weight: 500;
+
+                p {
+                    color: #ffffff;
+                }
             }
         }
 
@@ -256,13 +279,11 @@ watch(userEdit, (value: any) => {
             justify-content: center;
             width: 100%;
             height: 50px;
-            background-color: #ffffff;
             border-radius: 5px;
-            border: 1px solid #dbdbdb;
             margin-bottom: 20px;
 
             h1 {
-                font-size: 20px;
+                font-size: 16px;
                 color: #4E5166;
             }
         }
@@ -283,7 +304,7 @@ watch(userEdit, (value: any) => {
                 align-items: center;
                 width: 100%;
                 height: 100%;
-                background-color: floralwhite;
+                background-color: #f6f6f6;
                 border-radius: 0 0 5px 5px;
 
                 &__picture {
@@ -310,7 +331,7 @@ watch(userEdit, (value: any) => {
                         border-radius: 50%;
                         transform: translate(-50%, -50%);
                         color: #4E5166;
-                        font-size: 15px;
+                        font-size: 12px;
                         z-index: 1;
                         cursor: pointer;
                     }
@@ -320,10 +341,10 @@ watch(userEdit, (value: any) => {
                         top: 80%;
                         left: 80%;
                         border: 1px solid #4E5166;
-                        padding: 5px;
+                        padding: 4px;
                         border-radius: 50%;
                         transform: translate(-50%, -50%);
-                        font-size: 15px;
+                        font-size: 14px;
                         width: 15px;
                         height: 15px;
                         opacity: 0;
@@ -336,7 +357,7 @@ watch(userEdit, (value: any) => {
                     align-items: center;
                     width: 100%;
                     height: 100%;
-                    background-color: floralwhite;
+                    background-color: #f6f6f6;
                     border-radius: 0 0 5px 5px;
                     margin-top: 20px;
                     transition: all 0.3s ease-in-out;
@@ -348,7 +369,12 @@ watch(userEdit, (value: any) => {
 
                         input {
                             border: 1px solid #dbdbdb;
-                            border-radius: 5px;
+                            border-radius: 10px;
+                            padding: 5px;
+
+                            &:focus {
+                                outline: none;
+                            }
                         }
 
                         .input-file {
@@ -356,7 +382,7 @@ watch(userEdit, (value: any) => {
                         }
 
                         label {
-                            font-size: 20px;
+                            font-size: 14px;
                             color: #FD2D01;
                             margin-top: 15px;
                             margin-bottom: 5px;
@@ -372,24 +398,22 @@ watch(userEdit, (value: any) => {
                         justify-content: center;
                         width: 100%;
                         height: 50px;
-                        background-color: floralwhite;
                         border-radius: 0 0 5px 5px;
                         transition: all 0.3s ease-in-out;
 
                         button {
-                            margin-left: 5px;
-                            background-color: #FFFFFF;
-                            border-color: #bcffcb;
-                            color: darkgreen;
+                            background-color: #f6f6f6;
+                            color: #FD2D01;
                             padding: 10px;
-                            border: 1px solid darkgreen;
-                            border-radius: 5px;
+                            border: 1px solid #FD2D01;
+                            border-radius: 10px;
                             cursor: pointer;
                             transition: all 0.3s ease-in-out;
 
                             &:hover {
-                                background-color: #bcffcb;
-                                border-color: darkgreen;
+                                background-color: #FD2D01;
+                                color: #ffffff;
+                                transition: .3s all ease-in-out;
                             }
                         }
 

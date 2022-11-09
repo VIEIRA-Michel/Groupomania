@@ -641,7 +641,7 @@ onBeforeMount(() => {
                                 </div>
                                 </div>
                             </div>
-                            <div class="post__likeAndComment__detail">
+                            <div :class="[publication.likes.length > 0 || publication.numberOfComments > 0 ? 'post__likeAndComment__detail active' : 'post__likeAndComment__detail' ]">
                                 <div class="post__likeAndComment__detail__like">
                                     <template v-if="publication.likes.length > 0" v-for="(userHasLiked, i) in publication.likes" :key="i">
                                             <img v-if="i < 3" :class="`userHasLiked ${'user' + i}`" :src="userHasLiked.picture_url" alt="">
@@ -682,7 +682,7 @@ onBeforeMount(() => {
                                         </div>
                                     </div>
                                 </Teleport>
-                                <div class="post__likeAndComment__detail__comment">
+                                <div @click.stop="useCommentsStore().beforeGetComments(publication)" class="post__likeAndComment__detail__comment">
                                     <p>{{ publication.numberOfComments == 0 ? '' : publication.numberOfComments == 1 ? publication.numberOfComments + ' commentaire' : publication.numberOfComments + ' commentaires'}}</p>
                                 </div>
                             </div>
@@ -711,13 +711,12 @@ onBeforeMount(() => {
 </template>
 <style scoped lang="scss">
 @import '../styles/Utils/keyframes';
+@import '../styles/Components/buttons';
 
 * {
     font-family: 'Lato', sans-serif !important;
 }
 
-@import '../styles/Components/buttons';
-@import '../styles/Utils/keyframes';
 
 .container {
     position: relative;
@@ -1042,6 +1041,10 @@ onBeforeMount(() => {
                 svg {
                     cursor: pointer;
                     color: #4E5166;
+                    &:hover {
+                        color: #FD2D01;
+                        transition: .3s all ease-in-out;
+                    }
                 }
             }
 
@@ -1218,9 +1221,16 @@ onBeforeMount(() => {
             flex-direction: row;
             justify-content: space-between;
             align-items: center;
-            padding: 10px;
+            padding: 0px;
             margin-bottom: 0px;
-            height: 30px;
+            height: 0px;
+
+            &.active {
+                // display: flex;
+                transition: .3s all ease-in-out;
+                padding: 10px;
+                height: 30px;
+            }
             &__like {
                 position: relative;
                 display: flex;
@@ -1232,12 +1242,18 @@ onBeforeMount(() => {
                     @for $i from 1 through 4 {
                         &.user0 {
                             left: 0;
+                            -webkit-animation: roll-in-blurred-left 0.65s cubic-bezier(0.230, 1.000, 0.320, 1.000) 0.6s both;
+	                        animation: roll-in-blurred-left 0.65s cubic-bezier(0.230, 1.000, 0.320, 1.000) 0.6s both;
                         }
                         &.user1 {
                             left: 15px;
+                            -webkit-animation: roll-in-blurred-left 0.65s cubic-bezier(0.230, 1.000, 0.320, 1.000) 0.4s both;
+	                        animation: roll-in-blurred-left 0.65s cubic-bezier(0.230, 1.000, 0.320, 1.000) 0.4s both;
                         }
                         &.user2 {
                             left: 30px;
+                            -webkit-animation: roll-in-blurred-left 0.65s cubic-bezier(0.230, 1.000, 0.320, 1.000) 0.2s both;
+	                        animation: roll-in-blurred-left 0.65s cubic-bezier(0.230, 1.000, 0.320, 1.000) 0.2s both;
                         }
                     }
                             width:25px;
@@ -1257,6 +1273,8 @@ onBeforeMount(() => {
                     border: 1px solid #f6f6f6;
                     border-radius: 50%;
                     left: 45px;
+                    -webkit-animation: roll-in-blurred-left 0.65s cubic-bezier(0.230, 1.000, 0.320, 1.000) both;
+	                animation: roll-in-blurred-left 0.65s cubic-bezier(0.230, 1.000, 0.320, 1.000) both;
                     svg {
                         color: #4E5166;
                     }
@@ -1286,6 +1304,11 @@ onBeforeMount(() => {
             }
             &__comment {
                 padding-right: 5px;
+                cursor: pointer;
+
+                &:hover {
+                    text-decoration: underline;
+                }
             }
         }
     }
@@ -1298,7 +1321,6 @@ onBeforeMount(() => {
             div {
                 height: 100%;
                 border: none;
-                background-color: #f6f6f6;
                 cursor: pointer;
                 display: flex;
                 justify-content: center;
@@ -1312,6 +1334,11 @@ onBeforeMount(() => {
                 svg {
                     font-size: 20px;
                     color: #4E5166;
+
+                    &:hover {
+                        color: #FD2D01;
+                        transition: .3s all ease-in-out;
+                    }
                 }
 
 
@@ -1328,6 +1355,7 @@ onBeforeMount(() => {
         }
 
         &__comment {
+            cursor:pointer;
             padding: 5px;
 
             div {
@@ -1338,15 +1366,19 @@ onBeforeMount(() => {
                 display: flex;
                 justify-content: center;
                 align-items: center;
-
+                
                 span {
                     font-size: 20px;
                     margin-right: 5px;
                 }
-
+                
                 svg {
                     font-size: 20px;
                     color: #4E5166;
+                    &:hover {
+                        color: #FD2D01;
+                        transition: .3s all ease-in-out;
+                    }
                 }
             }
 
@@ -1372,12 +1404,10 @@ onBeforeMount(() => {
                 cursor: pointer;
                 transition: all 0.3s ease-in-out;
 
-                &:hover {
-                    // background: 
-                }
             }
 
             .cancel {
+                background-color: #f6f6f6;
                 border: 1px solid #4E5166;
                 color: #4E5166;
 
@@ -1388,6 +1418,7 @@ onBeforeMount(() => {
             }
 
             .submit {
+                background-color: #f6f6f6;
                 border: 1px solid #FD2D01;
                 color: #FD2D01;
 
@@ -1420,7 +1451,18 @@ onBeforeMount(() => {
         }
 
         button {
-            @include button-primary;
+            padding: 10px;
+            border-radius: 20px;
+            background-color: #ebe6e2;
+            border: 1px solid #FD2D01;
+            color: #FD2D01;
+            cursor: pointer;
+            
+            &:hover {
+                background-color: #FD2D01;
+                color: #ffffff;
+                transition: .3s all ease-in-out;
+            }
         }
     }
 }

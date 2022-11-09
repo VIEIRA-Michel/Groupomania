@@ -313,6 +313,12 @@ export const useFriendshipStore = defineStore({
                 })
             })
         },
+        // Cette fonction va nous permettre de vider les résultats de recherche
+        resetSearch: () => {
+            useFriendshipStore().$patch((state: any) => {
+                state.searchResults.splice(0, state.searchResults.length);
+            })
+        },
         // Cette fonction permet d'envoyer une demande d'amis à un utilisateur
         sendFriendRequest: (user_id: number) => {
             return new Promise((resolve, reject) => {

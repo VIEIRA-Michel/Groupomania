@@ -64,6 +64,13 @@ function toggleProfileMenu() {
     showProfileMenu.value = !showProfileMenu.value;
 }
 
+// Cette fonction va nous permettre de fermer le menu et les notifications si l'un des deux est affichée à l'écran et réinitialiser également les résultats de recherche d'utilisateur
+function reset() {
+    showNotification.value = false;
+    showProfileMenu.value = false;
+    useFriendshipStore().resetSearch();
+}
+
 // Ce watch va nous permettre de savoir si nous avons une nouvelle notification et de nous avertir par une animation sur le bouton de notification
 watch(notificationsCount, (newNotif) => {
     if (showNotification.value == false || showNotification.value == null) {
@@ -79,24 +86,24 @@ watch(notificationsCount, (newNotif) => {
     <header>
         <div class="menu">
             <div class="logo">
-                <router-link to="/app/home">
+                <router-link @click="reset" to="/app/home">
                     <img src="../assets/logo-groupomania.svg" alt="logo-groupomania">
                     <span>Groupomania</span>
                 </router-link>
             </div>
             <div v-if="props.isConnected" class="center">
-                <router-link to="/app/home">
+                <router-link @click="reset" to="/app/home">
                     <div class="menu__navigate">
                         <fa icon="home" />
                     </div>
                 </router-link>
-                <router-link to="/app/friends">
+                <router-link @click="reset" to="/app/friends">
                     <div class="menu__navigate">
                         <fa icon="user-group" />
                         <span v-if="props.isConnected && requests.length > 0"> {{ requests.length }}</span>
                     </div>
                 </router-link>
-                <router-link to="/app/chat">
+                <router-link @click="reset" to="/app/chat">
                     <div class="menu__navigate">
                         <fa icon="fa-solid fa-comments" />
                         <span
@@ -470,9 +477,10 @@ header {
                         height: 235px;
                         // height: 250px;
                         border: 1px solid #dbdbdb;
-                        border-radius: 5px;
+                        border-radius: 20px 0px 0px 20px;
                         overflow-y: scroll;
                         transition: 0.3s all;
+                        box-shadow: rgba(0 0 0 /22%) 0px 2px 18px 0px;
                         cursor: default;
                     }
 
@@ -575,38 +583,41 @@ header {
                     border: 1px solid transparent;
 
                     &.active {
-                        border-radius: 5px;
+                        border-radius: 20px;
                         width: 250px;
-                        height: 80px;
                         background: #ffffff;
                         border: 1px solid #dbdbdb;
                         transition: 0.3s all;
+                        box-shadow: rgba(0 0 0 /22%) 0px 2px 18px 0px;
+                        padding: 10px;
                     }
 
                     &__list {
-                        margin: 10px;
-
                         &__item {
-                            padding: 5px;
+                            padding: 10px;
                             -webkit-animation: text-focus-in 0.4s cubic-bezier(0.550, 0.085, 0.680, 0.530) both;
                             animation: text-focus-in 0.4s cubic-bezier(0.550, 0.085, 0.680, 0.530) both;
+                            border-radius: 10px;
 
-                            &:nth-child(1) {
-                                padding-bottom: 11px;
-                            }
+                            &:hover {
+                                background-color: #FD2D01;
+                                color: #ffffff;
+                                transition: .3s all ease-in-out;
 
-                            &:nth-child(2) {
-                                padding-top: 10px;
-                                border-top: 1px solid #dbdbdb;
+                                a {
 
-                                svg {
-                                    width: 18.75px;
-                                    height: 15px;
+                                    color: #ffffff;
+
+                                    svg {
+                                        color: #ffffff;
+                                    }
                                 }
                             }
 
                             a {
+                                color: #4E5166;
                                 svg {
+                                    width: 20px;
                                     margin-right: 10px;
                                 }
                             }

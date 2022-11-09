@@ -78,7 +78,7 @@ function replyToRequest(invitation: any, reply: string) {
 
 // Cette fonction va nous permettre de rechercher un utilisateur en fonction de ce que nous avons saisie dans la barre de recherche
 function searchUser() {
-    if(search.value.length > 0) {
+    if (search.value.length > 0) {
         // On vérifie d'abord nos demandes d'ami envoyées afin d'afficher le bon bouton sous la carte d'utilisateur en fonction de la situation
         useFriendshipStore().checkRequestsSended().then((response: any) => {
             // On éxécute ensuite la fonction de recherche présente dans le store communiquant directement à l'api
@@ -150,7 +150,7 @@ watch(open, (value: boolean) => {
                                 </div>
                             </div>
                             <button v-if="!user.isFriend && !user.pending && !user.waitingReply"
-                                @click="addToFriends(user.user_id)">
+                                @click="addToFriends(user.user_id)" class="add">
                                 <fa icon="fa-solid fa-user-plus" />
                             </button>
                             <button v-if="user.pending && !user.isFriend && !user.waitingReply"
@@ -180,7 +180,7 @@ watch(open, (value: boolean) => {
                                                 <div class="modal-container__content__header__title">Êtes-vous
                                                     certains de
                                                     vouloir annuler votre demande d'amitié envers <span>{{
-                                                    invitToBeCanceled.firstname
+                                                            invitToBeCanceled.firstname
                                                     }}</span> ?
                                                 </div>
                                             </div>
@@ -256,7 +256,7 @@ watch(open, (value: boolean) => {
                     <div class="friends-list__list__item__button">
 
                         <button class="friend" @click="deleteModal(friend)">
-                            <fa icon="fa-solid fa-user-minus" />
+                            <fa icon="fa-solid fa-user-check" />
                         </button>
                     </div>
                     <Teleport to="body">
@@ -307,11 +307,11 @@ watch(open, (value: boolean) => {
     margin-top: 50px;
 
     .search-user {
-        background: floralwhite;
-        border: 1px solid #FD2D01;
+        background: #f6f6f6;
+        border: 1px solid #dbdbdb;
         width: 70%;
         margin: 10px auto 0px auto;
-        border-radius: 5px;
+        border-radius: 20px;
         padding: 20px;
         -webkit-animation: slide-in-top 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
         animation: slide-in-top 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
@@ -323,8 +323,6 @@ watch(open, (value: boolean) => {
             width: 100%;
             border-radius: 5px;
             padding: 10px 0;
-            background-color: #ffffff;
-            border: 1px solid #dbdbdb;
         }
 
         &__input {
@@ -334,7 +332,7 @@ watch(open, (value: boolean) => {
 
             input {
                 border: 1px solid #dbdbdb;
-                border-radius: 5px;
+                border-radius: 10px;
                 outline: none;
             }
         }
@@ -357,7 +355,8 @@ watch(open, (value: boolean) => {
                     width: 105px;
                     background: #ffffff;
                     border: 1px solid #dbdbdb;
-                    border-radius: 5px;
+                    border-radius: 20px;
+                    padding: 10px;
 
                     &__avatar {
                         display: flex;
@@ -367,7 +366,7 @@ watch(open, (value: boolean) => {
                             width: 100%;
                             height: 80px;
                             object-fit: cover;
-                            border-radius: 5px 5px 0 0;
+                            border-radius: 10px;
                         }
                     }
 
@@ -389,43 +388,85 @@ watch(open, (value: boolean) => {
                         &__button {
                             display: flex;
                             flex-direction: row;
-                            border-top: 1px solid #dbdbdb;
-                            border-radius: 0 0 5px 5px;
+                            justify-content: space-between;
 
                             button {
                                 width: 100%;
                             }
 
                             .refused {
-                                border-radius: 0 0 0 5px;
-                                background: #ff7a7a;
-                                border: none;
+                                color: #4E5166;
+                                background-color: #ffffff;
+                                border: 1px solid #4E5166;
+                                border-radius: 10px;
+
+                                &:hover {
+                                    background-color: #4E5166;
+                                    color: #ffffff;
+                                    transition: .3s all ease-in-out;
+                                }
                             }
 
                             .accepted {
-                                border-radius: 0 0 5px 0;
-                                background: #bcffcb;
-                                border: none;
+                                width: 100%;
+                                background: #ffffff;
+                                color: #FD2D01;
+                                border: 1px solid #FD2D01;
+                                border-radius: 10px;
+
+                                &:hover {
+                                    background-color: #FD2D01;
+                                    color: #ffffff;
+                                    transition: .3s all ease-in-out;
+                                }
                             }
                         }
 
                         button {
-                            background: #bcffcb;
-                            width: 100%;
+                            width: 45%;
                             height: 30px;
                             border: none;
-                            border-top: 1px solid #dbdbdb;
-                            border-radius: 0 0 5px 5px;
+                            border-radius: 10px;
                             font-weight: bold;
                             cursor: pointer;
                         }
 
+                        .add {
+                            width: 100%;
+                            background-color: #ffffff;
+                            color: #3ca55e;
+                            border: 1px solid #3ca55e;
+
+                            &:hover {
+                                background-color: #3ca55e;
+                                color: #ffffff;
+                                transition: .3s all ease-in-out;
+                            }
+                        }
                         .pending {
-                            background: #4E5166;
+                            background: #ffffff;
+                            color: #ffc1cb;
+                            border: 1px solid #ffc1cb;
+                            width: 100%;
+
+                            &:hover {
+                                background: #ffc1cb;
+                                color: #ffffff;
+                                transition: .3s all ease-in-out;
+                            }
                         }
 
                         .friend {
-                            background: #FFD7D7;
+                            width: 100%;
+                            background: #ffffff;
+                            color: #FD2D01;
+                            border: 1px solid #FD2D01;
+
+                            &:hover {
+                                background-color: #FD2D01;
+                                color: #ffffff;
+                                transition: .3s all ease-in-out;
+                            }
                         }
 
                     }
@@ -438,12 +479,12 @@ watch(open, (value: boolean) => {
         display: flex;
         flex-direction: column;
         align-items: center;
-        background: floralwhite;
-        border: 1px solid #FD2D01;
+        background: #f6f6f6;
+        border: 1px solid #dbdbdb;
         width: 70%;
         padding: 20px;
         margin: 10px auto 0px auto;
-        border-radius: 5px;
+        border-radius: 20px;
         -webkit-animation: slide-in-bottom 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.3s both;
         animation: slide-in-bottom 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.3s both;
 
@@ -451,8 +492,6 @@ watch(open, (value: boolean) => {
             width: 100%;
             border-radius: 5px;
             padding: 10px 0;
-            background-color: #ffffff;
-            border: 1px solid #dbdbdb;
             margin-bottom: 20px;
             text-align: center;
 
@@ -478,7 +517,8 @@ watch(open, (value: boolean) => {
                 width: 105px;
                 background: #ffffff;
                 border: 1px solid #dbdbdb;
-                border-radius: 5px;
+                padding: 10px;
+                border-radius: 20px;
 
                 &__name {
                     &__text {
@@ -504,23 +544,36 @@ watch(open, (value: boolean) => {
 
                     button {
                         font-size: 1rem;
-                        width: 100%;
+                        width: 45%;
                         height: 30px;
                         cursor: pointer;
                         border: none;
-                        border-top: 1px solid #DBDBDB;
-
-                        transition: all 0.3s ease-in-out;
                     }
 
                     .refused {
-                        background: #ff7a7a;
-                        border-radius: 0 0 0 5px;
+                        color: #4E5166;
+                        background-color: #ffffff;
+                        border: 1px solid #4E5166;
+                        border-radius: 10px;
+
+                        &:hover {
+                            background-color: #4E5166;
+                            color: #ffffff;
+                            transition: .3s all ease-in-out;
+                        }
                     }
 
                     .accepted {
-                        background: #bcffcb;
-                        border-radius: 0 0 5px 0;
+                        background: #ffffff;
+                        color: #FD2D01;
+                        border: 1px solid #FD2D01;
+                        border-radius: 10px;
+
+                        &:hover {
+                            background-color: #FD2D01;
+                            color: #ffffff;
+                            transition: .3s all ease-in-out;
+                        }
                     }
                 }
 
@@ -532,7 +585,7 @@ watch(open, (value: boolean) => {
                         width: 100%;
                         height: 80px;
                         object-fit: cover;
-                        border-radius: 5px 5px 0 0;
+                        border-radius: 10px;
                     }
                 }
             }
@@ -546,12 +599,12 @@ watch(open, (value: boolean) => {
     }
 
     .friends-list {
-        background: floralwhite;
-        border: 1px solid #FD2D01;
+        background: #f6f6f6;
+        border: 1px solid #dbdbdb;
         width: 70%;
         padding: 20px;
         margin: 10px auto 0px auto;
-        border-radius: 5px;
+        border-radius: 20px;
         -webkit-animation: slide-in-bottom 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.6s both;
         animation: slide-in-bottom 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.6s both;
 
@@ -559,8 +612,6 @@ watch(open, (value: boolean) => {
             width: 100%;
             border-radius: 5px;
             padding: 10px 0;
-            background-color: #ffffff;
-            border: 1px solid #dbdbdb;
             text-align: center;
             margin-bottom: 10px;
             font-weight: 700;
@@ -579,12 +630,12 @@ watch(open, (value: boolean) => {
             }
 
             &__item {
-
                 margin: 10px auto;
                 width: 105px;
                 background: #ffffff;
                 border: 1px solid #dbdbdb;
-                border-radius: 5px;
+                border-radius: 20px;
+                padding: 10px;
 
 
                 &__button {
@@ -597,11 +648,16 @@ watch(open, (value: boolean) => {
                         width: 100%;
                         height: 30px;
                         cursor: pointer;
-                        border: none;
-                        border-top: 1px solid #DBDBDB;
-                        border-radius: 0 0 5px 5px;
+                        border-radius: 10px;
                         transition: all 0.3s ease-in-out;
-
+                        background-color: #ffffff;
+                        color: #FD2D01;
+                        border: 1px solid #FD2D01;
+                        &:hover {
+                            background-color: #FD2D01;
+                            transition: .3s all ease-in-out;
+                            color: #ffffff;
+                        }
                     }
 
                     .message {
@@ -618,7 +674,7 @@ watch(open, (value: boolean) => {
                         width: 100%;
                         height: 80px;
                         object-fit: cover;
-                        border-radius: 5px 5px 0 0;
+                        border-radius: 10px;
                     }
                 }
 

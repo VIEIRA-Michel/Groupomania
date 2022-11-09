@@ -142,12 +142,18 @@ const emit = defineEmits<{
         <div class="container-center__top__details">
             <div class="container-center__top__details__left">
                 <img :src="selectedUser.picture" alt="avatar" />
+                <div v-if="selectedUser.connected" class="online">
+                    <div></div>
+                </div>
+                <div v-else class="offline">
+                    <div></div>
+                </div>
             </div>
             <div class="container-center__top__details__right">
                 <div class="container-center__top__details__right__name">
                     {{ selectedUser.username }}
                 </div>
-                <div class="container-center__top__details__right__status">
+                <!-- <div class="container-center__top__details__right__status">
                     <div class="container-center__top__details__right__status__online">
                         <div v-if="selectedUser.connected" class="status-online">
                             <div class="online"></div>
@@ -158,22 +164,16 @@ const emit = defineEmits<{
                             <span class="offline-message">Hors Ligne</span>
                         </div>
                     </div>
-                </div>
+                </div> -->
             </div>
         </div>
         <div class="container-center__top__information" @click="displayInformation">
-            <div class="container-center__top__information__button">
+            <!-- <div class="container-center__top__information__button">
                 <fa icon="fa-solid fa-circle-info" />
-            </div>
+            </div> -->
         </div>
         <div v-if="display" class="container-center__top__user">
             <div class="container-center__top__user__description">
-                <!-- <div v-if="obj.birthday" class="container-center__top__user__description__birthday">
-                    <fa icon="fa-solid fa-cake-candles" /><span>C'est son anniversaire le {{ obj.birthday }}</span>
-                </div> -->
-                <!-- <div v-else class="container-center__top__user__description__birthday">
-                    <fa icon="fa-solid fa-cake-candles" /><span>Date d'anniversaire masqué</span>
-                </div> -->
                 <div class="container-center__top__user__description__createdat">
                     <fa icon="fa-solid fa-address-card" /><span>Inscrit depuis le {{ obj.created_at }}</span>
                 </div>
@@ -195,7 +195,7 @@ const emit = defineEmits<{
                                 <div class="friends-list__list__item__name">
                                     <div class="friends-list__list__item__name__text">
                                         <div class="friends-list__list__item__name__text__username">
-                                            <span>{{ friend.firstname }} {{ friend.lastname}}</span>
+                                            <span>{{ friend.firstname }} {{ friend.lastname }}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -250,7 +250,7 @@ const emit = defineEmits<{
     small {
         span {
             font-weight: bold;
-            color: #FD2D01;
+            color: #a7a8b2;
         }
     }
 
@@ -260,14 +260,25 @@ const emit = defineEmits<{
         align-items: center;
         justify-content: space-between;
         width: 100%;
-        background: floralwhite;
-        box-shadow: 0px 1px 8px -3px rgb(0 0 0 / 40%);
+        background: #f6f6f6;
+        border-bottom: 1px solid #dbdbdb;
+        // box-shadow: 0px 1px 8px -3px rgb(0 0 0 / 40%);
         flex-wrap: wrap;
         z-index: 1;
-        border-radius: 5px 5px 0 0;
+        border-radius: 20px 20px 0 0;
 
         &__previously {
             margin-left: 15px;
+
+            &__button {
+                cursor: pointer;
+                color: #a7a8b2;
+
+                &:hover {
+                    color: #4E5166;
+                    transition: .3s all ease-in-out;
+                }
+            }
         }
 
         &__details {
@@ -277,10 +288,51 @@ const emit = defineEmits<{
             justify-content: space-around;
 
             &__left {
-                img {
-                    width: 45px;
-                    height: 45px;
+                position: relative;
+                .offline {
+                    position: absolute;
+                    bottom: 9px;
+                    right: 5px;
+                    border: 2px solid #f6f6f6;
+                    width: 5px;
+                    height: 5px;
+                    border-radius: 50%;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+
+                    div {
+                        border: 2px solid #dbdbdb;
+                        border-radius: 50%;
+                        padding: 2px;
+                        background-color: #f6f6f6;
+                    }
+                }
+
+                .online {
+                    position: absolute;
+                    bottom: 9px;
+                    right: 5px;
+                    border: 2px solid #f6f6f6;
+                    width: 5px;
+                    height: 5px;
                     border-radius: 50px;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+
+                    div {
+                        border: 2px solid #3aa55d;
+                        border-radius: 50%;
+                        padding: 2px;
+                        background-color: #3aa55d;
+                    }
+                }
+
+                img {
+                    width: 38px;
+                    height: 38px;
+                    border-radius: 50%;
                     object-fit: cover;
                     margin: 5px;
                 }
@@ -344,7 +396,13 @@ const emit = defineEmits<{
 
             &__button {
                 svg {
-                    color: #FD2D01;
+                    cursor: pointer;
+                    color: #a7a8b2;
+
+                    &:hover {
+                        color: #4E5166;
+                        transition: .3s all ease-in-out
+                    }
                 }
             }
         }
@@ -412,10 +470,8 @@ const emit = defineEmits<{
                 &__friendlist {
 
                     .friends-list {
-                        background: floralwhite;
-                        width: 80%;
-                        margin: 10px auto 0px auto;
-                        border-radius: 5px;
+                        // margin: 10px auto 0px auto;
+                        // border-radius: 5px;
 
                         &__title {
                             text-align: center;
@@ -447,8 +503,6 @@ const emit = defineEmits<{
                             overflow-y: scroll;
                             margin: 20px;
                             padding: 10px;
-                            background: #dbdbdb;
-                            border: 1px solid #4E5166;
                             -webkit-animation: fade-in 0.2s cubic-bezier(0.390, 0.575, 0.565, 1.000) 1.6s both;
                             animation: fade-in 0.2s cubic-bezier(0.390, 0.575, 0.565, 1.000) 1.6s both;
 
@@ -591,7 +645,7 @@ const emit = defineEmits<{
                     &__message.fromSelf {
                         background-color: #FD2D01;
                         color: white;
-                        padding: 5px;
+                        padding: 10px;
                         border-radius: 10px;
                         -webkit-animation: slide-in-right-message 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
                         animation: slide-in-right-message 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
@@ -603,7 +657,7 @@ const emit = defineEmits<{
                     &__message.fromUser {
                         background-color: #DBDBDB;
                         color: black;
-                        padding: 5px;
+                        padding: 10px;
                         border-radius: 10px;
                         -webkit-animation: slide-in-left-message 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
                         animation: slide-in-left-message 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
@@ -640,7 +694,7 @@ const emit = defineEmits<{
             padding: 5px;
             border-top: 1px solid #DBDBDB;
             border-radius: 0 0 5px 5px;
-            background-color: floralwhite;
+            background-color: #f6f6f6;
 
             &__text {
                 background-color: #FFFFFF;
