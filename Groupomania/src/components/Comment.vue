@@ -28,7 +28,6 @@ const emit = defineEmits<{
 
 // Cette fonction va nous permettre de redimensionner le champ de saisie de texte en fonction de la taille du texte saisi afin de toujours voir l'ensemble du texte saisi
 function autoResize(event: any) {
-    console.log('resizeeeeee');
     event.target.style.height = 'auto';
     event.target.style.height = event.target.scrollHeight + 'px';
 }

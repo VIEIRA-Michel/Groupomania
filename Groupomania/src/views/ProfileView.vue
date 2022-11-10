@@ -13,12 +13,17 @@ const user = computed(() => useAuthStore().$state.user);
 
 // userEdit va nous permettre de récupérer les différents champs de saisie de texte et l'image de profil
 let userEdit = reactive({
-    picture_url: user.value.picture_url,
+    // picture_url: user.value.picture_url,
+    picture_url: '',
     email: '',
     confirmEmail: '',
     password: '',
     confirmPassword: ''
 });
+
+let emailCheck = ref(true);
+
+let passwordCheck = ref(true);
 
 // updatedProfil va permettre d'afficher une alerte si la modification du profil a été effectuée
 let updatedProfil = ref(false);
@@ -54,82 +59,93 @@ function previewPicture(e: any) {
 
 // Cette fonction va procéder à différentes vérifications au niveau des champs de saisie et s'il y a une image sélectionnée vérifier si elle est au bon format 
 // pour par la suite déclencher la fonction qui communiquera à l'api les modifications que l'on souhaite apporter
-function updateProfile(userEdit?: any) {
-    if (userEdit.password != userEdit.confirmPassword) {
-        errorMessage.value = 'Les mots de passe ne correspondent pas';
-        inputError.value = true;
-    } else if (userEdit.email != userEdit.confirmEmail) {
-        errorMessage.value = 'Les emails ne correspondent pas';
-        inputError.value = true;
-    } else {
-        if (userEdit.email == '' && userEdit.password == '' && userEdit.picture_url == user.value.picture_url) {
-            errorMessage.value = 'Aucune modification n\'a été apportée';
-            inputError.value = true;
-        } else {
-            // Si nous avons sélectionné une image on va vérifier si elle est au bon format
-            if (userEdit.picture_url) {
-                if (userEdit.picture_url.type == 'image/jpg'
-                    || userEdit.picture_url.type == 'image/jpeg'
-                    || userEdit.picture_url.type == 'image/png'
-                    || userEdit.picture_url.type == 'image/webp') {
-                    useAuthStore().updateProfile(userEdit).then((response: any) => {
-                        if (response.status == 200) {
-                            // Si la modification a été effectuée on va déclencher l'alerte que le profil a bien été mis à jour et on va réinitialiser la variable indiquant qu'il y a une erreur de saisie
-                            inputError ? inputError.value = false : "";
-                            updatedProfil.value = true;
-                            setTimeout(() => {
-                                // On émet l'évènement en lien avec la modification du profil afin de mettre à jour les informations dans le store des autres utilisateurs connectés
-                                socket.emit('update profil', response, user.value);
-                                updatedProfil.value = false;
-                                // Puis nous sommes redirigés vers la page d'accueil au bout de 2 secondes
-                                router.push('/app/home');
-                            }, 2000);
-                        } else {
-                            alert('Erreur lors de la mise à jour du profil');
-                        }
-                    });
-                } else {
-                    // Si l'image est au format string c'est que l'utilisateur n'a pas sélectionné d'image
-                    if (typeof (userEdit.picture_url) == 'string') {
-                        useAuthStore().updateProfile(userEdit).then((response: any) => {
-                            if (response.status == 200) {
-                                inputError ? inputError.value = false : "";
-                                updatedProfil.value = true;
-                                setTimeout(() => {
-                                    socket.emit('update profil', response, user.value);
-                                    updatedProfil.value = false;
-                                    router.push('/app/home');
-                                }, 2000);
-                            } else {
-                                alert('Erreur lors de la mise à jour du profil');
-                            }
-                        });
-                        // Si l'image est dans un format différent de celui attendu on va afficher un message d'erreur
-                    } else {
-                        wrongFile.value = true;
-                        errorMessage.value = 'Seuls les images aux formats .jpg .jpeg .png .webp sont acceptées';
-                    }
-                }
-                // Si nous n'avons pas sélectionné d'image on va directement déclencher la fonction qui communiquera à l'api les modifications que l'on souhaite apporter
-            } else {
-                useAuthStore().updateProfile(userEdit).then((response: any) => {
-                    if (response.status == 200) {
-                        inputError ? inputError.value = false : "";
-                        updatedProfil.value = true;
-                        setTimeout(() => {
-                            // Et on émet l'évènement en lien avec la modification du profil afin de mettre à jour les informations dans le store des autres utilisateurs connectés
-                            socket.emit('update profil', response, user.value);
-                            updatedProfil.value = false;
-                            // Puis nous sommes redirigés vers la page d'accueil au bout de 2 secondes
-                            router.push('/app/home');
-                        }, 2000);
-                    } else {
-                        alert('Erreur lors de la mise à jour du profil');
-                    }
-                });
-            }
+function updateProfile(e: Event) {
+    e?.preventDefault();
+    let formData = new FormData();
+    // On crée une regex afin de vérifier la conformité du mot de passe et veiller à ce qu'il ne contient pas de caractère spéciaux
+    let formRegexp = /^[^@&"()!_$*€£`+=\/;?#]+$/;
+    if (userEdit.picture_url !== '') {
+        if (userEdit.picture_url.type == 'image/jpg'
+            || userEdit.picture_url.type == 'image/jpeg'
+            || userEdit.picture_url.type == 'image/png'
+            || userEdit.picture_url.type == 'image/webp') {
+            formData.append('picture', userEdit.picture_url);
         }
     }
+    // Si le champ de saisie de l'email n'est pas vide
+    if (userEdit.email !== '') {
+        // Mais que l'email et la confirmation d'email ne correspondent pas nous affichons une erreur
+        if (userEdit.email != userEdit.confirmEmail) {
+            errorMessage.value = 'Les emails ne correspondent pas';
+            inputError.value = true;
+            emailCheck.value = false;
+        } else {
+            // Dans le cas contraire nous ajoutons à notre formData la clef email ainsi que la valeur saisie
+            formData.append('email', userEdit.email);
+            // Et nous passons notre valeur emailCheck pour indiquer que le champ est conforme pour la soumission
+            emailCheck.value = true;
+        }
+    }
+    // Si le champ de saisie du mot de passe n'est pas vide
+    if (userEdit.password !== '') {
+        // Mais que le mot de passe et la confirmation du mot de passe ne correspondent pas nous affichons une erreur
+        if (userEdit.password != userEdit.confirmPassword) {
+            errorMessage.value = 'Les mots de passe ne correspondent pas';
+            inputError.value = true;
+            passwordCheck.value = false
+        } else if (userEdit.password == userEdit.confirmPassword && (userEdit.password.trim().length < 8 || userEdit.password.trim().length > 12)) {
+            errorMessage.value = 'Le mot de passe ne respecte pas le format préconisé';
+            inputError.value = true;
+            passwordCheck.value = false
+        } else if (userEdit.password == userEdit.confirmPassword && (userEdit.password.trim().length >= 8 || userEdit.password.trim().length <= 12) && formRegexp.test(userEdit.password) == false) {
+            errorMessage.value = 'Le mot de passe ne peut contenir de caractère spéciaux';
+            inputError.value = true;
+            passwordCheck.value = false
+        } else {
+            //Dans le cas contraire nous ajoutons à notre formData la clef password ainsi que la valeur saisie
+            formData.append('password', userEdit.password);
+            // Et nous passons notre valeur passwordCheck pour indiquer que le champ est conforme pour la soumission
+            passwordCheck.value = true;
+        }
+    }
+    // Nous vérifions qu'au moins un champ du formulaire a été modifié
+    if (userEdit.picture_url !== '' || userEdit.email !== '' || userEdit.password !== '') {
+        // Si les champs concernant le mot de passe et l'email sont bien conforme alors nous déclenchons la fonction qui va permettre la modification du state
+        if (emailCheck.value && passwordCheck.value) {
+            useAuthStore().updateProfile(formData).then((response: any) => {
+                if (response.status == 200) {
+                    inputError ? inputError.value = false : "";
+                    updatedProfil.value = true;
+                    setTimeout(() => {
+                        // Et on émet l'évènement en lien avec la modification du profil afin de mettre à jour les informations dans le store des autres utilisateurs connectés
+                        socket.emit('update profil', response, user.value);
+                        updatedProfil.value = false;
+                        // Puis nous sommes redirigés vers la page d'accueil au bout de 2 secondes
+                        router.push('/app/home');
+                    }, 2000);
+                } else {
+                    alert('Erreur lors de la mise à jour du profil');
+                }
+            })
+        }
+    }
+
+}
+
+// Cette fonction va nous permettre de réinitialiser le formulaire
+function resetForm() {
+    // On sélectionne la div pour lui attribuer de nouveau notre photo de profil
+    const image: HTMLElement | null = document.getElementById('picture');
+    image.src = user.value.picture_url;
+    const initialValue = reactive({
+        picture_url: '',
+        email: '',
+        confirmEmail: '',
+        password: '',
+        confirmPassword: ''
+    });
+    // Et on réinitialise les valeurs de l'objet que nous sommes censé envoyer pour mettre à jour notre profil
+    Object.assign(userEdit, initialValue);
 }
 
 // On place un watch sur les différents champs de saisie afin de pouvoir afficher le bouton de validation de la modification du profil 
@@ -137,12 +153,20 @@ function updateProfile(userEdit?: any) {
 watch(userEdit, (value: any) => {
     if (value.email !== '' && value.email == value.confirmEmail
         || value.password !== '' && value.password == value.confirmPassword
-        || value.picture_url && value.picture_url !== user.value.picture_url) {
+        || value.picture_url !== '' && value.picture_url !== user.value.picture_url) {
         changed.value = true;
     } else {
         changed.value = false;
     }
+
+    if (value.email == '' && value.confirmEmail == '') {
+        emailCheck.value = true;
+    }
+    if (value.password == '' && value.confirmPassword == '') {
+        passwordCheck.value = true;
+    }
 })
+
 </script>
 <template>
     <div v-if="isConnected" class="container">
@@ -151,11 +175,11 @@ watch(userEdit, (value: any) => {
                 <h1>Editer mon profil</h1>
             </div>
             <div v-if="updatedProfil" class="edit-profil__notification success">
-            <!-- <div class="edit-profil__notification success"> -->
+                <!-- <div class="edit-profil__notification success"> -->
                 <p>Profil mis à jour ! <span>Vous allez être redirigé dans 2 secondes..</span></p>
             </div>
             <div v-if="inputError || wrongFile" class="edit-profil__notification verifyInput">
-            <!-- <div class="edit-profil__notification verifyInput"> -->
+                <!-- <div class="edit-profil__notification verifyInput"> -->
                 <fa icon="fa-solid fa-triangle-exclamation" />
                 <p>{{ errorMessage }}</p>
             </div>
@@ -168,7 +192,7 @@ watch(userEdit, (value: any) => {
                             @change="previewPicture($event)" />
                     </div>
                     <div class="edit-profil__body__content__form">
-                        <form @submit.prevent="updateProfile(userEdit)">
+                        <form>
                             <div class="edit-profil__body__content__form__input">
                                 <label for="email">Email</label>
                                 <input type="email" id="email" v-model="userEdit.email" />
@@ -180,14 +204,21 @@ watch(userEdit, (value: any) => {
                             <div class="edit-profil__body__content__form__input">
                                 <label for="password">Mot de passe</label>
                                 <input type="password" id="password" v-model="userEdit.password" />
+                                <ul class="message">Le mot de passe doit contenir
+                                    <li>• 8 à 12 caractères</li>
+                                    <li>• 1 minuscule</li>
+                                    <li>• 1 majuscule</li>
+                                    <li>• 2 chiffres</li>
+                                </ul>
                             </div>
                             <div class="edit-profil__body__content__form__input">
                                 <label for="confirmPassword">Confirmer le mot de passe</label>
                                 <input type="password" id="confirmPassword" v-model="userEdit.confirmPassword" />
                             </div>
                             <div v-if="changed"
-                                v-bind:class="[changed ? 'edit-profil__body__content__form__button' : 'edit-profil__body__content__form__button disabled']">
-                                <button>Valider les modifications</button>
+                                :class="[changed ? 'edit-profil__body__content__form__button' : 'edit-profil__body__content__form__button disabled']">
+                                <button @click="resetForm" class="cancel-button">Annuler</button>
+                                <button @click="updateProfile($event)" class="apply-button">Enregistrer</button>
                             </div>
                         </form>
                     </div>
@@ -227,7 +258,6 @@ watch(userEdit, (value: any) => {
         position: relative;
 
         &__notification {
-            // height: 20px;
             border-radius: 10px;
             display: flex;
             justify-content: center;
@@ -238,6 +268,7 @@ watch(userEdit, (value: any) => {
             right: 20px;
             top: 20px;
             box-shadow: rgb(0 0 0 / 22%) 0px 2px 18px 0px;
+
             span {
                 font-weight: 300;
             }
@@ -256,9 +287,8 @@ watch(userEdit, (value: any) => {
                     color: #ffffff;
                     display: flex;
                     flex-direction: column;
-                    span {
 
-                    }
+                    span {}
                 }
             }
 
@@ -388,6 +418,15 @@ watch(userEdit, (value: any) => {
                             margin-bottom: 5px;
                         }
 
+                        .message {
+                            background-color: #dbdbdb;
+                            color: #4E5166;
+                            padding: 5px;
+                            border-radius: 10px;
+                            font-size: 12px;
+                            margin-top: 15px;
+                        }
+
                     }
 
                     &__button {
@@ -395,7 +434,7 @@ watch(userEdit, (value: any) => {
                         display: flex;
                         flex-direction: row;
                         align-items: center;
-                        justify-content: center;
+                        justify-content: space-between;
                         width: 100%;
                         height: 50px;
                         border-radius: 0 0 5px 5px;
@@ -403,23 +442,30 @@ watch(userEdit, (value: any) => {
 
                         button {
                             background-color: #f6f6f6;
-                            color: #FD2D01;
                             padding: 10px;
-                            border: 1px solid #FD2D01;
                             border-radius: 10px;
                             cursor: pointer;
                             transition: all 0.3s ease-in-out;
+                        }
+
+                        .cancel-button {
+                            border: 1px solid #4E5166;
+                            color: #4E5166;
+
+                            &:hover {
+                                background-color: #4E5166;
+                                color: #ffffff;
+                            }
+                        }
+
+                        .apply-button {
+                            border: 1px solid #FD2D01;
+                            color: #FD2D01;
 
                             &:hover {
                                 background-color: #FD2D01;
                                 color: #ffffff;
-                                transition: .3s all ease-in-out;
                             }
-                        }
-
-                        button:nth-child(2) {
-                            background-color: #FD2D01;
-                            color: #FFFFFF;
                         }
                     }
                 }

@@ -93,7 +93,6 @@ onBeforeMount(() => {
                                     usePublicationsStore().onRemoveLike(args[0]);
                                     break;
                                 case 'new publication':
-                                    console.log(args[0]);
                                     usePublicationsStore().onNewPublication(args[0]);
                                     break;
                                 case 'edit publication':
@@ -103,7 +102,6 @@ onBeforeMount(() => {
                                     usePublicationsStore().onDeletePublication(args[0]);
                                     break;
                                 case 'has commented':
-                                    console.log(args[0]);
                                     useCommentsStore().onComment(args[0]);
                                     break;
                                 case 'delete comment':
@@ -165,7 +163,6 @@ onUnmounted(() => {
     socket.off("friend removed");
     socket.off("friendRequest canceled");
     socket.disconnect();
-    console.log('unmounted');
 });
 </script>
 

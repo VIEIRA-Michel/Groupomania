@@ -561,9 +561,12 @@ export const usePublicationsStore = defineStore({
                 })
             })
         },
-        // Cette fonction va nous permettre de réinitialiser toutes les valeurs du state 
+        // Cette fonction va nous permettre de réinitialiser notre tableau de publication ainsi que le cache
         resetPublicationsAndCache: () => {
-            usePublicationsStore().$reset();
+            usePublicationsStore().$patch((state: any) => {
+                state.publications.splice(0, state.publications.length);
+                state.cache.splice(0, state.cache.length);
+            });
         },
         // Cette fonction va nous permettre d'afficher le menu avec les boutons de modification et de suppression d'une publication
         displayMenu: (publication: any) => {
@@ -676,7 +679,6 @@ export const usePublicationsStore = defineStore({
         },
         // Cette fonction s'exécute à la réception d'un évènement de type 'edit publication' émis par le serveur socket.io
         onEditPublication: (data: any) => {
-            console.log(data);
             usePublicationsStore().$patch((state: any) => {
                 // On va parcourir les publications
                 state.publications.map((item: any) => {

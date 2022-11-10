@@ -228,7 +228,6 @@ export const useAuthStore = defineStore({
                 let newDateSplit = newDate.split(" ");
                 // On exécute la requête permettant la récupération des notifications
                 fetchNotifications().then((response: any) => {
-                    console.log(response);
                     // On parcours à présent le tableau de résultat
                     response.data.forEach((element: any) => {
                         // On retire tous les résultats comportant notre user_id 
@@ -288,29 +287,20 @@ export const useAuthStore = defineStore({
 
         updateProfile: (update: any) => {
             return new Promise((resolve, reject) => {
-                // On crée un formData pour envoyer la saisie des différents champs
-                let formData = new FormData();
-                // Si la valeur de picture_url est différente de 'undefined' cela signifie qu'une image a été sélectionnée et donc nous l'ajoutons a notre formData
-                update.picture_url !== undefined ? formData.append('picture', update.picture_url) : "";
-                // Si une adresse email a été saisie et que la valeur est différente de 'undefined' ou une string vide on l'ajoute dans notre formData
-                update.email !== '' && update.email !== undefined ? formData.append('email', update.email) : "";
-                // Si un mot de passe a été saisie et que la valeur est différente de 'undefined' ou une string vide on l'ajoute dans notre formData
-                update.password !== '' && update.password !== undefined ? formData.append('password', update.password) : "";
-                // On exécute la fonction faisant appel à l'api avec notre formData passé en paramètre
-                editProfile(formData).then((response: any) => {
+                editProfile(update).then((response: any) => {
                     // Si tout s'est bien passée et qu'une image avait été sélectionné on va mettre à jour notre state en enregistrant notre nouvelle photo de profil
-                    if (update.picture_url) {
+                    if (update.get('picture')) {
                         useAuthStore().$patch((state: any) => {
                             state.user.picture_url = response.data[0].picture_url
                         })
                     };
-                    // Si une adresse email avait été saisie on va mettre à jour notre state en enregistrant notre nouvelle adresse mail dans le state
-                    if (update.email) {
+                    // // Si une adresse email avait été saisie on va mettre à jour notre state en enregistrant notre nouvelle adresse mail dans le state
+                    if (update.get('email')) {
                         useAuthStore().$patch((state: any) => {
                             state.user.email = response.data[0].email
                         })
                     };
-                    // Si des informations d'utilisateur sont bien présentes dans le localStorage on va stocker nos informations d'utilisateur de nouveau en y incluant les modifications apportées à notre profil
+                    // // Si des informations d'utilisateur sont bien présentes dans le localStorage on va stocker nos informations d'utilisateur de nouveau en y incluant les modifications apportées à notre profil
                     localStorage.getItem('user') ? localStorage.setItem('user', JSON.stringify(useAuthStore().user)) : "";
                     resolve(response);
                 }).catch(error => {

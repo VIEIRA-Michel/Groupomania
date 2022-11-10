@@ -33,7 +33,6 @@ let invitToBeCanceled = ref(null);
 
 // Cette fonction va nous permettre de transmettre l'id de notre ami à la fonction présente dans le store communiquant directement à l'api
 function removeFriend(utilisateur: number) {
-    console.log(utilisateur);
     useFriendshipStore().removeFriend(utilisateur.user_id).then((response: any) => {
         // Si tout s'est bien passé on réinitialise la valeur de open afin que la modal puisse de nouveau s'ouvrir dans le cas où nous souhaiterions supprimé par la suite un autre ami
         open.value = false;
@@ -78,7 +77,7 @@ function replyToRequest(invitation: any, reply: string) {
 
 // Cette fonction va nous permettre de rechercher un utilisateur en fonction de ce que nous avons saisie dans la barre de recherche
 function searchUser() {
-    if (search.value.length > 0) {
+    if (search.value.trim().length > 0) {
         // On vérifie d'abord nos demandes d'ami envoyées afin d'afficher le bon bouton sous la carte d'utilisateur en fonction de la situation
         useFriendshipStore().checkRequestsSended().then((response: any) => {
             // On éxécute ensuite la fonction de recherche présente dans le store communiquant directement à l'api
@@ -333,6 +332,7 @@ watch(open, (value: boolean) => {
             input {
                 border: 1px solid #dbdbdb;
                 border-radius: 10px;
+                padding: 5px;
                 outline: none;
             }
         }

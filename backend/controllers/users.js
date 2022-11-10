@@ -134,18 +134,11 @@ exports.updateProfil = (req, res, next) => {
                 if (results.length === 0) {
                     res.status(404).json({ message: 'Utilisateur introuvable' })
                 } else {
-                    let profile = req.file ?
-                        {
-                            ...req.body,
-                            picture: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
-                        } : {
-                            ...req.body
-                        };
                     let arrSql = [];
                     let arrSqlValue = [];
-                    if (profile.email) {
+                    if (req.body.email) {
                         arrSql.push('email = ?');
-                        arrSqlValue.push(profile.email)
+                        arrSqlValue.push(req.body.email)
                     };
                     if (req.file) {
                         if (results[0].picture_url !== null) {
@@ -154,37 +147,60 @@ exports.updateProfil = (req, res, next) => {
                             })
                         };
                         arrSql.push('picture_url = ?');
-                        arrSqlValue.push(profile.picture)
+                        arrSqlValue.push(`${req.protocol}://${req.get('host')}/images/${req.file.filename}`);
                     };
-                    if (profile.password) {
-                        bcrypt.hash(profile.password, 10)
+                    if (req.body.password) {
+                        bcrypt.hash(req.body.password, 5)
                             .then(hash => {
                                 arrSql.push('password = ?');
                                 arrSqlValue.push(hash)
-                            }).catch(error => res.status(500).json({ message: error }))
-                    };
-                    let reqSql = `UPDATE users SET ` + arrSql.join(', ') + ` WHERE id = ?;`;
-                    arrSqlValue.push(req.user.userId);
-                    connection.query(
-                        reqSql, arrSqlValue, function (err, results) {
-                            if (err) {
-                                console.log(err);
-                                res.status(500).json({ message: 'Erreur lors de la modification du profil' })
-                            } else {
-                                sql = `SELECT id, picture_url, firstname, lastname, email, session_id, userID FROM users WHERE id = ?;`;
+                                let reqSql = `UPDATE users SET ` + arrSql.join(', ') + ` WHERE id = ?;`;
+                                arrSqlValue.push(req.user.userId);
                                 connection.query(
-                                    sql, [req.user.userId], function (err, results) {
+                                    reqSql, arrSqlValue, function (err, results) {
                                         if (err) {
                                             console.log(err);
-                                            res.status(500).json({ message: 'Erreur lors de la récupération du profil' })
+                                            res.status(500).json({ message: 'Erreur lors de la modification du profil' })
                                         } else {
-                                            res.status(200).json(results)
+                                            sql = `SELECT id, picture_url, firstname, lastname, email, session_id, userID FROM users WHERE id = ?;`;
+                                            connection.query(
+                                                sql, [req.user.userId], function (err, results) {
+                                                    if (err) {
+                                                        console.log(err);
+                                                        res.status(500).json({ message: 'Erreur lors de la récupération du profil' })
+                                                    } else {
+                                                        res.status(200).json(results)
+                                                    }
+                                                }
+                                            )
                                         }
                                     }
                                 )
+                            }).catch(error => res.status(500).json({ message: error }))
+                    } else {
+                        let reqSql = `UPDATE users SET ` + arrSql.join(', ') + ` WHERE id = ?;`;
+                        arrSqlValue.push(req.user.userId);
+                        connection.query(
+                            reqSql, arrSqlValue, function (err, results) {
+                                if (err) {
+                                    console.log(err);
+                                    res.status(500).json({ message: 'Erreur lors de la modification du profil' })
+                                } else {
+                                    sql = `SELECT id, picture_url, firstname, lastname, email, session_id, userID FROM users WHERE id = ?;`;
+                                    connection.query(
+                                        sql, [req.user.userId], function (err, results) {
+                                            if (err) {
+                                                console.log(err);
+                                                res.status(500).json({ message: 'Erreur lors de la récupération du profil' })
+                                            } else {
+                                                res.status(200).json(results)
+                                            }
+                                        }
+                                    )
+                                }
                             }
-                        }
-                    )
+                        )
+                    }
                 }
             }
         }

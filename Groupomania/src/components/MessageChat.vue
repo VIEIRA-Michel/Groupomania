@@ -262,7 +262,6 @@ const emit = defineEmits<{
         width: 100%;
         background: #f6f6f6;
         border-bottom: 1px solid #dbdbdb;
-        // box-shadow: 0px 1px 8px -3px rgb(0 0 0 / 40%);
         flex-wrap: wrap;
         z-index: 1;
         border-radius: 20px 20px 0 0;
@@ -282,7 +281,6 @@ const emit = defineEmits<{
         }
 
         &__details {
-            // margin-left: 50px;
             display: flex;
             align-items: center;
             justify-content: space-around;

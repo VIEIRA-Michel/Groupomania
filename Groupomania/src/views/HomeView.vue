@@ -137,8 +137,8 @@ function createPublication(event: any) {
         } else {
             wrongFile.value = true;
         }
-    } else if (!previewPicture.picture && content.value
-        || previewPicture.picture == null && content.value) {
+    } else if (!previewPicture.picture && content.value.trim().length > 0
+        || previewPicture.picture == null && content.value.trim().length > 0) {
         usePublicationsStore().addNewPublication(content.value, null).then((response: any) => {
             // On émet l'évènement en lien afin de prévenir les autres utilisateurs que nous avons publié une nouvelle publication
             socket.emit('new publication', { publication: response, user: useAuthStore().$state.user });
@@ -385,7 +385,6 @@ watchEffect(() => {
     } else {
         buttonDisabled.value = false
     }
-    // console.log(buttonDisabled.value);
 });
 
 // On place un watch sur la modalRequest afin que lorsque la modal de confirmation de suppression d'une publication s'affiche que le scroll soit désactivé
@@ -446,7 +445,7 @@ onBeforeMount(() => {
                 <fa icon="fa-solid fa-trash-can" />
             </button>
             <div :class="[displayPicture ? 'create_post__button onPreview' : 'create_post__button']">
-                <button v-if="content || previewPicture.picture" @click.prevent="createPublication" type="submit"
+                <button v-if="content.trim().length > 0 || previewPicture.picture" @click.prevent="createPublication" type="submit"
                     class="create_post__button__submit">Publier</button>
             </div>
         </div>

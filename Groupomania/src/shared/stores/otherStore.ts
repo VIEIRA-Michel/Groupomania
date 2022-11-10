@@ -46,7 +46,6 @@ export const useOtherStore = defineStore({
             useOtherStore().$patch((state: any) => {
                 // Si la notification concerne un évènement en particulier on ajoutera les informations nécessaires au bon affichage de la notification
                 if (content.user && type == "friendRequest sended") {
-                    console.log(content);
                     state.notifications.unshift({
                         type: "friendship invitation",
                         user_id: content.request.sender,
@@ -68,7 +67,6 @@ export const useOtherStore = defineStore({
                         read: false
                     })
                 } else if (content.user && type == "like") {
-                    console.log(content);
                     state.notifications.unshift({
                         type: "like",
                         user_id: content.user.user_id,
