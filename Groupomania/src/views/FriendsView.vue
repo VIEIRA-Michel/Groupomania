@@ -65,6 +65,7 @@ function addToFriends(user_id: any) {
 
 // Cette fonction va nous permettre de transmettre notre réponse à la demande d'ami reçu
 function replyToRequest(invitation: any, reply: string) {
+    console.log(invitation);
     useFriendshipStore().acceptOrDeclineRequest(invitation, reply).then((response) => {
         // Si tout s'est bien passé on émet l'évènement en lien afin de prévenir le serveur que nous avons accepté ou refusé une demande d'ami
         if (reply == 'accepted') {
@@ -133,7 +134,11 @@ watch(open, (value: boolean) => {
         <div class="search-user">
             <div class="search-user__title">Rechercher un utilisateur</div>
             <div class="search-user__input">
-                <input type="text" v-model="search" @keyup.enter="searchUser" />
+                <input type="text" v-model="search" @keyup.enter="searchUser"
+                    placeholder="Rechercher sur Groupomania" />
+                <div @click.stop="searchUser" class="search-icon">
+                    <fa icon="fa-solid fa-magnifying-glass" />
+                </div>
             </div>
             <div v-if="usersFound" class="search-user__results">
                 <div class="search-user__results__list">
@@ -162,10 +167,14 @@ watch(open, (value: boolean) => {
                             </button>
                             <div v-if="user.waitingReply && !user.pending && !user.isFriend"
                                 class="search-user__results__list__item__name__button">
-                                <button @click="replyToRequest({ sender: user.user_id }, 'refused')" class="refused">
+                                <button
+                                    @click="requests.find((e) => e.sender == user.user_id ? replyToRequest(e, 'refused') : '')"
+                                    class="refused">
                                     <fa icon="fa-solid fa-xmark" />
                                 </button>
-                                <button @click="replyToRequest({ sender: user.user_id }, 'accepted')" class="accepted">
+                                <button
+                                    @click="requests.find((e) => e.sender == user.user_id ? replyToRequest(e, 'accepted') : '')"
+                                    class="accepted">
                                     <fa icon="fa-solid fa-check" />
                                 </button>
                             </div>
@@ -179,7 +188,7 @@ watch(open, (value: boolean) => {
                                                 <div class="modal-container__content__header__title">Êtes-vous
                                                     certains de
                                                     vouloir annuler votre demande d'amitié envers <span>{{
-                                                            invitToBeCanceled.firstname
+                                                    invitToBeCanceled.firstname
                                                     }}</span> ?
                                                 </div>
                                             </div>
@@ -328,12 +337,38 @@ watch(open, (value: boolean) => {
             display: flex;
             justify-content: center;
             margin: 20px;
+            position: relative;
+            width: fit-content;
+            position: relative;
+            margin: auto;
 
             input {
                 border: 1px solid #dbdbdb;
                 border-radius: 10px;
-                padding: 5px;
+                padding: 10px;
+                width: 210px;
                 outline: none;
+            }
+
+            .search-icon {
+                height: 38px;
+                width: 38px;
+                position: absolute;
+                right: 0px;
+                top: 0px;
+                border-radius: 0 10px 10px 0;
+                background-color: #dbdbdb;
+                color: #4e5166;
+                cursor: pointer;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+
+                &:hover {
+                    background-color: #FD2D01;
+                    color: #ffffff;
+                    transition: .3s all ease-in-out;
+                }
             }
         }
 
@@ -408,7 +443,6 @@ watch(open, (value: boolean) => {
                             }
 
                             .accepted {
-                                width: 100%;
                                 background: #ffffff;
                                 color: #FD2D01;
                                 border: 1px solid #FD2D01;
@@ -443,6 +477,7 @@ watch(open, (value: boolean) => {
                                 transition: .3s all ease-in-out;
                             }
                         }
+
                         .pending {
                             background: #ffffff;
                             color: #ffc1cb;
@@ -653,6 +688,7 @@ watch(open, (value: boolean) => {
                         background-color: #ffffff;
                         color: #FD2D01;
                         border: 1px solid #FD2D01;
+
                         &:hover {
                             background-color: #FD2D01;
                             transition: .3s all ease-in-out;

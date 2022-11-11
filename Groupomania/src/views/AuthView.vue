@@ -143,9 +143,11 @@ function register() {
                             <div class="container__content__form__password__input">
                                 <label for="password">Mot de passe</label>
                                 <input type="password" id="password" v-model="userInput.password" required />
-                                <ul class="message">La longueur du mot de passe doit être comprise entre 8 et 12
-                                    caractères et doit contenir au minimum :
-                                    <li>1 minuscule 1 majuscule 2 chiffres</li>
+                                <ul class="message">Le mot de passe doit contenir
+                                    <li>• 8 à 12 caractères</li>
+                                    <li>• 1 minuscule</li>
+                                    <li>• 1 majuscule</li>
+                                    <li>• 2 chiffres</li>
                                 </ul>
                             </div>
                             <div class="container__content__form__password__confirm-input">
@@ -264,11 +266,11 @@ function register() {
             }
 
             &__form {
-                border-radius: 5px;
-                background: floralwhite;
-                border: 1px solid #FD2D01;
+                border-radius: 20px;
+                background: #f6f6f6;
+                border: 1px solid #dbdbdb;
                 padding: 20px;
-                width: 305px;
+                width: 255px;
                 -webkit-animation: focus-in-expand 0.4s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
                 animation: focus-in-expand 0.4s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
 
@@ -278,15 +280,15 @@ function register() {
                 }
 
                 &__alert {
-                    background-color: #FF7A79;
+                    background-color: #4E5166;
                     color: #FFFFFF !important;
                     padding: 5px;
                     display: flex;
                     flex-direction: column;
                     margin-bottom: 10px;
                     font-size: 12px;
-                    border-radius: 5px;
-                    border: 1px solid #FD2D01;
+                    border-radius: 10px;
+                    border: 1px solid #4E5166;
                 }
 
                 &__information {
@@ -307,7 +309,9 @@ function register() {
                         input {
                             text-align: center;
                             border: 1px solid #dbdbdb;
-                            border-radius: 5px;
+                            padding: 5px;
+                            margin-top: 10px;
+                            border-radius: 10px;
                         }
                     }
 
@@ -321,22 +325,25 @@ function register() {
                         width: 100%;
                         font-weight: 300;
                         margin-bottom: 10px;
+                        justify-content: center;
 
                         input {
                             text-align: center;
                             border: 1px solid #dbdbdb;
-                            border-radius: 5px 5px 0 0;
+                            border-radius: 10px;
+                            padding: 5px;
+                            margin-top: 10px;
                         }
 
                         .message {
-                            background-color: #f5f5f5;
-                            border-bottom: 1px solid #dbdbdb;
-                            border-left: 1px solid #dbdbdb;
-                            border-right: 1px solid #dbdbdb;
-                            border-radius: 0 0 5px 5px;
+                            background-color: #dbdbdb;
+                            border-radius: 10px;
                             padding: 5px;
                             color: #4E5166;
-                            font-size: 12px;
+                            font-size: 14px;
+                            text-align: left;
+                            margin-top: 20px;
+                            // width: fit-content;
                         }
                     }
 
@@ -351,7 +358,9 @@ function register() {
                         input {
                             text-align: center;
                             border: 1px solid #dbdbdb;
-                            border-radius: 5px;
+                            margin-top: 10px;
+                            border-radius: 10px;
+                            padding: 5px;
                         }
                     }
                 }
@@ -381,12 +390,11 @@ function register() {
                     }
 
                     button {
-                        background-color: #FFFFFF;
-                        border-color: #FD2D01;
+                        background-color: #f6f5f5;
                         color: #FD2D01;
                         padding: 10px;
                         border: 1px solid #FD2D01;
-                        border-radius: 5px;
+                        border-radius: 10px;
                         cursor: pointer;
                         transition: all 0.3s ease-in-out;
 
@@ -406,17 +414,20 @@ function register() {
 
                     input {
                         text-align: center;
+                        margin-top: 10px;
+                        padding: 5px;
+                        border-radius: 10px;
                     }
 
                     .invalidInput {
                         border: 1px solid #FD2D01;
-                        border-radius: 5px;
+                        border-radius: 10px;
                         -webkit-animation: shake-horizontal 0.4s cubic-bezier(0.455, 0.030, 0.515, 0.955) both;
                         animation: shake-horizontal 0.4s cubic-bezier(0.455, 0.030, 0.515, 0.955) both;
                     }
 
                     .default {
-                        border-radius: 5px;
+                        border-radius: 10px;
                         border: 1px solid #dbdbdb;
                         text-align: center;
                     }
@@ -427,12 +438,11 @@ function register() {
                     }
 
                     button {
-                        background-color: #FFFFFF;
-                        border-color: #FD2D01;
+                        background-color: #f6f5f5;
                         color: #FD2D01;
-                        padding: 10px;
                         border: 1px solid #FD2D01;
-                        border-radius: 5px;
+                        padding: 10px;
+                        border-radius: 10px;
                         cursor: pointer;
                         transition: all 0.3s ease-in-out;
 

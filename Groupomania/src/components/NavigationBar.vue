@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, watchEffect } from 'vue';
+import { ref, computed, watch, watchEffect, onBeforeMount } from 'vue';
 import { useOtherStore } from '@/shared/stores/otherStore';
 import { useFriendshipStore } from '@/shared/stores/friendsStore';
 import { useChatStore } from '@/shared/stores/chatStore';
@@ -9,7 +9,6 @@ import { useRouter } from 'vue-router';
 import pictureDefault from '@/assets/profile_picture.jpg';
 
 const router = useRouter();
-
 
 // requests va nous permettre de récupérer la liste de nos demandes d'amis reçu
 const requests = computed(() => useFriendshipStore().$state.requests);
@@ -26,6 +25,8 @@ const notifications = computed(() => useOtherStore().$state.notifications);
 // notificationsCount va nous permettre de récupérer le nombre de notification non lus que nous avons
 const notificationsCount = computed(() => useOtherStore().getCountOfNotificationNotRead);
 
+const isConnected = computed(() => useAuthStore().$state.isConnected);
+
 // showNotification va nous permettre d'afficher ou non la liste des notifications
 let showNotification = ref<any>(null);
 
@@ -34,6 +35,8 @@ let newNotification = ref(false);
 
 // showProfileMenu va nous permettre d'afficher le menu de notre profil
 let showProfileMenu = ref(false);
+
+let currentPage = ref();
 
 // On récupère la propriété que l'on passe depuis l'élément parent et on définit son type
 const props = defineProps<{
@@ -72,6 +75,10 @@ function reset() {
     showNotification.value = false;
     showProfileMenu.value = false;
     useFriendshipStore().resetSearch();
+};
+
+function changePage(page: string) {
+    currentPage.value = page;
 }
 
 // Ce watch va nous permettre de savoir si nous avons une nouvelle notification et de nous avertir par une animation sur le bouton de notification
@@ -82,6 +89,37 @@ watch(notificationsCount, (newNotif) => {
     if (newNotif == 0) {
         newNotification.value = false;
     }
+})
+
+// let page = ref(document.location.pathname);
+
+// onBeforeMount(() => {
+//     document
+// })
+
+watch(isConnected, (value) => {
+    console.log(value);
+
+    if (value == true) {
+        currentPage.value = document.location.pathname
+
+        // switch (currentPage.value) {
+        //     case '/app/home':
+        //         currentPage.value = 'home';
+        //         break;
+        //     case 'app/friends':
+        //         currentPage.value = 'friends';
+        //         break;
+        //     case 'app/chat':
+        //         currentPage.value = 'chat';
+        //         break;
+        // }
+        // console.log(currentPage);
+    }
+})
+
+watch(currentPage, (value: string) => {
+    console.log(value)
 })
 
 </script>
@@ -95,18 +133,21 @@ watch(notificationsCount, (newNotif) => {
                 </router-link>
             </div>
             <div v-if="props.isConnected" class="center">
-                <router-link @click="reset" to="/app/home">
+                <router-link @click="reset, changePage('home')" to="/app/home"
+                    :class="[currentPage == 'home' ? 'currentPage' : 'other']">
                     <div class="menu__navigate">
                         <fa icon="home" />
                     </div>
                 </router-link>
-                <router-link @click="reset" to="/app/friends">
+                <router-link @click="reset, changePage('friends')" to="/app/friends"
+                    :class="[currentPage == 'friends' ? 'currentPage' : 'other']">
                     <div class="menu__navigate">
                         <fa icon="user-group" />
                         <span v-if="props.isConnected && requests.length > 0"> {{ requests.length }}</span>
                     </div>
                 </router-link>
-                <router-link @click="reset" to="/app/chat">
+                <router-link @click="reset, changePage('chat')" to="/app/chat"
+                    :class="[currentPage == 'chat' ? 'currentPage' : 'other']">
                     <div class="menu__navigate">
                         <fa icon="fa-solid fa-comments" />
                         <span
@@ -278,18 +319,25 @@ header {
             text-decoration: none;
             margin-left: 10px;
             color: #FD2D01;
+
+            &:focus {
+                color: #4E5166;
+            }
         }
 
         &__navigate {
             cursor: pointer;
             position: relative;
-            border-radius: 5px;
+            border-radius: 10px;
             height: 40px;
 
             &:hover {
                 background-color: #dbdbdb;
                 transition: 0.4s all;
-                color: #4E5166;
+
+                svg {
+                    color: #4E5166 !important;
+                }
             }
 
             &:active {
@@ -331,6 +379,25 @@ header {
             svg {
                 padding: 10px;
                 border-radius: 5px;
+            }
+
+            .currentPage {
+                border-bottom: 4px solid #4E5166;
+
+                svg {
+                    color: #4E5166;
+                }
+
+                &:hover {
+                    .menu__navigate {
+                        background-color: #FFF;
+                    }
+                }
+            }
+
+            .other {
+                color: #FD2D01;
+                border: none;
             }
         }
 
