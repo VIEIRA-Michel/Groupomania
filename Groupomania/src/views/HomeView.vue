@@ -88,12 +88,19 @@ function onPickFile(event: any) {
     wrongFile.value = false;
     // On sélectionne la balise img où l'on disposera la prévisualisation de l'image où l'on disposera l'image sélectionner
     const image: any = document.getElementById('picture');
-    previewPicture.picture = event.target.files[0];
-    // On récupère le fichier sélectionné et on l'attribue à la variable selectedFile
-    selectedFile.value = document.getElementById("file").value;
-    // Si previewPicture.picture comporte une valeur on va créer un objet FileReader qui va nous permettre de lire le contenu du fichier sélectionné
-    previewPicture.picture ? image.src = URL.createObjectURL(previewPicture.picture) : "";
-    displayPicture.value = true;
+    if(event.target.files[0].type == 'image/jpg' 
+    || event.target.files[0].type == 'image/jpeg' 
+    || event.target.files[0].type == 'image/png' 
+    || event.target.files[0].type == 'image/webp') {
+        previewPicture.picture = event.target.files[0];
+        // On récupère le fichier sélectionné et on l'attribue à la variable selectedFile
+        selectedFile.value = document.getElementById("file").value;
+        // Si previewPicture.picture comporte une valeur on va créer un objet FileReader qui va nous permettre de lire le contenu du fichier sélectionné
+        previewPicture.picture ? image.src = URL.createObjectURL(previewPicture.picture) : "";
+        displayPicture.value = true;
+    } else {
+        wrongFile.value = true;
+    }
 };
 
 // Cette fonction va nous permettre de redimensionner le champ de saisie de texte en fonction de la taille du texte saisi afin de toujours voir l'ensemble du texte saisi
@@ -143,6 +150,9 @@ function createPublication(event: any) {
             // On émet l'évènement en lien afin de prévenir les autres utilisateurs que nous avons publié une nouvelle publication
             socket.emit('new publication', { publication: response, user: useAuthStore().$state.user });
             content.value = '';
+            if (wrongFile.value) {
+                wrongFile.value = false;
+            }
         });
     }
 };
@@ -179,11 +189,21 @@ function activeEditMode(publication: any) {
 function editPickFile(event: any, publication: any) {
     // On réinitialise la valeur de pictureHasHidden afin de pouvoir prévisualiser l'image que l'on vient de sélectionner
     pictureHasHidden.value = false;
-    // on stock l'image sélectionner dans une propriété liée au mode de modification afin de pouvoir par la suite prévisualiser l'image
-    usePublicationsStore().previewMode(publication.publication_id, event.target.files[0]).then((response: any) => {
-        inputFileEdit.value = document.getElementById("file-edit").value;
-        publication.previewOnEdit ? document.getElementById(`${publication.publication_id.toString()}`).src = URL.createObjectURL(publication.previewOnEdit) : "";
-    })
+    
+    if(event.target.files[0].type == 'image/jpg' 
+    || event.target.files[0].type == 'image/jpeg' 
+    || event.target.files[0].type == 'image/png' 
+    || event.target.files[0].type == 'image/webp') {
+        // on stock l'image sélectionner dans une propriété liée au mode de modification afin de pouvoir par la suite prévisualiser l'image
+        usePublicationsStore().previewMode(publication.publication_id, event.target.files[0]).then((response: any) => {
+            inputFileEdit.value = document.getElementById("file-edit").value;
+            // publication.previewOnEdit ? document.getElementById(`${publication.publication_id.toString()}`).src = URL.createObjectURL(publication.previewOnEdit) : "";
+            publication.previewOnEdit ? document.getElementById(`publication-picture ${publication.publication_id.toString()}`).src = URL.createObjectURL(publication.previewOnEdit) : ""
+            wrongFileEdit.value = false;
+        })
+    } else {
+        wrongFileEdit.value = true;
+    }
 };
 
 // Cette fonction va nous permettre de cacher l'affichage de l'image déjà présente dans la publication 
@@ -225,18 +245,22 @@ function removePicture(option: string, publication_id?: number) {
 
 // Cette fonction va nous permettre de sortir du mode de modification en annulant tout changement
 function cancelModification(publication: any) {
+    if(publication.picture) {
+        document.getElementById(`publication-picture ${publication.publication_id.toString()}`).src = publication.picture;
+    }; 
+    if (pictureHasHidden.value) {
+        pictureHasHidden.value = false;
+    }
+    if (publication.previewOnEdit) {
+        usePublicationsStore().resetPreview(publication.publication_id).then((response: any) => {
+            if (publication.picture) {
+                document.getElementById(`publication-picture ${publication.publication_id.toString()}`).src = publication.picture;
+            }
+        })
+    }
     usePublicationsStore().activateEditMode(publication.publication_id, 'deactivate').then((response: any) => {
-        if (pictureHasHidden.value) {
-            pictureHasHidden.value = false;
-        }
-        if (publication.previewOnEdit) {
-            usePublicationsStore().resetPreview(publication.publication_id).then((response: any) => {
-                if (publication.picture) {
-                    document.getElementById(`${publication.publication_id.toString()}`).src = publication.picture;
-                }
-            })
-        }
         inputFileEdit.value = null;
+        tmpPicture.value = '';
     })
 };
 
@@ -271,6 +295,7 @@ function updatePublication(publication: any) {
                 // Si le type de l'image sélectionner est une string cela veux dire que nous ne souhaitons pas modifier l'image de la publication
                 if (typeof (editPost.picture) == 'string') {
                     if(publication.content === editPost.content && publication.picture === editPost.picture) {
+                        document.getElementById(`publication-picture ${publication.publication_id.toString()}`).src = publication.picture;
                         usePublicationsStore().closeEditingMode(publication.publication_id);
                     } else {
                         usePublicationsStore().updatePublication(publication.publication_id, editPost).then((response: any) => {
@@ -285,11 +310,15 @@ function updatePublication(publication: any) {
             }
             // Dans le cas où il n'y a aucune image sélectionner dans le mode de modification d'une publication on procède à la modification de la publication sans modifier l'image
         } else {
-            usePublicationsStore().updatePublication(publication.publication_id, editPost).then((response: any) => {
-                socket.emit('edit publication', response, useAuthStore().$state.user);
-                usePublicationsStore().resetPreview(publication.publication_id).then((response2: any) => {
+            if(publication.content !== editPost.content || publication.picture && pictureHasHidden.value == true) {
+                usePublicationsStore().updatePublication(publication.publication_id, editPost).then((response: any) => {
+                    socket.emit('edit publication', response, useAuthStore().$state.user);
+                    usePublicationsStore().resetPreview(publication.publication_id).then((response2: any) => {
+                    })
                 })
-            })
+            } else {
+                usePublicationsStore().activateEditMode(publication.publication_id, 'deactivate');
+            }
         }
     }
 };
@@ -426,24 +455,21 @@ onBeforeMount(() => {
                                     class="create_post__content__details__file" id="file">
                                 <div @click="chooseFile('create')"
                                     class="create_post__content__details__button__choose">
-                                    Choisir un
-                                    fichier</div>
+                                    Choisir une image</div>
                             </div>
-                            <span v-if="wrongFile" class="picture-message-alert">Seuls
-                                les images
-                                aux formats .jpg .jpeg
-                                .png .webp sont
-                                acceptées</span>
+                            <p v-if="wrongFile" class="picture-message-alert">L'image doit être
+                                au format .jpg .jpeg 
+                                .png ou .webp</p>
                         </form>
                     </div>
                 </div>
             </div>
-            <img alt="picture"
-                :class="[displayPicture ? 'create_post__content__details__picture' : 'create_post__content__details__picture hidden']"
-                id="picture" />
-            <button @click="removePicture('create')" class="create_post__trash" v-if="displayPicture">
-                <fa icon="fa-solid fa-trash-can" />
-            </button>
+            <div :class="[displayPicture ? 'create_post__content__details__picture' : 'create_post__content__details__picture hidden']">
+                <img alt="picture" id="picture" />
+                <button @click="removePicture('create')" class="create_post__trash" v-if="displayPicture">
+                    <fa icon="fa-solid fa-trash-can" />
+                </button>
+            </div>
             <div :class="[displayPicture ? 'create_post__button onPreview' : 'create_post__button']">
                 <button v-if="content.trim().length > 0 || previewPicture.picture" @click.prevent="createPublication" type="submit"
                     class="create_post__button__submit">Publier</button>
@@ -596,25 +622,23 @@ onBeforeMount(() => {
                                                     class="create_post__content__details__button__choose post-edit">Choisir un
                                                     fichier</div>
                                             </div>
-                                        <span v-if="wrongFileEdit" class="picture-message-alert">Seuls
-                                            les images
-                                            aux formats .jpg .jpeg
-                                            .png .webp sont
-                                            acceptées</span>
+                                        <p v-if="wrongFileEdit" class="picture-message-alert">L'image doit être
+                                        au format .jpg .jpeg .png ou .webp</p>
                                     </template>
                                     <template v-else>
                                         <p v-if="publication.content">{{ publication.content }}</p>
                                     </template>
                                 </div>
-                                <img :src="publication.picture" alt=""
-                                    :class="[ publication.picture && publication.editMode == false 
+                                <div :class="[ publication.picture && publication.editMode == false 
                                     || publication.editMode == true && publication.previewOnEdit 
                                     || publication.editMode == true && tmpPicture ? 'post__content__picture' : 'post__content__picture hidden']"
                                     :id="publication.publication_id.toString()">
-                                <button @click="hideImageOnPost(publication)" class="post__content__deleteButton"
-                                    v-if="publication.editMode && tmpPicture && !pictureHasHidden || publication.editMode && publication.previewOnEdit && !pictureHasHidden">
-                                    <fa icon="fa-solid fa-trash-can" />
-                                </button>
+                                    <img :src="publication.picture" :id="`publication-picture ${publication.publication_id}`" alt="">
+                                    <button @click="hideImageOnPost(publication)" class="post__content__deleteButton"
+                                        v-if="publication.editMode && tmpPicture && !pictureHasHidden || publication.editMode && publication.previewOnEdit && !pictureHasHidden">
+                                        <fa icon="fa-solid fa-trash-can" />
+                                    </button>
+                                </div>
                             </div>
                         </div>
                         <div v-if="publication.editMode" class="post__button">
@@ -782,13 +806,15 @@ onBeforeMount(() => {
                 width: 100%;
 
                 .picture-message-alert {
-                    background: #FF7A79;
-                    border-radius: 5px;
-                    border: 1px solid #FD2D01;
+                    background: #4E5166;
+                    border-radius: 10px;
+                    border: 1px solid #4E5166;
                     color: #FFFFFF;
                     font-size: 12px;
                     padding: 5px;
                     font-weight: normal;
+                    margin-bottom: 10px;
+                    width: fit-content;
                 }
             }
 
@@ -818,23 +844,48 @@ onBeforeMount(() => {
 
             &__file {
                 margin: 10px 0px;
-                // width: 240px;
                 display: none;
                 z-index: 0;
                 opacity: 0;
             }
 
             &__picture {
-                width: 100%;
-                height: 100%;
                 max-height: 353px;
-                margin-top: 20px;
-                object-fit: cover;
-                border-top: 1px solid #dbdbdb;
-                border-bottom: 1px solid #dbdbdb;
+                margin: 20px 10px 0px 10px;
+                display: flex;
+                justify-content: center;
+                position: relative;
+
+                img {
+                    width: 100%;
+                    object-fit: cover;
+                    border-radius: 10px;
+
+                }
 
                 &.hidden {
                     display: none;
+                }
+
+                button {
+                    font-size: 15px;
+                    width: 35px;
+                    height: 35px;
+                    border: 1px solid #FD2D01;
+                    background: transparent;
+                    color: #FD2D01;
+                    border-radius: 5px;
+                    position: absolute;
+                    top: 10px;
+                    right: 10px;
+                    box-shadow: rgb(0 0 0 / 22%) 0px 2px 18px 0px;
+                    cursor: pointer;
+
+                    &:hover {
+                        background: #FD2D01;
+                        color: #FFFFFF;
+                        transition: 0.3s all;
+                    }
                 }
             }
 
@@ -908,26 +959,6 @@ onBeforeMount(() => {
                     }
                 }
             }
-        }
-    }
-
-    &__trash {
-        font-size: 15px;
-        width: 35px;
-        height: 35px;
-        border: 1px solid #FD2D01;
-        background: #FFFFFF;
-        color: #FD2D01;
-        border-radius: 5px;
-        position: absolute;
-        right: 10px;
-        top: 115px;
-        cursor: pointer;
-
-        &:hover {
-            background: #FD2D01;
-            color: #FFFFFF;
-            transition: 0.3s all;
         }
     }
 
@@ -1119,11 +1150,12 @@ onBeforeMount(() => {
             display: flex;
             flex-direction: column;
             color: #4E5166;
-            // width: 100%;
             &.editingMode {
                 flex-direction: row;
                 width: 100%;
                 flex-wrap: wrap;
+                align-items: baseline;
+                justify-content: space-between;
 
                 textarea {
                     width: 100% !important;
@@ -1146,28 +1178,56 @@ onBeforeMount(() => {
             }
 
             .picture-message-alert {
-                background: #FF7A79;
-                border-radius: 5px;
-                border: 1px solid #FD2D01;
+                background: #4E5166;
+                border-radius: 10px;
+                border: 1px solid #4E5166;
                 color: #FFFFFF;
                 font-size: 12px;
                 padding: 5px;
                 font-weight: normal;
+                width: fit-content;
+                height: fit-content;
             }
         }
 
         &__picture {
-            width: 100%;
-            height: 100%;
             max-height: 353px;
-            object-fit: cover;
-            border: 1px solid #dbdbdb;
-            border-radius: 10px;
-            background: #FFFFFF;
-            margin-top: 10px;
+            margin-top: 20px;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            width: 100%;
+
+            img {
+                width: 100%;
+                object-fit: cover;
+                border-radius: 10px;
+
+            }
 
             &.hidden {
                 display: none;
+            }
+
+            button {
+                position: absolute;
+                font-size: 15px;
+                width: 35px;
+                height: 35px;
+                border: 1px solid #FD2D01;
+                background: transparent;
+                color: #FD2D01;
+                border-radius: 5px;
+                position: absolute;
+                right: 10px;
+                top: 10px;
+                cursor: pointer;
+
+                &:hover {
+                    background: #FD2D01;
+                    color: #FFFFFF;
+                    transition: 0.3s all;
+                }
             }
         }
 
@@ -1189,26 +1249,6 @@ onBeforeMount(() => {
 
             &__file {
                 margin: 10px 0px;
-            }
-        }
-
-        &__deleteButton {
-            font-size: 15px;
-            width: 35px;
-            height: 35px;
-            border: 1px solid #FD2D01;
-            background: #FFFFFF;
-            color: #FD2D01;
-            border-radius: 5px;
-            position: absolute;
-            right: 10px;
-            top: 170px;
-            cursor: pointer;
-
-            &:hover {
-                background: #FD2D01;
-                color: #FFFFFF;
-                transition: 0.3s all;
             }
         }
     }
@@ -1399,7 +1439,7 @@ onBeforeMount(() => {
                 margin-left: 10px;
                 padding: 5px;
                 border: 1px solid #dbdbdb;
-                border-radius: 5px;
+                border-radius: 10px;
                 cursor: pointer;
                 transition: all 0.3s ease-in-out;
 

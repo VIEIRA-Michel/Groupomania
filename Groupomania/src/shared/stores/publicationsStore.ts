@@ -321,6 +321,7 @@ export const usePublicationsStore = defineStore({
                         if (publication.publication_id == publication_id && operation == 'deactivate') {
                             // On va passer la valeur de l'attribut editMode à false afin de fermer le mode édition de la publication
                             publication.editMode = false;
+                            publication.menu = false;
                             // Dans le cas où l'id d'une publication correspond à l'id de la publication sur laquelle on a cliqué et qu'on ne lui passe aucune autre instruction
                         } else if (publication.publication_id == publication_id) {
                             // On passe la publication en mode édition
@@ -329,6 +330,8 @@ export const usePublicationsStore = defineStore({
                             // Dans le cas où l'id d'une publication ne correspond pas à l'id de la publication sur laquelle on a cliqué on ferme le mode édition 
                             // Afin de ne pas avoir plusieurs publications en mode édition en même temps
                             publication.editMode = false;
+                            publication.menu = false;
+                            publication.previewOnEdit = null;
                         }
                     })
                 })

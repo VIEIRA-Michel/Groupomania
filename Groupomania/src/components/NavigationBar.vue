@@ -4,9 +4,12 @@ import { useOtherStore } from '@/shared/stores/otherStore';
 import { useFriendshipStore } from '@/shared/stores/friendsStore';
 import { useChatStore } from '@/shared/stores/chatStore';
 import { useAuthStore } from '@/shared/stores/authStore';
-
+import { useRouter } from 'vue-router';
 // Cette image par défaut va s'afficher uniquement dans le cas où l'utilisateur aurait émit un trop grand nombre de requête et qu'il ne peut plus récupérer les informations de son compte
 import pictureDefault from '@/assets/profile_picture.jpg';
+
+const router = useRouter();
+
 
 // requests va nous permettre de récupérer la liste de nos demandes d'amis reçu
 const requests = computed(() => useFriendshipStore().$state.requests);
@@ -107,7 +110,7 @@ watch(notificationsCount, (newNotif) => {
                     <div class="menu__navigate">
                         <fa icon="fa-solid fa-comments" />
                         <span
-                            v-if="props.isConnected && users.length !== 0 && users.find((item:any) => item.hasNewMessages == true)">1</span>
+                            v-if="props.isConnected && users.length !== 0 && users.find((item: any) => item.hasNewMessages == true)">1</span>
                     </div>
                 </router-link>
             </div>
@@ -116,7 +119,7 @@ watch(notificationsCount, (newNotif) => {
                     <div class="notification-alert__content">
                         <div class="notification-alert__content__icon">
                             <fa icon="fa-solid fa-bell"
-                                :class="[ showNotification == null && newNotification || showNotification == false && newNotification ? 'active' : '']" />
+                                :class="[showNotification == null && newNotification || showNotification == false && newNotification ? 'active' : '']" />
                             <span v-if="props.isConnected && notificationsCount > 0"> {{ notificationsCount }}</span>
                         </div>
                     </div>
@@ -171,7 +174,7 @@ watch(notificationsCount, (newNotif) => {
                                     </div>
                                 </div>
                             </div>
-                            <div v-if="showNotification && notifications.length <=0"
+                            <div v-if="showNotification && notifications.length <= 0"
                                 class="notification-alert__container__text">
                                 <div class="event__text">
                                     <p>Aucune notification</p>
@@ -182,9 +185,9 @@ watch(notificationsCount, (newNotif) => {
                 </nav>
                 <div @click.stop="toggleProfileMenu" class="profile">
                     <img :src="user.picture_url ? user.picture_url : pictureDefault" alt="avatar" />
-                    <div :class="[ showProfileMenu ? 'profile__menu active' : 'profile__menu' ]">
+                    <div :class="[showProfileMenu ? 'profile__menu active' : 'profile__menu']">
                         <div v-if="showProfileMenu" class="profile__menu__list">
-                            <div class="profile__menu__list__item">
+                            <div @click="router.push('/app/profil')" class="profile__menu__list__item">
                                 <router-link to="/app/profil">
                                     <fa icon="fa-solid fa-user-pen" />
                                     Modifier mon profil
@@ -590,6 +593,7 @@ header {
                         transition: 0.3s all;
                         box-shadow: rgba(0 0 0 /22%) 0px 2px 18px 0px;
                         padding: 10px;
+                        cursor: initial;
                     }
 
                     &__list {
@@ -598,6 +602,7 @@ header {
                             -webkit-animation: text-focus-in 0.4s cubic-bezier(0.550, 0.085, 0.680, 0.530) both;
                             animation: text-focus-in 0.4s cubic-bezier(0.550, 0.085, 0.680, 0.530) both;
                             border-radius: 10px;
+                            cursor: pointer;
 
                             &:hover {
                                 background-color: #FD2D01;
@@ -616,6 +621,7 @@ header {
 
                             a {
                                 color: #4E5166;
+
                                 svg {
                                     width: 20px;
                                     margin-right: 10px;
