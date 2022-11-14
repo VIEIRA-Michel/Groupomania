@@ -121,8 +121,9 @@ export const useOtherStore = defineStore({
                 })
             } else if (type == "friendRequest canceled") {
                 useOtherStore().$patch((state: any) => {
+                    console.log(content);
                     for (let i = 0; i < state.notifications.length; i++) {
-                        if (state.notifications[i].idRequest == content.target.idRequest && state.notifications[i].type == "friendship invitation") {
+                        if (state.notifications[i].user_id == content.user.user_id && state.notifications[i].type == "friendship invitation") {
                             state.notifications.splice(i, 1);
                             i = -1;
                         }

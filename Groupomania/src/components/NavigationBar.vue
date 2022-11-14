@@ -75,11 +75,8 @@ function reset() {
     showNotification.value = false;
     showProfileMenu.value = false;
     useFriendshipStore().resetSearch();
+    useChatStore().unselectUser();
 };
-
-function changePage(page: string) {
-    currentPage.value = page;
-}
 
 // Ce watch va nous permettre de savoir si nous avons une nouvelle notification et de nous avertir par une animation sur le bouton de notification
 watch(notificationsCount, (newNotif) => {
@@ -91,35 +88,10 @@ watch(notificationsCount, (newNotif) => {
     }
 })
 
-// let page = ref(document.location.pathname);
-
-// onBeforeMount(() => {
-//     document
-// })
-
-watch(isConnected, (value) => {
+// Ce watch va nous permettre de récupérer la page sur laquelle nous sommes
+watch(router.currentRoute, (value) => {
     console.log(value);
-
-    if (value == true) {
-        currentPage.value = document.location.pathname
-
-        // switch (currentPage.value) {
-        //     case '/app/home':
-        //         currentPage.value = 'home';
-        //         break;
-        //     case 'app/friends':
-        //         currentPage.value = 'friends';
-        //         break;
-        //     case 'app/chat':
-        //         currentPage.value = 'chat';
-        //         break;
-        // }
-        // console.log(currentPage);
-    }
-})
-
-watch(currentPage, (value: string) => {
-    console.log(value)
+    reset();
 })
 
 </script>
@@ -127,27 +99,27 @@ watch(currentPage, (value: string) => {
     <header>
         <div class="menu">
             <div class="logo">
-                <router-link @click="reset" to="/app/home">
+                <router-link to="/app/home">
                     <img src="../assets/logo-groupomania.svg" alt="logo-groupomania">
                     <span>Groupomania</span>
                 </router-link>
             </div>
             <div v-if="props.isConnected" class="center">
-                <router-link @click="reset, changePage('home')" to="/app/home"
-                    :class="[currentPage == 'home' ? 'currentPage' : 'other']">
+                <router-link to="/app/home"
+                    :class="[router.currentRoute.value.path == '/app/home' ? 'currentPage' : 'other']">
                     <div class="menu__navigate">
                         <fa icon="home" />
                     </div>
                 </router-link>
-                <router-link @click="reset, changePage('friends')" to="/app/friends"
-                    :class="[currentPage == 'friends' ? 'currentPage' : 'other']">
+                <router-link to="/app/friends"
+                    :class="[router.currentRoute.value.path == '/app/friends' ? 'currentPage' : 'other']">
                     <div class="menu__navigate">
                         <fa icon="user-group" />
                         <span v-if="props.isConnected && requests.length > 0"> {{ requests.length }}</span>
                     </div>
                 </router-link>
-                <router-link @click="reset, changePage('chat')" to="/app/chat"
-                    :class="[currentPage == 'chat' ? 'currentPage' : 'other']">
+                <router-link to="/app/chat"
+                    :class="[router.currentRoute.value.path == '/app/chat' ? 'currentPage' : 'other']">
                     <div class="menu__navigate">
                         <fa icon="fa-solid fa-comments" />
                         <span
@@ -166,59 +138,61 @@ watch(currentPage, (value: string) => {
                     </div>
                     <div
                         :class="[showNotification && notifications.length == 0 ? 'notification-alert__container empty' : showNotification ? 'notification-alert__container active' : 'notification-alert__container']">
-                        <div class="notification-alert__container__list">
-                            <div v-if="showNotification" v-for="notif in notifications"
-                                class="notification-alert__container__list__item">
-                                <div v-if="showNotification" class="event">
-                                    <div class="event__avatar">
-                                        <img :src="notif.picture_url" alt="avatar" />
+                        <div :class="[showNotification ? 'active' : 'hidden']">
+                            <div class="notification-alert__container__list">
+                                <div v-if="showNotification" v-for="notif in notifications"
+                                    class="notification-alert__container__list__item">
+                                    <div v-if="showNotification" class="event">
+                                        <div class="event__avatar">
+                                            <img :src="notif.picture_url" alt="avatar" />
+                                        </div>
+                                        <div class="event__text">
+                                            <div class="event__text__top">
+                                                <div class="event__text__top__username">
+                                                    {{ notif.firstname + ' ' + notif.lastname }}
+                                                </div>
+                                                <div class="event__text__top__date">
+                                                    {{ notif.date }}
+                                                </div>
+                                            </div>
+                                            <div class="event__text__type">
+                                                <p>{{ notif.message }}</p>
+                                            </div>
+                                        </div>
                                     </div>
+                                    <div v-if="notif.type == 'comment' || notif.type == 'like'"
+                                        class="notification-alert__container__list__item__content">
+                                        <div class="notification-alert__container__list__item__content__publication">
+                                            <div
+                                                class="notification-alert__container__list__item__content__publication__top">
+                                                <div
+                                                    class="notification-alert__container__list__item__content__publication__top__avatar">
+                                                    <img :src="user.picture_url" alt="avatar" />
+                                                </div>
+                                                <div
+                                                    class="notification-alert__container__list__item__content__publication__top__username">
+                                                    {{ user.firstname + ' ' + user.lastname }}
+                                                </div>
+                                            </div>
+                                            <div
+                                                class="notification-alert__container__list__item__content__publication__bottom">
+                                                <div v-if="notif.publication_content"
+                                                    class="notification-alert__container__list__item__content__publication__bottom__text">
+                                                    {{ notif.publication_content }}
+                                                </div>
+                                                <div v-if="notif.publication_picture"
+                                                    class="notification-alert__container__list__item__content__publication__bottom__picture">
+                                                    <img :src="notif.publication_picture" alt="publication picture">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div v-if="showNotification && notifications.length <= 0"
+                                    class="notification-alert__container__text">
                                     <div class="event__text">
-                                        <div class="event__text__top">
-                                            <div class="event__text__top__username">
-                                                {{ notif.firstname + ' ' + notif.lastname }}
-                                            </div>
-                                            <div class="event__text__top__date">
-                                                {{ notif.date }}
-                                            </div>
-                                        </div>
-                                        <div class="event__text__type">
-                                            <p>{{ notif.message }}</p>
-                                        </div>
+                                        <p>Aucune notification</p>
                                     </div>
-                                </div>
-                                <div v-if="notif.type == 'comment' || notif.type == 'like'"
-                                    class="notification-alert__container__list__item__content">
-                                    <div class="notification-alert__container__list__item__content__publication">
-                                        <div
-                                            class="notification-alert__container__list__item__content__publication__top">
-                                            <div
-                                                class="notification-alert__container__list__item__content__publication__top__avatar">
-                                                <img :src="user.picture_url" alt="avatar" />
-                                            </div>
-                                            <div
-                                                class="notification-alert__container__list__item__content__publication__top__username">
-                                                {{ user.firstname + ' ' + user.lastname }}
-                                            </div>
-                                        </div>
-                                        <div
-                                            class="notification-alert__container__list__item__content__publication__bottom">
-                                            <div v-if="notif.publication_content"
-                                                class="notification-alert__container__list__item__content__publication__bottom__text">
-                                                {{ notif.publication_content }}
-                                            </div>
-                                            <div v-if="notif.publication_picture"
-                                                class="notification-alert__container__list__item__content__publication__bottom__picture">
-                                                <img :src="notif.publication_picture" alt="publication picture">
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div v-if="showNotification && notifications.length <= 0"
-                                class="notification-alert__container__text">
-                                <div class="event__text">
-                                    <p>Aucune notification</p>
                                 </div>
                             </div>
                         </div>
@@ -229,10 +203,10 @@ watch(currentPage, (value: string) => {
                     <div :class="[showProfileMenu ? 'profile__menu active' : 'profile__menu']">
                         <div v-if="showProfileMenu" class="profile__menu__list">
                             <div @click="router.push('/app/profil')" class="profile__menu__list__item">
-                                <router-link to="/app/profil">
+                                <a to="/app/profil">
                                     <fa icon="fa-solid fa-user-pen" />
                                     Modifier mon profil
-                                </router-link>
+                                </a>
                             </div>
                             <div @click="emit('logout')" class="profile__menu__list__item">
                                 <a>
@@ -476,6 +450,8 @@ header {
                     top: 54px;
                     right: 0px;
                     background: #ffffff;
+                    border: 1px solid #dbdbdb;
+                    box-shadow: rgb(0 0 0 / 22%) 0px 2px 18px 0px;
                     // padding: 10px;
 
                     &__list {
@@ -542,16 +518,32 @@ header {
                         }
                     }
 
+                    .hidden {
+                        width: 0px;
+                        height: 0px;
+                    }
+
                     &.active {
                         width: 350px;
                         height: 235px;
-                        // height: 250px;
-                        border: 1px solid #dbdbdb;
-                        border-radius: 20px 0px 0px 20px;
-                        overflow-y: scroll;
+                        border-radius: 20px;
                         transition: 0.3s all;
-                        box-shadow: rgba(0 0 0 /22%) 0px 2px 18px 0px;
-                        cursor: default;
+                        overflow-y: hidden;
+                        border: none;
+
+                        .active {
+                            width: 350px;
+                            height: 235px;
+                            border: 1px solid #dbdbdb;
+                            border-radius: 20px;
+                            overflow-y: scroll;
+                            transition: 0.3s all;
+                            cursor: default;
+                            position: absolute;
+                            right: 0;
+                            -webkit-animation: text-focus-in 0.3s cubic-bezier(0.550, 0.085, 0.680, 0.530) 0.2s both;
+                            animation: text-focus-in 0.3s cubic-bezier(0.550, 0.085, 0.680, 0.530) 0.2s both;
+                        }
                     }
 
                     &.empty {
@@ -560,8 +552,10 @@ header {
                         height: 250px;
                         background: #FFFFFF;
                         border: 1px solid #dbdbdb;
-                        border-radius: 5px;
+                        border-radius: 20px;
                         transition: 0.3s all;
+                        box-shadow: rgba(0 0 0 /22%) 0px 2px 18px 0px;
+                        cursor: default;
                     }
                 }
 
@@ -587,6 +581,8 @@ header {
 
                         p {
                             margin-top: 10px;
+                            -webkit-animation: text-focus-in 0.3s cubic-bezier(0.550, 0.085, 0.680, 0.530) 0.2s both;
+                            animation: text-focus-in 0.3s cubic-bezier(0.550, 0.085, 0.680, 0.530) 0.2s both;
                         }
 
                         &__top {

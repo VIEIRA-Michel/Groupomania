@@ -177,7 +177,6 @@ function register() {
     font-family: 'Lato', sans-serif;
 }
 
-
 .register {
     display: flex;
     align-items: center;

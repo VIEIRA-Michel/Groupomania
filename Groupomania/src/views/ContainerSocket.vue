@@ -114,6 +114,7 @@ onBeforeMount(() => {
                                     useFriendshipStore().onFriendRequestRefused(args[0]);
                                     break;
                                 case 'friendRequest accepted':
+                                    console.log('hmm hmm');
                                     useFriendshipStore().onFriendRequestAccepted(args[0]);
                                     break;
                                 case 'friend removed':
@@ -150,7 +151,6 @@ onBeforeMount(() => {
 });
 
 onUnmounted(() => {
-    useAuthStore().logout()
     socket.off("connect");
     socket.off("disconnect");
     socket.off("users");
@@ -162,7 +162,10 @@ onUnmounted(() => {
     socket.off("friendRequest accepted");
     socket.off("friend removed");
     socket.off("friendRequest canceled");
+    console.log('unmounted');
+    useAuthStore().logout();
     socket.disconnect();
+    location.reload();
 });
 </script>
 
@@ -181,7 +184,7 @@ onUnmounted(() => {
                     <div class="notification-container__list__item__content__body">
                         <div class="notification-container__list__item__content__body__top">
                             <div class="notification-container__list__item__content__body__top__username">
-                                {{ message.username}}
+                                {{ message.username }}
                             </div>
                             <div class="notification-container__list__item__content__body__top__date">{{ message.at }}
                             </div>
@@ -233,13 +236,14 @@ onUnmounted(() => {
 
     &__list {
         &__item {
-            background: floralwhite;
+            background: #f6f6f6;
             margin-bottom: 10px;
-            border-radius: 5px;
-            border: 1px solid #FD2D01;
+            border-radius: 10px;
+            border: 1px solid #dbdbdb;
             -webkit-animation: text-focus-in 0.3s cubic-bezier(0.550, 0.085, 0.680, 0.530) 0.3s both;
             animation: text-focus-in 0.3s cubic-bezier(0.550, 0.085, 0.680, 0.530) 0.3s both;
             cursor: pointer;
+            box-shadow: rgb(0 0 0 / 22%) 0px 2px 18px 0px;
 
             &.hidden {
                 -webkit-animation: text-blur-out 0.3s cubic-bezier(0.550, 0.085, 0.680, 0.530) both;

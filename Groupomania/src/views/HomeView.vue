@@ -688,7 +688,7 @@ onBeforeMount(() => {
                                                 </div>
                                                 <div class="modal-container-like__content__body">
                                                     <div class="modal-container-like__content__body__users">
-                                                        <div :class="[publication.likes.length > 4 ? 'modal-container-like__content__body__users__list showScroll' : 'modal-container-like__content__body__users__list']">
+                                                        <div :class="[publication.likes.length > 3 ? 'modal-container-like__content__body__users__list showScroll' : 'modal-container-like__content__body__users__list']">
                                                             <div v-for="(userHasLiked, index) in publication.likes" :key="index" class="modal-container-like__content__body__users__list__item">
                                                                 <img :src="userHasLiked.picture_url" alt="">
                                                                 <div> {{(userHasLiked.user_firstname ? userHasLiked.user_firstname : userHasLiked.firstname) + ' ' + (userHasLiked.user_lastname ? userHasLiked.user_lastname : userHasLiked.lastname)}}</div>
@@ -1174,7 +1174,7 @@ onBeforeMount(() => {
                 border: 1px solid #dbdbdb;
                 background-color: #ffffff;
                 overflow-wrap: break-word;
-                text-align: center;
+                // text-align: center;
             }
 
             .picture-message-alert {
