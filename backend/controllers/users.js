@@ -9,6 +9,7 @@ const randomId = () => crypto.randomBytes(8).toString("hex");
 
 // Cette fonction va nous permettre de nous inscrire
 exports.signup = (req, res, next) => {
+    console.log(req);
     bcrypt.hash(req.body.password, 10)
         .then(hash => {
             let user = {

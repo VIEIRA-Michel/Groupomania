@@ -25,8 +25,11 @@ function logout() {
 
   &::-webkit-scrollbar {
     width: 4px;
-    background:#ffffff;
+    background: #ffffff;
 
+    @media only screen and (max-width: 768px) {
+      width: 2px;
+    }
   }
 
   &::-webkit-scrollbar-thumb {

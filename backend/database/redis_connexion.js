@@ -1,8 +1,8 @@
-require("dotenv").config();
+// require("dotenv").config();
 const { createClient } = require("redis");
 
 const redis = createClient({
-    url: process.env.REDIS_URL
+    url: "redis://localhost:6379"
 });
 
 module.exports = redis;

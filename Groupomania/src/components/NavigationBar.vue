@@ -452,7 +452,11 @@ header {
                     background: #ffffff;
                     border: 1px solid #dbdbdb;
                     box-shadow: rgb(0 0 0 / 22%) 0px 2px 18px 0px;
+
                     // padding: 10px;
+                    @media only screen and (max-width: 768px) {
+                        right: -58px;
+                    }
 
                     &__list {
                         &__item {
@@ -536,7 +540,7 @@ header {
                             height: 235px;
                             border: 1px solid #dbdbdb;
                             border-radius: 20px;
-                            overflow-y: scroll;
+                            overflow-y: auto;
                             transition: 0.3s all;
                             cursor: default;
                             position: absolute;
@@ -588,6 +592,7 @@ header {
                         &__top {
                             display: flex;
                             justify-content: space-between;
+                            align-items: baseline;
 
                             &__username {
                                 font-size: 15px;

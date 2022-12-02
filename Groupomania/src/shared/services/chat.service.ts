@@ -1,7 +1,7 @@
 import axios from 'axios';
 import type { Message } from '../interfaces/message.interface';
 
-let BASE_URL = 'http://localhost:3000/api';
+let BASE_URL = 'http://185.224.139.102:3000/api';
 
 export async function sendMsg(id: number, message: any): Promise<any> {
     const response = await axios({

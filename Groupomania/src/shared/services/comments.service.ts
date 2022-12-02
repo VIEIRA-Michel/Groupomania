@@ -1,7 +1,7 @@
 import type { Comment } from '../interfaces/comment.interface';
 import axios from 'axios';
 
-let BASE_URL = 'http://localhost:3000/api';
+let BASE_URL = 'http://185.224.139.102:3000/api';
 
 export async function fetchComments(id: number, limit: number, from: number): Promise<Comment[]> {
     const response = await axios({

@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-let BASE_URL = 'http://localhost:3000/api';
+let BASE_URL = 'http://185.224.139.102:3000/api';
 
 export async function signUp(lastname: string, firstname: string, email: string, password: string): Promise<any> {
     const response = await axios({
