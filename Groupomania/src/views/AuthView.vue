@@ -70,12 +70,11 @@ function register() {
         </div>
         <div class="container">
             <div class="container__header">
+                <div class="container__header__logo">
+                    <img src="../assets/logo-groupomania.svg" alt="logo-groupomania">
+                </div>
                 <div class="container__header__title">
                     <h1><span>Groupomania</span></h1>
-                </div>
-                <div class="container__header__message">
-                    <p>Prenons le temps de mieux nous connaître et partageons ensemble chacune de nos victoires
-                    </p>
                 </div>
             </div>
             <div class="container__content">
@@ -208,7 +207,7 @@ function register() {
         height: 370px;
         width: 100vw;
         position: absolute;
-        background: linear-gradient(180deg, rgb(250, 250, 250) 19%, rgba(0, 212, 255, 0) 100%);
+        background: linear-gradient(180deg, rgb(255, 255, 255) 19%, rgba(0, 212, 255, 0) 100%);
     }
 
     .container {
@@ -219,6 +218,7 @@ function register() {
         width: 100%;
         height: 100%;
         justify-content: center;
+        position: relative;
 
         span {
             color: #FD2D01;
@@ -226,26 +226,33 @@ function register() {
 
 
         &__header {
-            @media only screen and (min-width: 769px) {
-                position: absolute;
-                top: 80px;
-            }
+            // @media only screen and (min-width: 769px) {
+            position: absolute;
+            // top: 80px;
+            top: 0;
+            // }
 
-            &__title {
-                h1 {
-                    font-size: 30px;
-                    font-weight: bold;
-                    -webkit-animation: focus-in-expand 0.8s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
-                    animation: focus-in-expand 0.8s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+            &__logo {
+                display: flex;
+                justify-content: center;
+
+                img {
+                    width: 220px;
+                    height: 50px;
+                    object-fit: cover;
                 }
             }
 
-            &__message {
-                text-align: center;
+            &__title {
+                position: absolute;
+                left: 0;
+                right: 0;
+                top: 11px;
+                background-color: #ffffff;
 
-                p {
-                    -webkit-animation: text-focus-in 0.8s cubic-bezier(0.215, 0.610, 0.355, 1.000) 1.6s both;
-                    animation: text-focus-in 0.8s cubic-bezier(0.215, 0.610, 0.355, 1.000) 1.6s both;
+                h1 {
+                    font-size: 25px;
+                    font-weight: bold;
                 }
             }
         }
@@ -256,8 +263,6 @@ function register() {
             align-items: center;
             padding: 20px;
             width: 38%;
-            -webkit-animation: slide-out-blurred-bottom 0.8s cubic-bezier(0.755, 0.050, 0.855, 0.060) 0.8s reverse both;
-            animation: slide-out-blurred-bottom 0.8s cubic-bezier(0.755, 0.050, 0.855, 0.060) 0.8s reverse both;
 
             @media only screen and (min-width: 769px) {
                 position: relative;

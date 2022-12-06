@@ -15,7 +15,9 @@ function logout() {
 }
 </script>
 <template>
-  <NavigationBar :isConnected="isConnected" @logout="logout" />
+  <template v-if="isConnected">
+    <NavigationBar :isConnected="isConnected" @logout="logout" />
+  </template>
   <router-view>
   </router-view>
 </template>
